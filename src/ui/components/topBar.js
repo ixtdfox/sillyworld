@@ -5,27 +5,27 @@ export function renderTopBar({ title, breadcrumb, onBack, onExit, canGoBack }) {
   const left = document.createElement('div');
   left.className = 'sillyrpg-topbar-left';
 
-  const back = document.createElement('button');
-  back.type = 'button';
-  back.className = 'sillyrpg-btn';
-  back.textContent = 'Back';
-  back.disabled = !canGoBack;
-  back.addEventListener('click', onBack);
+  const backToChat = document.createElement('button');
+  backToChat.type = 'button';
+  backToChat.className = 'sillyrpg-btn';
+  backToChat.textContent = 'Back to Chat';
+  backToChat.addEventListener('click', onExit);
+  left.appendChild(backToChat);
 
-  left.appendChild(back);
+  if (canGoBack) {
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'sillyrpg-btn';
+    back.textContent = '←';
+    back.title = 'Back';
+    back.addEventListener('click', onBack);
+    left.appendChild(back);
+  }
 
   const center = document.createElement('div');
   center.className = 'sillyrpg-topbar-center';
   center.innerHTML = `<div class="sillyrpg-title">${title}</div><div class="sillyrpg-breadcrumb">${breadcrumb || ''}</div>`;
 
-  const right = document.createElement('div');
-  const exit = document.createElement('button');
-  exit.type = 'button';
-  exit.className = 'sillyrpg-btn sillyrpg-btn-danger';
-  exit.textContent = 'Exit';
-  exit.addEventListener('click', onExit);
-  right.appendChild(exit);
-
-  top.append(left, center, right);
+  top.append(left, center);
   return top;
 }

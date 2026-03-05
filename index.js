@@ -1,4 +1,15 @@
 const SILLYRPG_DEBUG_PREFIX = '[SillyRPG]';
+const TOOLBAR_BUTTON_ID = 'sillyrpg-toolbar-btn';
+const TOOLBAR_CANDIDATES = [
+  '#top-toolbar',
+  '#top-bar',
+  '#top-settings-holder',
+  '.top-bar',
+  '.toolbar',
+  '.drawer-toolbar',
+  '#extensionsMenu',
+  'header'
+];
 
 function getExtBase() {
   try {
@@ -20,47 +31,56 @@ function getExtBase() {
 const EXT_BASE = getExtBase();
 window.__SILLYRPG__ = { EXT_BASE };
 
-function ensureStyle() {
-  if (document.getElementById('sillyrpg-style')) return;
-
-  const link = document.createElement('link');
-  link.id = 'sillyrpg-style';
-  link.rel = 'stylesheet';
-  link.href = new URL('style.css', EXT_BASE).toString();
-  document.head.appendChild(link);
+function createToolbarButton() {
+  const button = document.createElement('button');
+  button.id = TOOLBAR_BUTTON_ID;
+  button.type = 'button';
+  button.className = 'menu_button fa-solid';
+  button.title = 'SillyRPG';
+  button.setAttribute('aria-label', 'SillyRPG');
+  button.textContent = '🎴';
+  button.addEventListener('click', async () => {
+    try {
+      const app = await import('./src/app.js');
+      app.openApp();
+    } catch (error) {
+      console.debug(SILLYRPG_DEBUG_PREFIX, 'Failed to open app.', error);
+    }
+  });
+  return button;
 }
 
-async function openApp() {
-  try {
-    const app = await import('./src/app.js');
-    app.openApp();
-  } catch (error) {
-    console.debug(SILLYRPG_DEBUG_PREFIX, 'Failed to open app.', error);
+function getToolbarHost() {
+  for (const selector of TOOLBAR_CANDIDATES) {
+    const host = document.querySelector(selector);
+    if (host) return host;
   }
+  return null;
 }
 
-function ensureEntryButton() {
-  const existing = document.getElementById('sillyrpg-open-btn');
-  if (existing) return;
+function ensureToolbarButton() {
+  if (document.getElementById(TOOLBAR_BUTTON_ID)) return true;
+  const host = getToolbarHost();
+  if (!host) return false;
 
-  const btn = document.createElement('button');
-  btn.id = 'sillyrpg-open-btn';
-  btn.type = 'button';
-  btn.className = 'sillyrpg-open-btn';
-  btn.textContent = 'SillyRPG';
-  btn.addEventListener('click', openApp);
+  host.appendChild(createToolbarButton());
+  return true;
+}
 
-  const toolbarHost =
-    document.querySelector('#extensions_settings') ||
-    document.querySelector('.drawer-content') ||
-    document.body;
+function watchForToolbar() {
+  if (ensureToolbarButton()) return;
 
-  toolbarHost.appendChild(btn);
+  const observer = new MutationObserver(() => {
+    if (ensureToolbarButton()) {
+      observer.disconnect();
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function bootstrap() {
-  ensureStyle();
-  ensureEntryButton();
+  watchForToolbar();
   console.debug(SILLYRPG_DEBUG_PREFIX, 'bootstrapped', { EXT_BASE });
 }
 

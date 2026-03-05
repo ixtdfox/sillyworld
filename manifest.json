@@ -2,8 +2,10 @@
   "name": "SillyRPG",
   "display_name": "SillyRPG",
   "version": "0.1.0",
-  "author": "Codex",
+  "author": "ixtdfox",
   "description": "A lightweight RPG-style SillyTavern UI extension.",
-  "entry": "index.js",
-  "type": "ui"
+  "js": "index.js",
+  "css": "style.css",
+  "type": "ui",
+  "loading_order": 15
 }
