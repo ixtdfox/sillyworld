@@ -1,0 +1,9 @@
+{
+  "name": "SillyRPG",
+  "display_name": "SillyRPG",
+  "version": "0.1.0",
+  "author": "Codex",
+  "description": "A lightweight RPG-style SillyTavern UI extension.",
+  "entry": "index.js",
+  "type": "ui"
+}

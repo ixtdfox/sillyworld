@@ -1,0 +1,41 @@
+{
+  "city": {
+    "name": "Larkspur",
+    "mapImage": "assets/city/city_map_placeholder.svg",
+    "districts": [
+      {
+        "id": "market",
+        "name": "Market",
+        "mapImage": "assets/districts/market_iso_placeholder.svg",
+        "pois": [
+          {
+            "id": "shop-poi",
+            "name": "Shop",
+            "locationId": "shop"
+          }
+        ]
+      }
+    ]
+  },
+  "locations": [
+    {
+      "id": "shop",
+      "name": "Shop",
+      "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
+      "npcs": [
+        {
+          "id": "shopkeeper",
+          "name": "Mira the Shopkeeper",
+          "stCharacterName": "Mira the Shopkeeper",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        },
+        {
+          "id": "guard",
+          "name": "Town Guard Aster",
+          "stCharacterName": "Town Guard Aster",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        }
+      ]
+    }
+  ]
+}

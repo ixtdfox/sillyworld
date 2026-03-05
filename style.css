@@ -1,0 +1,139 @@
+#sillyrpg-root {
+  position: fixed;
+  inset: 4% 8%;
+  z-index: 9999;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+#sillyrpg-root[hidden] {
+  display: none;
+}
+
+#sillyrpg-root .sillyrpg-panel {
+  width: 100%;
+  max-width: 960px;
+  max-height: 92vh;
+  overflow: auto;
+  background: rgba(18, 22, 32, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  color: #f0f3ff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 12px 42px rgba(0, 0, 0, 0.45);
+}
+
+#sillyrpg-root .sillyrpg-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#sillyrpg-root .sillyrpg-topbar-center {
+  text-align: center;
+}
+
+#sillyrpg-root .sillyrpg-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+#sillyrpg-root .sillyrpg-breadcrumb {
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+#sillyrpg-root .sillyrpg-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#sillyrpg-root .sillyrpg-btn,
+#sillyrpg-root .sillyrpg-open-btn {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f3f4f6;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+#sillyrpg-root .sillyrpg-btn:hover,
+#sillyrpg-root .sillyrpg-open-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+#sillyrpg-root .sillyrpg-btn-danger {
+  background: rgba(190, 30, 60, 0.35);
+}
+
+#sillyrpg-root .sillyrpg-menu,
+#sillyrpg-root .sillyrpg-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#sillyrpg-root .sillyrpg-section-title {
+  margin: 0;
+}
+
+#sillyrpg-root .sillyrpg-btn-block {
+  width: 100%;
+  text-align: left;
+}
+
+#sillyrpg-root .sillyrpg-image {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#sillyrpg-root .sillyrpg-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+#sillyrpg-root .sillyrpg-card {
+  text-align: center;
+}
+
+#sillyrpg-root .sillyrpg-npc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#sillyrpg-root .sillyrpg-npc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#sillyrpg-root .sillyrpg-npc-avatar {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 999px;
+}
+
+@media (max-width: 760px) {
+  #sillyrpg-root {
+    inset: 2% 2%;
+  }
+
+  #sillyrpg-root .sillyrpg-topbar {
+    flex-wrap: wrap;
+  }
+}
