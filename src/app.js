@@ -52,7 +52,16 @@ async function startNewGame() {
   const seed = await loadSeed();
   const store = worldStore.init(seed);
   store.reset(seed);
-  navigationStore.reset({ screen: 'map', level: MAP_LEVEL.City, contextId: 'city:larkspur', navStack: [] });
+  const state = store.getState();
+  navigationStore.reset({
+    screen: 'map',
+    level: MAP_LEVEL.Building,
+    contextId: state.player.currentNodeId,
+    navStack: [
+      { level: MAP_LEVEL.City, contextId: 'city:larkspur' },
+      { level: MAP_LEVEL.District, contextId: state.maps.nodesById[state.player.currentNodeId]?.parentId || null }
+    ].filter((step) => Boolean(step.contextId))
+  });
   store.save();
   render();
 }
@@ -62,7 +71,16 @@ async function loadAndResumeGame() {
   const store = worldStore.init(seed);
   const loaded = store.load();
   if (loaded) {
-    navigationStore.reset({ screen: 'map', level: MAP_LEVEL.City, contextId: 'city:larkspur', navStack: [] });
+    const state = store.getState();
+    navigationStore.reset({
+      screen: 'map',
+      level: MAP_LEVEL.Building,
+      contextId: state.player.currentNodeId,
+      navStack: [
+        { level: MAP_LEVEL.City, contextId: 'city:larkspur' },
+        { level: MAP_LEVEL.District, contextId: state.maps.nodesById[state.player.currentNodeId]?.parentId || null }
+      ].filter((step) => Boolean(step.contextId))
+    });
   }
   render();
 }
