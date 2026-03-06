@@ -58,7 +58,40 @@ function getLevelIntro(contextNode, config, nodes) {
   return contextNode?.meta?.description || '';
 }
 
-export function renderMapLevelView({ config, contextNode, nodes, onNodeClick }) {
+
+
+function renderActionList(actions = [], onActionClick = () => {}) {
+  if (!Array.isArray(actions) || actions.length === 0) return null;
+
+  const section = document.createElement('div');
+  section.className = 'sillyrpg-action-list';
+
+  const label = document.createElement('p');
+  label.className = 'sillyrpg-location-copy';
+  label.textContent = 'Available actions:';
+  section.appendChild(label);
+
+  for (const action of actions) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'sillyrpg-btn sillyrpg-btn-block';
+    button.textContent = action.label || action.id || 'Action';
+    button.addEventListener('click', () => onActionClick(action));
+
+    if (action.description) {
+      const copy = document.createElement('p');
+      copy.className = 'sillyrpg-location-copy';
+      copy.textContent = action.description;
+      section.append(button, copy);
+      continue;
+    }
+
+    section.appendChild(button);
+  }
+
+  return section;
+}
+export function renderMapLevelView({ config, contextNode, nodes, onNodeClick, actions = [] }) {
   const wrap = document.createElement('div');
   wrap.className = 'sillyrpg-screen';
 
@@ -117,6 +150,9 @@ export function renderMapLevelView({ config, contextNode, nodes, onNodeClick }) 
     list.appendChild(card);
   }
 
+  const actionList = renderActionList(actions, ({ id }) => onNodeClick({ type: 'action', id }));
+
   wrap.append(title, subtitle, image, description, listLabel, list);
+  if (actionList) wrap.appendChild(actionList);
   return wrap;
 }

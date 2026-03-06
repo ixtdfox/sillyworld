@@ -93,7 +93,31 @@ function getChildLevel(level) {
   return MAP_LEVEL.Room;
 }
 
+
+function getRestActionsForContext(store, nav, contextNode) {
+  if (!contextNode || nav.level !== MAP_LEVEL.Building) return [];
+  if (contextNode.id !== store.getState().player.homeNodeId) return [];
+  return store.getAvailableRestActions();
+}
+
 function handleMapNodeClick(node, store) {
+  if (node.type === 'action') {
+    const restResult = store.performRestAction(node.id);
+    if (!restResult.ok) {
+      notify(restResult.reason || 'Cannot perform this action right now.', 'warning');
+      return;
+    }
+
+    if (restResult.transitions?.length) {
+      const latest = restResult.transitions[restResult.transitions.length - 1];
+      notify(`Phase shift: ${latest.fromPhase} → ${latest.toPhase}`, 'info');
+    }
+
+    store.save();
+    render();
+    return;
+  }
+
   if (node.type === 'npc') {
     if (node.availability && !node.availability.available) {
       notify(node.availability.reason || 'This contact is unavailable right now.', 'warning');
@@ -157,10 +181,13 @@ function renderMapScreen(store) {
     };
   }).filter((node) => node.type !== 'npc' || node.availability?.available !== false);
 
+  const actions = getRestActionsForContext(store, nav, contextNode);
+
   return renderMapLevelView({
     config,
     contextNode,
     nodes,
+    actions,
     onNodeClick: (node) => handleMapNodeClick(node, store)
   });
 }

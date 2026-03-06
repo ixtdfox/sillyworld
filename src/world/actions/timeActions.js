@@ -63,7 +63,7 @@ export function setTimeOfDay(state, nextTimeOfDay) {
   return setTimePhase(state, nextTimeOfDay);
 }
 
-export function advanceTime(state) {
+export function advanceTime(state, options = {}) {
   const current = normalizeWorldTime(state.world);
   const currentIndex = TIME_PHASE_ORDER.indexOf(current.phase);
   const nextIndex = (currentIndex + 1) % TIME_PHASE_ORDER.length;
@@ -89,21 +89,42 @@ export function advanceTime(state) {
     toPhase: nextPhase,
     dayNumber: nextState.world.clock.dayNumber,
     clockStep: nextState.world.clock.step,
-    trigger: 'time-advance'
+    trigger: options.trigger || 'time-advance'
   });
 
   return appendPhaseTransitions(nextState, [transition]);
 }
 
-export function advanceTimeBySteps(state, steps = 1) {
+export function advanceTimeBySteps(state, steps = 1, options = {}) {
   const normalizedSteps = Number.isFinite(steps) ? Math.max(0, Math.floor(steps)) : 0;
   let nextState = state;
 
   for (let index = 0; index < normalizedSteps; index += 1) {
-    nextState = advanceTime(nextState);
+    nextState = advanceTime(nextState, options);
   }
 
   return nextState;
+}
+
+export function getStepsUntilPhase(currentPhase, targetPhase) {
+  const normalizedCurrent = normalizeTimePhase(currentPhase, null);
+  const normalizedTarget = normalizeTimePhase(targetPhase, null);
+  if (!normalizedCurrent || !normalizedTarget) return 0;
+
+  const currentIndex = TIME_PHASE_ORDER.indexOf(normalizedCurrent);
+  const targetIndex = TIME_PHASE_ORDER.indexOf(normalizedTarget);
+  if (currentIndex < 0 || targetIndex < 0) return 0;
+
+  return (targetIndex - currentIndex + TIME_PHASE_ORDER.length) % TIME_PHASE_ORDER.length;
+}
+
+export function advanceToTimePhase(state, targetTimePhase, options = {}) {
+  const currentPhase = normalizeTimePhase(state.world?.timePhase, normalizeTimePhase(state.world?.timeOfDay));
+  const steps = getStepsUntilPhase(currentPhase, targetTimePhase);
+  const minimumSteps = options.requireForwardProgress === false ? 0 : 1;
+  const effectiveSteps = steps === 0 ? minimumSteps : steps;
+
+  return advanceTimeBySteps(state, effectiveSteps, options);
 }
 
 export function getTimeCostForAction(actionType, fallback = 0) {
