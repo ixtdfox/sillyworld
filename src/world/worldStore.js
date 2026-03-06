@@ -3,6 +3,7 @@ import { deepClone } from './utils/object.js';
 import { setTimeOfDay, setTimePhase, advanceTime } from './actions/timeActions.js';
 import { addItemToPlayer, moveItemToSlot, removeItemFromPlayer, unequipSlot } from './actions/inventoryActions.js';
 import { setRelationship } from './actions/relationshipActions.js';
+import { movePlayerToNode } from './actions/navigationActions.js';
 import { getMapConfig, getNodesForLevel, getNodeById } from './selectors/mapSelectors.js';
 import { canTakeItem, getInventoryWeight } from './selectors/inventorySelectors.js';
 import { getRelationship } from './selectors/relationshipSelectors.js';
@@ -45,6 +46,16 @@ export function createWorldStore(seed = {}) {
     },
     advanceTime() {
       apply(advanceTime(state));
+    },
+    movePlayerToNode(nodeId, options = {}) {
+      const result = movePlayerToNode(state, nodeId, options);
+      if (!result.ok) return { ok: false };
+      apply(result.state);
+      return {
+        ok: true,
+        timeCostSteps: result.timeCostSteps,
+        phaseChanged: result.phaseChanged
+      };
     },
     addItemToPlayer(instanceId) {
       const result = addItemToPlayer(state, instanceId);

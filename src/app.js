@@ -102,6 +102,8 @@ function handleMapNodeClick(node, store) {
     return;
   }
 
+  store.movePlayerToNode(node.id);
+
   if (node.childrenLevel) {
     navigationStore.navigateToLevel(node.childrenLevel, node.id);
     store.save();

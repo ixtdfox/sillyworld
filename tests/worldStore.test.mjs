@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { createWorldStore } from '../src/world/worldStore.js';
 import { TIME_OF_DAY, TIME_PHASE } from '../src/world/constants/types.js';
 import { getInventoryWeight, canTakeItem } from '../src/world/selectors/inventorySelectors.js';
-import { advanceTime } from '../src/world/actions/timeActions.js';
+import { advanceTime, advanceTimeBySteps, getTimeCostForAction } from '../src/world/actions/timeActions.js';
 import { setRelationship as setRelationshipAction } from '../src/world/actions/relationshipActions.js';
 import { deserializeGameState, serializeGameState } from '../src/world/worldPersistence.js';
 import { getDistrictById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from '../src/world/selectors/settingSelectors.js';
@@ -89,6 +89,23 @@ test('time action: advanceTime cycles night -> morning and increments day', () =
   assert.equal(next.world.timePhase, TIME_PHASE.Morning);
   assert.equal(next.world.timeOfDay, TIME_OF_DAY.Morning);
   assert.equal(next.world.clock.dayNumber, 2);
+});
+
+test('time action: advanceTimeBySteps deterministically crosses phase thresholds', () => {
+  const store = createWorldStore(seed);
+  store.setTimePhase(TIME_PHASE.Day);
+
+  const next = advanceTimeBySteps(store.getState(), 2);
+  assert.equal(next.world.timePhase, TIME_PHASE.Night);
+  assert.equal(next.world.timeOfDay, TIME_OF_DAY.Night);
+  assert.equal(next.world.clock.dayNumber, 1);
+  assert.equal(next.world.clock.step, 2);
+});
+
+test('time action: configured gameplay action costs stay explicit', () => {
+  assert.equal(getTimeCostForAction('navigation', -1), 1);
+  assert.equal(getTimeCostForAction('inventory', -1), 0);
+  assert.equal(getTimeCostForAction('unknown-action', 3), 3);
 });
 
 test('inventory selectors: weight and canTakeItem are deterministic', () => {
@@ -307,6 +324,31 @@ test('time phase selectors and store API expose normalized gameplay phase', () =
   store.setTimeOfDay(TIME_OF_DAY.Night);
   assert.equal(store.getTimePhase(), TIME_PHASE.Night);
   assert.equal(store.getState().world.timePhase, TIME_PHASE.Night);
+});
+
+test('navigation action moves player, advances time, and reports phase transitions', () => {
+  const store = createWorldStore(seed);
+  store.setTimePhase(TIME_PHASE.Evening);
+
+  const moved = store.movePlayerToNode('building:last-light-bar');
+  assert.equal(moved.ok, true);
+  assert.equal(moved.timeCostSteps, 1);
+  assert.equal(moved.phaseChanged, true);
+  assert.equal(store.getState().player.currentNodeId, 'building:last-light-bar');
+  assert.equal(store.getState().world.timePhase, TIME_PHASE.Night);
+  assert.equal(store.getState().world.clock.step, 1);
+});
+
+test('navigation action supports explicit movement time costs and day wrap', () => {
+  const store = createWorldStore(seed);
+  store.setTimePhase(TIME_PHASE.Night);
+
+  const moved = store.movePlayerToNode('building:south-gate', { timeCostSteps: 2 });
+  assert.equal(moved.ok, true);
+  assert.equal(moved.timeCostSteps, 2);
+  assert.equal(store.getState().world.timePhase, TIME_PHASE.Day);
+  assert.equal(store.getState().world.clock.dayNumber, 2);
+  assert.equal(store.getState().world.clock.step, 2);
 });
 
 test('migration from schema v3 adds gameplay timePhase from legacy timeOfDay', () => {
