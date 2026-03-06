@@ -1,41 +1,52 @@
 {
-  "city": {
-    "name": "Larkspur",
-    "mapImage": "assets/city/city_map_placeholder.svg",
-    "districts": [
-      {
-        "id": "market",
-        "name": "Market",
-        "mapImage": "assets/districts/market_iso_placeholder.svg",
-        "pois": [
-          {
-            "id": "shop-poi",
-            "name": "Shop",
-            "locationId": "shop"
-          }
-        ]
-      }
+  "world": {
+    "timeOfDay": "Morning",
+    "clock": { "dayNumber": 1, "step": 0 }
+  },
+  "maps": {
+    "levelConfigs": {
+      "global": { "id": "global", "level": "global", "displayName": "World", "nodeTypesAllowed": ["region"], "interactions": ["travel"] },
+      "region": { "id": "region", "level": "region", "displayName": "Region", "nodeTypesAllowed": ["city"], "interactions": ["travel"] },
+      "city": { "id": "city", "level": "city", "displayName": "City", "nodeTypesAllowed": ["district"], "interactions": ["travel", "inspect"] },
+      "district": { "id": "district", "level": "district", "displayName": "District", "nodeTypesAllowed": ["building", "street"], "interactions": ["travel", "inspect"] },
+      "building": { "id": "building", "level": "building", "displayName": "Building", "nodeTypesAllowed": ["room", "npc", "item"], "interactions": ["talk", "loot"] },
+      "room": { "id": "room", "level": "room", "displayName": "Room", "nodeTypesAllowed": ["npc", "item"], "interactions": ["talk", "loot"] }
+    },
+    "nodes": [
+      { "id": "city:larkspur", "name": "Larkspur", "level": "city", "type": "city", "parentId": null, "childrenLevel": "district", "meta": { "mapImage": "assets/city/city_map_placeholder.svg" }, "interactions": ["travel"] },
+      { "id": "district:market", "name": "Market", "level": "district", "type": "district", "parentId": "city:larkspur", "childrenLevel": "building", "meta": { "mapImage": "assets/districts/market_iso_placeholder.svg" }, "interactions": ["travel"] },
+      { "id": "building:shop", "name": "Shop", "level": "building", "type": "building", "parentId": "district:market", "childrenLevel": "room", "meta": { "backgroundImage": "assets/locations/shop_bg_placeholder.svg" }, "interactions": ["inspect"] },
+      { "id": "npc:shopkeeper", "name": "Mira the Shopkeeper", "level": "room", "type": "npc", "parentId": "building:shop", "meta": { "id": "shopkeeper", "name": "Mira the Shopkeeper", "stCharacterName": "Mira the Shopkeeper", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] },
+      { "id": "npc:guard", "name": "Town Guard Aster", "level": "room", "type": "npc", "parentId": "building:shop", "meta": { "id": "guard", "name": "Town Guard Aster", "stCharacterName": "Town Guard Aster", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] }
     ]
   },
-  "locations": [
-    {
-      "id": "shop",
-      "name": "Shop",
-      "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
-      "npcs": [
-        {
-          "id": "shopkeeper",
-          "name": "Mira the Shopkeeper",
-          "stCharacterName": "Mira the Shopkeeper",
-          "avatar": "assets/npcs/npc_placeholder.svg"
-        },
-        {
-          "id": "guard",
-          "name": "Town Guard Aster",
-          "stCharacterName": "Town Guard Aster",
-          "avatar": "assets/npcs/npc_placeholder.svg"
-        }
-      ]
+  "player": {
+    "id": "player",
+    "name": "Adventurer",
+    "hp": { "current": 100, "max": 100 },
+    "energy": { "current": 100, "max": 100 },
+    "skills": { "barter": 1 },
+    "professions": ["wanderer"],
+    "carryCapacityWeight": 20,
+    "inventory": { "items": [] },
+    "equipped": {},
+    "relationships": {}
+  },
+  "characters": [
+    { "id": "shopkeeper", "name": "Mira the Shopkeeper", "currentNodeId": "npc:shopkeeper" },
+    { "id": "guard", "name": "Town Guard Aster", "currentNodeId": "npc:guard" }
+  ],
+  "items": {
+    "defs": [
+      { "defId": "apple", "name": "Apple", "weight": 0.2, "stackable": true, "maxStack": 50 },
+      { "defId": "sword", "name": "Rusty Sword", "weight": 3, "stackable": false }
+    ],
+    "instances": [
+      { "instanceId": "item:apple-stack", "defId": "apple", "qty": 5 },
+      { "instanceId": "item:sword-1", "defId": "sword", "qty": 1 }
+    ],
+    "nodeInventory": {
+      "building:shop": ["item:apple-stack", "item:sword-1"]
     }
-  ]
+  }
 }
