@@ -11,3 +11,5 @@ export * as worldSelectors from './selectors/worldSelectors.js';
 export * as mapSelectors from './selectors/mapSelectors.js';
 export * as inventorySelectors from './selectors/inventorySelectors.js';
 export * as relationshipSelectors from './selectors/relationshipSelectors.js';
+
+export * as settingSelectors from './selectors/settingSelectors.js';

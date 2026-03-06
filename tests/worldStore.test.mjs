@@ -7,6 +7,7 @@ import { getInventoryWeight, canTakeItem } from '../src/world/selectors/inventor
 import { advanceTime } from '../src/world/actions/timeActions.js';
 import { setRelationship as setRelationshipAction } from '../src/world/actions/relationshipActions.js';
 import { deserializeGameState, serializeGameState } from '../src/world/worldPersistence.js';
+import { getDistrictById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from '../src/world/selectors/settingSelectors.js';
 
 const seed = JSON.parse(fs.readFileSync(new URL('../src/world/seed_world.json', import.meta.url), 'utf8'));
 
@@ -34,6 +35,40 @@ test('seed world has city foundation districts and MVP locations', () => {
   for (const nodeId of [...requiredDistricts, ...requiredLocations]) {
     assert.equal(hasNode(nodeId), true, `missing node ${nodeId}`);
   }
+});
+
+test('setting model seed defines districts, POIs, factions, and location metadata', () => {
+  assert.equal(Array.isArray(seed.setting.districts), true);
+  assert.equal(Array.isArray(seed.setting.pointsOfInterest), true);
+  assert.equal(Array.isArray(seed.setting.factions), true);
+
+  const oldCity = seed.setting.districts.find((d) => d.id === 'district:old-city');
+  assert.equal(oldCity.meta.quarantineStatus, 'sealed');
+  assert.equal(oldCity.meta.nightAccessAllowed, false);
+
+  const factory = seed.setting.pointsOfInterest.find((poi) => poi.id === 'poi:ruined-factory');
+  assert.equal(factory.meta.dangerLevel, 'extreme');
+  assert.deepEqual(factory.meta.accessRestrictions, ['hazmat-gear-required']);
+});
+
+test('setting selectors resolve district/poi/faction links', () => {
+  const store = createWorldStore(seed);
+  const state = store.getState();
+
+  const ashline = getDistrictById(state, 'district:ashline');
+  assert.equal(ashline.controllingFactionId, 'faction:gate-watch');
+
+  const poi = getPointOfInterestById(state, 'poi:south-gate');
+  assert.equal(poi.nodeId, 'building:south-gate');
+
+  const ashlinePois = getPointsOfInterestForDistrict(state, 'district:ashline');
+  assert.equal(ashlinePois.length >= 2, true);
+
+  const factions = getFactionsForPointOfInterest(state, 'poi:south-gate');
+  assert.equal(factions[0].id, 'faction:gate-watch');
+
+  const locationMeta = getLocationMeta(state, { poiId: 'poi:ruined-factory' });
+  assert.equal(locationMeta.quarantineStatus, 'sealed');
 });
 
 test('time action: advanceTime cycles night -> morning and increments day', () => {
@@ -96,9 +131,26 @@ test('serialization + hydration + migration from v1-like payload', () => {
     ui: { level: 'city' }
   };
   const migrated = deserializeGameState(JSON.stringify(legacyV1), seed);
-  assert.equal(migrated.schemaVersion, 2);
+  assert.equal(migrated.schemaVersion, 3);
   assert.equal(migrated.world.timeOfDay, TIME_OF_DAY.Evening);
   assert.equal(migrated.ui, undefined);
+  assert.equal(Object.keys(migrated.setting.districtsById).length > 0, true);
+});
+
+test('migration from v2 state infers setting from map nodes when setting is absent', () => {
+  const legacyV2 = {
+    schemaVersion: 2,
+    world: seed.world,
+    player: seed.player,
+    maps: seed.maps,
+    items: seed.items,
+    characters: { byId: {} }
+  };
+
+  const migrated = deserializeGameState(JSON.stringify(legacyV2), seed);
+  assert.equal(migrated.schemaVersion, 3);
+  assert.equal(getDistrictById(migrated, 'district:new-city').id, 'district:new-city');
+  assert.equal(getPointOfInterestById(migrated, 'poi:apartment-204').nodeId, 'building:apartment-204');
 });
 
 test('hydrate fails cleanly on invalid json', () => {

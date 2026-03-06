@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const TIME_OF_DAY = Object.freeze({
   Morning: 'Morning',

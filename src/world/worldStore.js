@@ -6,6 +6,7 @@ import { setRelationship } from './actions/relationshipActions.js';
 import { getMapConfig, getNodesForLevel, getNodeById } from './selectors/mapSelectors.js';
 import { canTakeItem, getInventoryWeight } from './selectors/inventorySelectors.js';
 import { getRelationship } from './selectors/relationshipSelectors.js';
+import { getDistrictById, getDistricts, getFactionById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from './selectors/settingSelectors.js';
 import { deserializeGameState, saveGameState, loadGameState, serializeGameState } from './worldPersistence.js';
 
 export function createWorldStore(seed = {}) {
@@ -79,6 +80,28 @@ export function createWorldStore(seed = {}) {
     },
     getInventoryWeight() {
       return getInventoryWeight(state);
+    },
+
+    getDistricts() {
+      return getDistricts(state);
+    },
+    getDistrictById(districtId) {
+      return getDistrictById(state, districtId);
+    },
+    getPointOfInterestById(poiId) {
+      return getPointOfInterestById(state, poiId);
+    },
+    getPointsOfInterestForDistrict(districtId) {
+      return getPointsOfInterestForDistrict(state, districtId);
+    },
+    getFactionById(factionId) {
+      return getFactionById(state, factionId);
+    },
+    getFactionsForPointOfInterest(poiId) {
+      return getFactionsForPointOfInterest(state, poiId);
+    },
+    getLocationMeta(args) {
+      return getLocationMeta(state, args);
     },
     canTakeItem(instanceId) {
       return canTakeItem(state, instanceId);

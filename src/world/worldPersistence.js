@@ -1,6 +1,6 @@
 import { migrateGameState } from './worldMigrations.js';
 
-export const SAVE_KEY = 'sillyrpg.save.v2';
+export const SAVE_KEY = 'sillyrpg.save.v3';
 
 export function serializeGameState(state) {
   try {
