@@ -94,7 +94,8 @@
         "parentId": null,
         "childrenLevel": "district",
         "meta": {
-          "mapImage": "assets/city/city_map_placeholder.svg"
+          "mapImage": "assets/city/city_map_placeholder.svg",
+          "description": "A rebuilt city of polished slogans, quiet fear, and streets that remember more than the officials admit."
         },
         "interactions": [
           "travel"
@@ -108,7 +109,8 @@
         "parentId": "city:larkspur",
         "childrenLevel": "building",
         "meta": {
-          "mapImage": "assets/districts/market_iso_placeholder.svg"
+          "mapImage": "assets/districts/market_iso_placeholder.svg",
+          "description": "Fresh concrete, civic banners, and tired commuters pretending recovery is complete."
         },
         "interactions": [
           "travel"
@@ -122,7 +124,8 @@
         "parentId": "city:larkspur",
         "childrenLevel": "building",
         "meta": {
-          "mapImage": "assets/districts/market_iso_placeholder.svg"
+          "mapImage": "assets/districts/market_iso_placeholder.svg",
+          "description": "Transit overpasses and checkpoint lights where every conversation lowers to a whisper."
         },
         "interactions": [
           "travel"
@@ -171,14 +174,15 @@
         ]
       },
       {
-        "id": "building:apartment-204",
-        "name": "Apartment 204",
+        "id": "building:rowan-flat-2b",
+        "name": "Rowan Flats, Apt 2B",
         "level": "building",
         "type": "building",
         "parentId": "district:new-city",
         "childrenLevel": "room",
         "meta": {
-          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
+          "description": "Your borrowed apartment above a shuttered laundromat. The radiator hisses, the paint peels, and every quiet minute feels like the city waiting for you to make a choice."
         },
         "interactions": [
           "inspect"
@@ -192,7 +196,8 @@
         "parentId": "district:new-city",
         "childrenLevel": "room",
         "meta": {
-          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
+          "description": "A fluorescent pharmacy that never fully closes, serving shift workers, insomniacs, and the quietly desperate."
         },
         "interactions": [
           "inspect"
@@ -206,7 +211,8 @@
         "parentId": "district:new-city",
         "childrenLevel": "room",
         "meta": {
-          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
+          "description": "A records office of redacted files and long pauses before anyone answers a direct question."
         },
         "interactions": [
           "inspect"
@@ -220,7 +226,8 @@
         "parentId": "district:new-city",
         "childrenLevel": "room",
         "meta": {
-          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
+          "description": "A cramped line of stalls where rumors travel faster than produce prices."
         },
         "interactions": [
           "inspect"
@@ -301,7 +308,7 @@
         "name": "Vera, Upstairs Neighbor",
         "level": "room",
         "type": "npc",
-        "parentId": "building:apartment-204",
+        "parentId": "building:rowan-flat-2b",
         "meta": {
           "id": "neighbor",
           "name": "Vera, Upstairs Neighbor",
@@ -462,10 +469,34 @@
     ],
     "carryCapacityWeight": 20,
     "inventory": {
-      "items": []
+      "items": [
+        "item:apartment-keys",
+        "item:transit-pass",
+        "item:case-notebook"
+      ]
     },
     "equipped": {},
-    "relationships": {}
+    "relationships": {
+      "neighbor": {
+        "level": 20,
+        "tags": [
+          "trusted-neighbor",
+          "building-contact"
+        ]
+      },
+      "bartender": {
+        "level": 10,
+        "tags": [
+          "old-acquaintance"
+        ]
+      }
+    },
+    "currentNodeId": "building:rowan-flat-2b",
+    "homeNodeId": "building:rowan-flat-2b",
+    "resources": {
+      "cash": 42,
+      "transitCredits": 6
+    }
   },
   "characters": [
     {
@@ -535,6 +566,24 @@
         "name": "Pocket Flashlight",
         "weight": 0.5,
         "stackable": false
+      },
+      {
+        "defId": "apartment-keys",
+        "name": "Apartment Keys",
+        "weight": 0.1,
+        "stackable": false
+      },
+      {
+        "defId": "transit-pass",
+        "name": "Municipal Transit Pass",
+        "weight": 0.05,
+        "stackable": false
+      },
+      {
+        "defId": "case-notebook",
+        "name": "Case Notebook",
+        "weight": 0.3,
+        "stackable": false
       }
     ],
     "instances": [
@@ -552,6 +601,21 @@
         "instanceId": "item:flashlight-1",
         "defId": "flashlight",
         "qty": 1
+      },
+      {
+        "instanceId": "item:apartment-keys",
+        "defId": "apartment-keys",
+        "qty": 1
+      },
+      {
+        "instanceId": "item:transit-pass",
+        "defId": "transit-pass",
+        "qty": 1
+      },
+      {
+        "instanceId": "item:case-notebook",
+        "defId": "case-notebook",
+        "qty": 1
       }
     ],
     "nodeInventory": {
@@ -559,7 +623,7 @@
         "item:painkillers-pack",
         "item:water-bottle"
       ],
-      "building:apartment-204": [
+      "building:rowan-flat-2b": [
         "item:flashlight-1"
       ]
     }
@@ -669,10 +733,10 @@
     ],
     "pointsOfInterest": [
       {
-        "id": "poi:apartment-204",
-        "nodeId": "building:apartment-204",
+        "id": "poi:rowan-flat-2b",
+        "nodeId": "building:rowan-flat-2b",
         "districtId": "district:new-city",
-        "name": "Apartment 204",
+        "name": "Rowan Flats, Apt 2B",
         "poiType": "safehouse",
         "factionIds": [],
         "meta": {

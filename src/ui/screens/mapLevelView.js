@@ -20,6 +20,10 @@ export function renderMapLevelView({ config, contextNode, nodes, onNodeClick }) 
   const list = document.createElement('div');
   list.className = 'sillyrpg-card-grid';
 
+  const description = document.createElement('p');
+  description.className = 'sillyrpg-location-copy';
+  description.textContent = contextNode?.meta?.description || '';
+
   for (const node of nodes || []) {
     const card = document.createElement('button');
     card.type = 'button';
@@ -29,6 +33,6 @@ export function renderMapLevelView({ config, contextNode, nodes, onNodeClick }) 
     list.appendChild(card);
   }
 
-  wrap.append(title, image, list);
+  wrap.append(title, image, description, list);
   return wrap;
 }
