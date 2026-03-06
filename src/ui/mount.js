@@ -1,4 +1,14 @@
 const ROOT_ID = 'sillyrpg-root';
+const ROOT_HOST_SELECTORS = ['#movingDivs', '#movingUIWrapper', '#bg_load'];
+
+function getRootHost() {
+  for (const selector of ROOT_HOST_SELECTORS) {
+    const host = document.querySelector(selector);
+    if (host) return host;
+  }
+
+  return document.body;
+}
 const CHAT_UI_SELECTORS = [
   '#chat',
   '#chat_parent',
@@ -48,7 +58,7 @@ export function ensureRoot() {
     root = document.createElement('div');
     root.id = ROOT_ID;
     root.hidden = true;
-    document.body.appendChild(root);
+    getRootHost().appendChild(root);
   }
   return root;
 }
