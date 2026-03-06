@@ -1,0 +1,31 @@
+function prettifyPhase(phase = '') {
+  if (!phase) return '';
+  return phase[0].toUpperCase() + phase.slice(1);
+}
+
+export function renderPhaseTransitionInterstitial({ transition, onContinue }) {
+  const wrap = document.createElement('div');
+  wrap.className = 'sillyrpg-screen sillyrpg-phase-interstitial';
+
+  const banner = document.createElement('p');
+  banner.className = 'sillyrpg-phase-banner';
+  banner.textContent = `Phase Shift · Day ${transition.dayNumber}`;
+
+  const title = document.createElement('h3');
+  title.className = 'sillyrpg-section-title';
+  title.textContent = `${prettifyPhase(transition.fromPhase)} → ${prettifyPhase(transition.toPhase)}`;
+
+  const copy = document.createElement('p');
+  copy.className = 'sillyrpg-location-copy';
+  copy.textContent = `Larkspur moves into ${prettifyPhase(transition.toPhase)}. Schedules, patrol routes, and opportunities can now change.`;
+
+  const continueButton = document.createElement('button');
+  continueButton.type = 'button';
+  continueButton.className = 'sillyrpg-btn sillyrpg-btn-block';
+  continueButton.textContent = 'Continue';
+  continueButton.addEventListener('click', onContinue);
+
+  wrap.append(banner, title, copy, continueButton);
+  return wrap;
+}
+

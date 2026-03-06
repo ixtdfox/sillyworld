@@ -1,4 +1,5 @@
 import { TIME_OF_DAY_ORDER, TIME_PHASE, TIME_PHASE_ORDER } from '../constants/types.js';
+import { appendPhaseTransitions, createPhaseTransition } from './phaseTransitionActions.js';
 
 export const ACTION_TIME_COST_STEPS = Object.freeze({
   navigation: 1,
@@ -69,7 +70,7 @@ export function advanceTime(state) {
   const wrapped = nextIndex === 0;
   const nextPhase = TIME_PHASE_ORDER[nextIndex];
 
-  return {
+  const nextState = {
     ...state,
     world: {
       ...state.world,
@@ -82,6 +83,16 @@ export function advanceTime(state) {
     },
     updatedAt: Date.now()
   };
+
+  const transition = createPhaseTransition({
+    fromPhase: current.phase,
+    toPhase: nextPhase,
+    dayNumber: nextState.world.clock.dayNumber,
+    clockStep: nextState.world.clock.step,
+    trigger: 'time-advance'
+  });
+
+  return appendPhaseTransitions(nextState, [transition]);
 }
 
 export function advanceTimeBySteps(state, steps = 1) {

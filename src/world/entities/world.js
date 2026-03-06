@@ -14,6 +14,7 @@ function toLegacyTimeOfDay(phase) {
 
 export function createDefaultWorld(seed = {}) {
   const timePhase = normalizeTimePhase(seed.timePhase, normalizeTimePhase(seed.timeOfDay));
+  const phaseTransitions = seed.phaseTransitions || {};
 
   return {
     timePhase,
@@ -21,6 +22,10 @@ export function createDefaultWorld(seed = {}) {
     clock: {
       dayNumber: seed.clock?.dayNumber || 1,
       step: seed.clock?.step || 0
+    },
+    phaseTransitions: {
+      pending: Array.isArray(phaseTransitions.pending) ? phaseTransitions.pending : [],
+      history: Array.isArray(phaseTransitions.history) ? phaseTransitions.history : []
     }
   };
 }
