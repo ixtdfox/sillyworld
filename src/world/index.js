@@ -15,3 +15,4 @@ export * as relationshipSelectors from './selectors/relationshipSelectors.js';
 
 export * as settingSelectors from './selectors/settingSelectors.js';
 export * as locationAvailabilitySelectors from './selectors/locationAvailabilitySelectors.js';
+export * as npcAvailabilitySelectors from './selectors/npcAvailabilitySelectors.js';

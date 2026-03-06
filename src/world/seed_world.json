@@ -326,7 +326,14 @@
           "role": "Protagonist-Adjacent",
           "affiliation": "Ivory Circle",
           "contactType": "personal",
-          "relationshipAnchor": "estranged-ex-wife"
+          "relationshipAnchor": "estranged-ex-wife",
+          "availability": {
+            "byPhase": {
+              "day": { "available": true, "locationId": "building:ivory-club" },
+              "evening": { "available": true, "locationId": "building:ivory-club" },
+              "night": { "available": false, "reason": "Lana avoids meetings after dark." }
+            }
+          }
         },
         "interactions": [
           "talk"
@@ -346,7 +353,14 @@
           "role": "Local Social Contact",
           "affiliation": "Last Light Bar",
           "contactType": "social",
-          "relationshipAnchor": "old-shift-acquaintance"
+          "relationshipAnchor": "old-shift-acquaintance",
+          "availability": {
+            "byPhase": {
+              "day": { "available": false, "reason": "Ivo opens up once evening crowds arrive." },
+              "evening": { "available": true, "locationId": "building:last-light-bar" },
+              "night": { "available": true, "locationId": "building:last-light-bar" }
+            }
+          }
         },
         "interactions": [
           "talk"
@@ -366,7 +380,14 @@
           "role": "Medical Contact",
           "affiliation": "Night Pharmacy",
           "contactType": "medical",
-          "relationshipAnchor": "post-blast-treatment-network"
+          "relationshipAnchor": "post-blast-treatment-network",
+          "availability": {
+            "byPhase": {
+              "day": { "available": true, "locationId": "building:night-pharmacy" },
+              "evening": { "available": true, "locationId": "building:night-pharmacy" },
+              "night": { "available": true, "locationId": "building:night-pharmacy" }
+            }
+          }
         },
         "interactions": [
           "talk"
@@ -386,7 +407,14 @@
           "role": "Authority Contact",
           "affiliation": "Gate Watch",
           "contactType": "institutional",
-          "relationshipAnchor": "quarantine-enforcement"
+          "relationshipAnchor": "quarantine-enforcement",
+          "availability": {
+            "byPhase": {
+              "day": { "available": true, "locationId": "building:south-gate" },
+              "evening": { "available": true, "locationId": "building:south-gate" },
+              "night": { "available": false, "reason": "Holt rotates to patrol and is off direct interview duty at night." }
+            }
+          }
         },
         "interactions": [
           "talk"
@@ -406,7 +434,14 @@
           "role": "Street Contact",
           "affiliation": "Zone Scavengers",
           "contactType": "black-market",
-          "relationshipAnchor": "smuggling-routes"
+          "relationshipAnchor": "smuggling-routes",
+          "availability": {
+            "byPhase": {
+              "day": { "available": false, "reason": "Yara keeps low profile during daytime sweeps." },
+              "evening": { "available": true, "locationId": "building:old-plaza" },
+              "night": { "available": true, "locationId": "building:old-plaza" }
+            }
+          }
         },
         "interactions": [
           "talk"
@@ -426,7 +461,14 @@
           "role": "Institutional Insider",
           "affiliation": "City Records Office",
           "contactType": "civic-records",
-          "relationshipAnchor": "death-registry-access"
+          "relationshipAnchor": "death-registry-access",
+          "availability": {
+            "byPhase": {
+              "day": { "available": true, "locationId": "building:civic-archive" },
+              "evening": { "available": true, "locationId": "building:civic-archive" },
+              "night": { "available": false, "reason": "Archive staff and clerks leave after evening lockup." }
+            }
+          }
         },
         "interactions": [
           "talk"
