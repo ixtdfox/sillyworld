@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { createWorldStore } from '../src/world/worldStore.js';
 import { TIME_OF_DAY, TIME_PHASE } from '../src/world/constants/types.js';
 import { getInventoryWeight, canTakeItem } from '../src/world/selectors/inventorySelectors.js';
-import { advanceTime, advanceTimeBySteps, getTimeCostForAction } from '../src/world/actions/timeActions.js';
+import { advanceTime, advanceTimeBySteps, advanceToTimePhase, getStepsUntilPhase, getTimeCostForAction } from '../src/world/actions/timeActions.js';
 import { setRelationship as setRelationshipAction } from '../src/world/actions/relationshipActions.js';
 import { deserializeGameState, serializeGameState } from '../src/world/worldPersistence.js';
 import { getDistrictById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from '../src/world/selectors/settingSelectors.js';
@@ -454,6 +454,57 @@ test('migration from schema v3 adds gameplay timePhase from legacy timeOfDay', (
   assert.equal(migrated.schemaVersion, 4);
   assert.equal(migrated.world.timeOfDay, TIME_OF_DAY.Night);
   assert.equal(migrated.world.timePhase, TIME_PHASE.Night);
+});
+
+
+
+test('time action: advanceToTimePhase supports targeted skip with forward progress baseline', () => {
+  const store = createWorldStore(seed);
+  store.setTimePhase(TIME_PHASE.Day);
+
+  let next = advanceToTimePhase(store.getState(), TIME_PHASE.Evening, { trigger: 'test-rest' });
+  assert.equal(next.world.timePhase, TIME_PHASE.Evening);
+  assert.equal(next.world.clock.step, 1);
+  assert.equal(next.world.phaseTransitions.pending[0].trigger, 'test-rest');
+
+  next = advanceToTimePhase(next, TIME_PHASE.Evening, { trigger: 'test-rest' });
+  assert.equal(next.world.timePhase, TIME_PHASE.Night);
+  assert.equal(next.world.clock.step, 2);
+});
+
+test('time action: getStepsUntilPhase wraps correctly', () => {
+  assert.equal(getStepsUntilPhase(TIME_PHASE.Night, TIME_PHASE.Morning), 1);
+  assert.equal(getStepsUntilPhase(TIME_PHASE.Morning, TIME_PHASE.Morning), 0);
+  assert.equal(getStepsUntilPhase(TIME_PHASE.Day, TIME_PHASE.Morning), 3);
+});
+
+test('rest action is available at home and advances to requested phase', () => {
+  const store = createWorldStore(seed);
+  store.setTimePhase(TIME_PHASE.Day);
+
+  const availableAtHome = store.getAvailableRestActions();
+  assert.equal(availableAtHome.length >= 1, true);
+
+  const rest = store.performRestAction('rest-until-evening');
+  assert.equal(rest.ok, true);
+  assert.equal(store.getState().world.timePhase, TIME_PHASE.Evening);
+  assert.equal(rest.timeCostSteps, 1);
+  assert.equal(rest.transitions.length, 1);
+  assert.equal(rest.transitions[0].trigger, 'rest-until-evening');
+});
+
+test('rest action is blocked outside of home', () => {
+  const store = createWorldStore(seed);
+  store.setTimePhase(TIME_PHASE.Evening);
+  const moved = store.movePlayerToNode('building:last-light-bar');
+  assert.equal(moved.ok, true);
+
+  const availableAway = store.getAvailableRestActions();
+  assert.equal(availableAway.length, 0);
+
+  const rest = store.performRestAction('sleep-until-morning');
+  assert.equal(rest.ok, false);
+  assert.equal(rest.reason.includes('home'), true);
 });
 
 test('hydrate fails cleanly on invalid json', () => {

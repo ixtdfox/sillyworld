@@ -4,6 +4,7 @@ import { setTimeOfDay, setTimePhase, advanceTime } from './actions/timeActions.j
 import { addItemToPlayer, moveItemToSlot, removeItemFromPlayer, unequipSlot } from './actions/inventoryActions.js';
 import { setRelationship } from './actions/relationshipActions.js';
 import { movePlayerToNode } from './actions/navigationActions.js';
+import { getAvailableRestActions, performRestAction } from './actions/restActions.js';
 import { getMapConfig, getNodesForLevel, getNodeById } from './selectors/mapSelectors.js';
 import { canTakeItem, getInventoryWeight } from './selectors/inventorySelectors.js';
 import { getRelationship } from './selectors/relationshipSelectors.js';
@@ -49,6 +50,25 @@ export function createWorldStore(seed = {}) {
     },
     advanceTime() {
       apply(advanceTime(state));
+    },
+
+    getAvailableRestActions() {
+      return getAvailableRestActions(state);
+    },
+    performRestAction(actionId) {
+      const result = performRestAction(state, actionId);
+      if (!result.ok) {
+        return {
+          ok: false,
+          reason: result.reason || ''
+        };
+      }
+      apply(result.state);
+      return {
+        ok: true,
+        timeCostSteps: result.timeCostSteps,
+        transitions: result.transitions || []
+      };
     },
     movePlayerToNode(nodeId, options = {}) {
       const result = movePlayerToNode(state, nodeId, options);
