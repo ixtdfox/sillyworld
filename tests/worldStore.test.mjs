@@ -11,6 +11,16 @@ import { getDistrictById, getFactionsForPointOfInterest, getLocationMeta, getPoi
 
 const seed = JSON.parse(fs.readFileSync(new URL('../src/world/seed_world.json', import.meta.url), 'utf8'));
 
+function indexNodesById(nodes) {
+  return new Map(nodes.map((node) => [node.id, node]));
+}
+
+function assertHasNodes(nodesById, ids, label) {
+  for (const id of ids) {
+    assert.equal(nodesById.has(id), true, `missing ${label} ${id}`);
+  }
+}
+
 test('seed world has city foundation districts and MVP locations', () => {
   const nodes = seed.maps.nodes;
   const hasNode = (id) => nodes.some((node) => node.id === id);
@@ -129,6 +139,109 @@ test('seed world includes foundational npc roster discoverable at relevant locat
     assert.equal(Boolean(node), true, `missing npc node ${npcNodeId}`);
     assert.equal(node.parentId, parentId);
     assert.equal(node.meta.stCharacterName?.length > 0, true);
+  }
+});
+
+test('seed world keeps starting location and core POIs wired correctly', () => {
+  const nodes = seed.maps.nodes;
+  const nodesById = indexNodesById(nodes);
+
+  const requiredPois = [
+    'poi:rowan-flat-2b',
+    'poi:last-light-bar',
+    'poi:night-pharmacy',
+    'poi:civic-archive',
+    'poi:south-gate',
+    'poi:old-plaza',
+    'poi:ruined-factory',
+    'poi:ivory-club'
+  ];
+
+  const poisById = new Map(seed.setting.pointsOfInterest.map((poi) => [poi.id, poi]));
+  for (const poiId of requiredPois) {
+    assert.equal(poisById.has(poiId), true, `missing required poi ${poiId}`);
+  }
+
+  assert.equal(nodesById.has(seed.player.currentNodeId), true, 'player current node does not exist');
+  assert.equal(nodesById.has(seed.player.homeNodeId), true, 'player home node does not exist');
+  assert.equal(seed.player.currentNodeId, 'building:rowan-flat-2b');
+  assert.equal(seed.player.homeNodeId, 'building:rowan-flat-2b');
+
+  const homePoi = seed.setting.pointsOfInterest.find((poi) => poi.nodeId === seed.player.homeNodeId);
+  assert.equal(Boolean(homePoi), true, 'player home node is not represented by any point of interest');
+});
+
+test('seed setting references valid district, poi, and faction ids', () => {
+  const nodesById = indexNodesById(seed.maps.nodes);
+  const districtIds = new Set(seed.setting.districts.map((district) => district.id));
+  const factionIds = new Set(seed.setting.factions.map((faction) => faction.id));
+
+  for (const district of seed.setting.districts) {
+    assert.equal(nodesById.has(district.nodeId), true, `district node is missing for ${district.id}`);
+    assert.equal(district.id, district.nodeId, `district id/node mismatch for ${district.id}`);
+    assert.equal(Boolean(district.controllingFactionId), true, `district ${district.id} missing controlling faction`);
+    assert.equal(factionIds.has(district.controllingFactionId), true, `district ${district.id} has unknown controlling faction`);
+  }
+
+  for (const poi of seed.setting.pointsOfInterest) {
+    assert.equal(nodesById.has(poi.nodeId), true, `poi node is missing for ${poi.id}`);
+    assert.equal(districtIds.has(poi.districtId), true, `poi ${poi.id} has unknown district`);
+
+    for (const factionId of poi.factionIds || []) {
+      assert.equal(factionIds.has(factionId), true, `poi ${poi.id} has unknown faction ${factionId}`);
+    }
+  }
+});
+
+test('seed navigation graph does not contain obvious broken links', () => {
+  const nodes = seed.maps.nodes;
+  const nodesById = indexNodesById(nodes);
+  const levelConfigs = seed.maps.levelConfigs;
+
+  for (const node of nodes) {
+    assert.equal(Boolean(levelConfigs[node.level]), true, `node ${node.id} uses unknown level ${node.level}`);
+
+    if (!node.parentId) continue;
+
+    const parent = nodesById.get(node.parentId);
+    assert.notEqual(node.parentId, node.id, `node ${node.id} cannot be its own parent`);
+    assert.equal(Boolean(parent), true, `node ${node.id} has missing parent ${node.parentId}`);
+
+    const parentLevelConfig = levelConfigs[parent.level] || {};
+    const allowedTypes = parentLevelConfig.nodeTypesAllowed || [];
+    assert.equal(
+      allowedTypes.includes(node.type),
+      true,
+      `node ${node.id} type ${node.type} not allowed under parent level ${parent.level}`
+    );
+  }
+});
+
+test('characters, npc map nodes, and relationship scaffolding stay in sync', () => {
+  const nodesById = indexNodesById(seed.maps.nodes);
+  const charactersById = new Map(seed.characters.map((character) => [character.id, character]));
+  const relationshipIds = new Set(Object.keys(seed.player.relationships));
+
+  const coreCharacterIds = [
+    'lana-vey',
+    'ivo-rask',
+    'dr-olek-mirov',
+    'captain-sena-holt',
+    'yara-dene',
+    'elena-sable'
+  ];
+
+  assertHasNodes(nodesById, coreCharacterIds.map((id) => `npc:${id}`), 'npc node');
+
+  for (const characterId of coreCharacterIds) {
+    const character = charactersById.get(characterId);
+    assert.equal(Boolean(character), true, `missing character ${characterId}`);
+    assert.equal(relationshipIds.has(characterId), true, `missing relationship seed for ${characterId}`);
+
+    const npcNode = nodesById.get(`npc:${characterId}`);
+    assert.equal(character.currentNodeId, npcNode.id, `character ${characterId} currentNodeId mismatch`);
+    assert.equal(character.homeNodeId, npcNode.parentId, `character ${characterId} homeNodeId mismatch`);
+    assert.equal(npcNode.meta?.id, characterId, `npc meta.id mismatch for ${characterId}`);
   }
 });
 
