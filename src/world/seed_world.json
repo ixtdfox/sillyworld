@@ -1,88 +1,827 @@
 {
   "world": {
     "timeOfDay": "Morning",
-    "clock": { "dayNumber": 1, "step": 0 }
+    "clock": {
+      "dayNumber": 1,
+      "step": 0
+    }
   },
   "maps": {
     "levelConfigs": {
-      "global": { "id": "global", "level": "global", "displayName": "World", "nodeTypesAllowed": ["region"], "interactions": ["travel"] },
-      "region": { "id": "region", "level": "region", "displayName": "Region", "nodeTypesAllowed": ["city"], "interactions": ["travel"] },
-      "city": { "id": "city", "level": "city", "displayName": "City", "nodeTypesAllowed": ["district"], "interactions": ["travel", "inspect"] },
-      "district": { "id": "district", "level": "district", "displayName": "District", "nodeTypesAllowed": ["building", "street"], "interactions": ["travel", "inspect"] },
-      "building": { "id": "building", "level": "building", "displayName": "Location", "nodeTypesAllowed": ["room", "npc", "item"], "interactions": ["talk", "loot", "inspect"] },
-      "room": { "id": "room", "level": "room", "displayName": "Point", "nodeTypesAllowed": ["npc", "item"], "interactions": ["talk", "loot", "inspect"] }
+      "global": {
+        "id": "global",
+        "level": "global",
+        "displayName": "World",
+        "nodeTypesAllowed": [
+          "region"
+        ],
+        "interactions": [
+          "travel"
+        ]
+      },
+      "region": {
+        "id": "region",
+        "level": "region",
+        "displayName": "Region",
+        "nodeTypesAllowed": [
+          "city"
+        ],
+        "interactions": [
+          "travel"
+        ]
+      },
+      "city": {
+        "id": "city",
+        "level": "city",
+        "displayName": "City",
+        "nodeTypesAllowed": [
+          "district"
+        ],
+        "interactions": [
+          "travel",
+          "inspect"
+        ]
+      },
+      "district": {
+        "id": "district",
+        "level": "district",
+        "displayName": "District",
+        "nodeTypesAllowed": [
+          "building",
+          "street"
+        ],
+        "interactions": [
+          "travel",
+          "inspect"
+        ]
+      },
+      "building": {
+        "id": "building",
+        "level": "building",
+        "displayName": "Location",
+        "nodeTypesAllowed": [
+          "room",
+          "npc",
+          "item"
+        ],
+        "interactions": [
+          "talk",
+          "loot",
+          "inspect"
+        ]
+      },
+      "room": {
+        "id": "room",
+        "level": "room",
+        "displayName": "Point",
+        "nodeTypesAllowed": [
+          "npc",
+          "item"
+        ],
+        "interactions": [
+          "talk",
+          "loot",
+          "inspect"
+        ]
+      }
     },
     "nodes": [
-      { "id": "city:larkspur", "name": "Larkspur", "level": "city", "type": "city", "parentId": null, "childrenLevel": "district", "meta": { "mapImage": "assets/city/city_map_placeholder.svg" }, "interactions": ["travel"] },
-
-      { "id": "district:new-city", "name": "New City District", "level": "district", "type": "district", "parentId": "city:larkspur", "childrenLevel": "building", "meta": { "mapImage": "assets/districts/market_iso_placeholder.svg" }, "interactions": ["travel"] },
-      { "id": "district:ashline", "name": "Ashline Corridor", "level": "district", "type": "district", "parentId": "city:larkspur", "childrenLevel": "building", "meta": { "mapImage": "assets/districts/market_iso_placeholder.svg" }, "interactions": ["travel"] },
-      { "id": "district:old-city", "name": "Old City Quarantine", "level": "district", "type": "district", "parentId": "city:larkspur", "childrenLevel": "building", "meta": { "mapImage": "assets/districts/market_iso_placeholder.svg" }, "interactions": ["travel"] },
-      { "id": "district:industrial-outskirts", "name": "Industrial Outskirts", "level": "district", "type": "district", "parentId": "city:larkspur", "childrenLevel": "building", "meta": { "mapImage": "assets/districts/market_iso_placeholder.svg" }, "interactions": ["travel"] },
-      { "id": "district:ivory-isle", "name": "Ivory Isle Enclave", "level": "district", "type": "district", "parentId": "city:larkspur", "childrenLevel": "building", "meta": { "mapImage": "assets/districts/market_iso_placeholder.svg" }, "interactions": ["travel"] },
-
-      { "id": "building:apartment-204", "name": "Apartment 204", "level": "building", "type": "building", "parentId": "district:new-city", "childrenLevel": "room", "meta": { "backgroundImage": "assets/locations/shop_bg_placeholder.svg" }, "interactions": ["inspect"] },
-      { "id": "building:night-pharmacy", "name": "Night Pharmacy", "level": "building", "type": "building", "parentId": "district:new-city", "childrenLevel": "room", "meta": { "backgroundImage": "assets/locations/shop_bg_placeholder.svg" }, "interactions": ["inspect"] },
-      { "id": "building:civic-archive", "name": "Municipal Records Office", "level": "building", "type": "building", "parentId": "district:new-city", "childrenLevel": "room", "meta": { "backgroundImage": "assets/locations/shop_bg_placeholder.svg" }, "interactions": ["inspect"] },
-      { "id": "building:street-market", "name": "Rivergate Street Market", "level": "building", "type": "building", "parentId": "district:new-city", "childrenLevel": "room", "meta": { "backgroundImage": "assets/locations/shop_bg_placeholder.svg" }, "interactions": ["inspect"] },
-
-      { "id": "building:last-light-bar", "name": "Last Light Bar", "level": "building", "type": "building", "parentId": "district:ashline", "childrenLevel": "room", "meta": { "backgroundImage": "assets/locations/shop_bg_placeholder.svg" }, "interactions": ["inspect"] },
-      { "id": "building:south-gate", "name": "South Gate Checkpoint", "level": "building", "type": "building", "parentId": "district:ashline", "childrenLevel": "room", "meta": { "backgroundImage": "assets/locations/shop_bg_placeholder.svg" }, "interactions": ["inspect"] },
-
-      { "id": "building:old-plaza", "name": "Old Plaza Block", "level": "building", "type": "building", "parentId": "district:old-city", "childrenLevel": "room", "meta": { "backgroundImage": "assets/locations/shop_bg_placeholder.svg" }, "interactions": ["inspect"] },
-
-      { "id": "building:ruined-factory", "name": "Ruined Chemical Factory", "level": "building", "type": "building", "parentId": "district:industrial-outskirts", "childrenLevel": "room", "meta": { "backgroundImage": "assets/locations/shop_bg_placeholder.svg" }, "interactions": ["inspect"] },
-
-      { "id": "building:ivory-club", "name": "Ivory Club Lobby", "level": "building", "type": "building", "parentId": "district:ivory-isle", "childrenLevel": "room", "meta": { "backgroundImage": "assets/locations/shop_bg_placeholder.svg" }, "interactions": ["inspect"] },
-
-      { "id": "npc:neighbor", "name": "Vera, Upstairs Neighbor", "level": "room", "type": "npc", "parentId": "building:apartment-204", "meta": { "id": "neighbor", "name": "Vera, Upstairs Neighbor", "stCharacterName": "Vera Kline", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] },
-      { "id": "npc:pharmacist", "name": "Pharmacist Olek", "level": "room", "type": "npc", "parentId": "building:night-pharmacy", "meta": { "id": "pharmacist", "name": "Pharmacist Olek", "stCharacterName": "Olek Mirov", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] },
-      { "id": "npc:records-clerk", "name": "Records Clerk Toma", "level": "room", "type": "npc", "parentId": "building:civic-archive", "meta": { "id": "records-clerk", "name": "Records Clerk Toma", "stCharacterName": "Toma Vey", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] },
-      { "id": "npc:market-vendor", "name": "Vendor Rina", "level": "room", "type": "npc", "parentId": "building:street-market", "meta": { "id": "market-vendor", "name": "Vendor Rina", "stCharacterName": "Rina Sol", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] },
-      { "id": "npc:bartender", "name": "Bartender Ivo", "level": "room", "type": "npc", "parentId": "building:last-light-bar", "meta": { "id": "bartender", "name": "Bartender Ivo", "stCharacterName": "Ivo Rask", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] },
-      { "id": "npc:checkpoint-officer", "name": "Checkpoint Officer Sena", "level": "room", "type": "npc", "parentId": "building:south-gate", "meta": { "id": "checkpoint-officer", "name": "Checkpoint Officer Sena", "stCharacterName": "Officer Sena Holt", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] },
-      { "id": "npc:zone-scavenger", "name": "Scavenger Yara", "level": "room", "type": "npc", "parentId": "building:old-plaza", "meta": { "id": "zone-scavenger", "name": "Scavenger Yara", "stCharacterName": "Yara Dene", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] },
-      { "id": "npc:factory-watchman", "name": "Watchman Dren", "level": "room", "type": "npc", "parentId": "building:ruined-factory", "meta": { "id": "factory-watchman", "name": "Watchman Dren", "stCharacterName": "Dren Kal", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] },
-      { "id": "npc:concierge", "name": "Concierge Maris", "level": "room", "type": "npc", "parentId": "building:ivory-club", "meta": { "id": "concierge", "name": "Concierge Maris", "stCharacterName": "Maris Vale", "avatar": "assets/npcs/npc_placeholder.svg" }, "interactions": ["talk"] }
+      {
+        "id": "city:larkspur",
+        "name": "Larkspur",
+        "level": "city",
+        "type": "city",
+        "parentId": null,
+        "childrenLevel": "district",
+        "meta": {
+          "mapImage": "assets/city/city_map_placeholder.svg"
+        },
+        "interactions": [
+          "travel"
+        ]
+      },
+      {
+        "id": "district:new-city",
+        "name": "New City District",
+        "level": "district",
+        "type": "district",
+        "parentId": "city:larkspur",
+        "childrenLevel": "building",
+        "meta": {
+          "mapImage": "assets/districts/market_iso_placeholder.svg"
+        },
+        "interactions": [
+          "travel"
+        ]
+      },
+      {
+        "id": "district:ashline",
+        "name": "Ashline Corridor",
+        "level": "district",
+        "type": "district",
+        "parentId": "city:larkspur",
+        "childrenLevel": "building",
+        "meta": {
+          "mapImage": "assets/districts/market_iso_placeholder.svg"
+        },
+        "interactions": [
+          "travel"
+        ]
+      },
+      {
+        "id": "district:old-city",
+        "name": "Old City Quarantine",
+        "level": "district",
+        "type": "district",
+        "parentId": "city:larkspur",
+        "childrenLevel": "building",
+        "meta": {
+          "mapImage": "assets/districts/market_iso_placeholder.svg"
+        },
+        "interactions": [
+          "travel"
+        ]
+      },
+      {
+        "id": "district:industrial-outskirts",
+        "name": "Industrial Outskirts",
+        "level": "district",
+        "type": "district",
+        "parentId": "city:larkspur",
+        "childrenLevel": "building",
+        "meta": {
+          "mapImage": "assets/districts/market_iso_placeholder.svg"
+        },
+        "interactions": [
+          "travel"
+        ]
+      },
+      {
+        "id": "district:ivory-isle",
+        "name": "Ivory Isle Enclave",
+        "level": "district",
+        "type": "district",
+        "parentId": "city:larkspur",
+        "childrenLevel": "building",
+        "meta": {
+          "mapImage": "assets/districts/market_iso_placeholder.svg"
+        },
+        "interactions": [
+          "travel"
+        ]
+      },
+      {
+        "id": "building:apartment-204",
+        "name": "Apartment 204",
+        "level": "building",
+        "type": "building",
+        "parentId": "district:new-city",
+        "childrenLevel": "room",
+        "meta": {
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+        },
+        "interactions": [
+          "inspect"
+        ]
+      },
+      {
+        "id": "building:night-pharmacy",
+        "name": "Night Pharmacy",
+        "level": "building",
+        "type": "building",
+        "parentId": "district:new-city",
+        "childrenLevel": "room",
+        "meta": {
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+        },
+        "interactions": [
+          "inspect"
+        ]
+      },
+      {
+        "id": "building:civic-archive",
+        "name": "Municipal Records Office",
+        "level": "building",
+        "type": "building",
+        "parentId": "district:new-city",
+        "childrenLevel": "room",
+        "meta": {
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+        },
+        "interactions": [
+          "inspect"
+        ]
+      },
+      {
+        "id": "building:street-market",
+        "name": "Rivergate Street Market",
+        "level": "building",
+        "type": "building",
+        "parentId": "district:new-city",
+        "childrenLevel": "room",
+        "meta": {
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+        },
+        "interactions": [
+          "inspect"
+        ]
+      },
+      {
+        "id": "building:last-light-bar",
+        "name": "Last Light Bar",
+        "level": "building",
+        "type": "building",
+        "parentId": "district:ashline",
+        "childrenLevel": "room",
+        "meta": {
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+        },
+        "interactions": [
+          "inspect"
+        ]
+      },
+      {
+        "id": "building:south-gate",
+        "name": "South Gate Checkpoint",
+        "level": "building",
+        "type": "building",
+        "parentId": "district:ashline",
+        "childrenLevel": "room",
+        "meta": {
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+        },
+        "interactions": [
+          "inspect"
+        ]
+      },
+      {
+        "id": "building:old-plaza",
+        "name": "Old Plaza Block",
+        "level": "building",
+        "type": "building",
+        "parentId": "district:old-city",
+        "childrenLevel": "room",
+        "meta": {
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+        },
+        "interactions": [
+          "inspect"
+        ]
+      },
+      {
+        "id": "building:ruined-factory",
+        "name": "Ruined Chemical Factory",
+        "level": "building",
+        "type": "building",
+        "parentId": "district:industrial-outskirts",
+        "childrenLevel": "room",
+        "meta": {
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+        },
+        "interactions": [
+          "inspect"
+        ]
+      },
+      {
+        "id": "building:ivory-club",
+        "name": "Ivory Club Lobby",
+        "level": "building",
+        "type": "building",
+        "parentId": "district:ivory-isle",
+        "childrenLevel": "room",
+        "meta": {
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+        },
+        "interactions": [
+          "inspect"
+        ]
+      },
+      {
+        "id": "npc:neighbor",
+        "name": "Vera, Upstairs Neighbor",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:apartment-204",
+        "meta": {
+          "id": "neighbor",
+          "name": "Vera, Upstairs Neighbor",
+          "stCharacterName": "Vera Kline",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:pharmacist",
+        "name": "Pharmacist Olek",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:night-pharmacy",
+        "meta": {
+          "id": "pharmacist",
+          "name": "Pharmacist Olek",
+          "stCharacterName": "Olek Mirov",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:records-clerk",
+        "name": "Records Clerk Toma",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:civic-archive",
+        "meta": {
+          "id": "records-clerk",
+          "name": "Records Clerk Toma",
+          "stCharacterName": "Toma Vey",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:market-vendor",
+        "name": "Vendor Rina",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:street-market",
+        "meta": {
+          "id": "market-vendor",
+          "name": "Vendor Rina",
+          "stCharacterName": "Rina Sol",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:bartender",
+        "name": "Bartender Ivo",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:last-light-bar",
+        "meta": {
+          "id": "bartender",
+          "name": "Bartender Ivo",
+          "stCharacterName": "Ivo Rask",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:checkpoint-officer",
+        "name": "Checkpoint Officer Sena",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:south-gate",
+        "meta": {
+          "id": "checkpoint-officer",
+          "name": "Checkpoint Officer Sena",
+          "stCharacterName": "Officer Sena Holt",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:zone-scavenger",
+        "name": "Scavenger Yara",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:old-plaza",
+        "meta": {
+          "id": "zone-scavenger",
+          "name": "Scavenger Yara",
+          "stCharacterName": "Yara Dene",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:factory-watchman",
+        "name": "Watchman Dren",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:ruined-factory",
+        "meta": {
+          "id": "factory-watchman",
+          "name": "Watchman Dren",
+          "stCharacterName": "Dren Kal",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:concierge",
+        "name": "Concierge Maris",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:ivory-club",
+        "meta": {
+          "id": "concierge",
+          "name": "Concierge Maris",
+          "stCharacterName": "Maris Vale",
+          "avatar": "assets/npcs/npc_placeholder.svg"
+        },
+        "interactions": [
+          "talk"
+        ]
+      }
     ]
   },
   "player": {
     "id": "player",
     "name": "Maksim",
-    "hp": { "current": 100, "max": 100 },
-    "energy": { "current": 100, "max": 100 },
-    "skills": { "negotiation": 1, "observation": 1 },
-    "professions": ["former plant technician"],
+    "hp": {
+      "current": 100,
+      "max": 100
+    },
+    "energy": {
+      "current": 100,
+      "max": 100
+    },
+    "skills": {
+      "negotiation": 1,
+      "observation": 1
+    },
+    "professions": [
+      "former plant technician"
+    ],
     "carryCapacityWeight": 20,
-    "inventory": { "items": [] },
+    "inventory": {
+      "items": []
+    },
     "equipped": {},
     "relationships": {}
   },
   "characters": [
-    { "id": "neighbor", "name": "Vera, Upstairs Neighbor", "currentNodeId": "npc:neighbor" },
-    { "id": "pharmacist", "name": "Pharmacist Olek", "currentNodeId": "npc:pharmacist" },
-    { "id": "records-clerk", "name": "Records Clerk Toma", "currentNodeId": "npc:records-clerk" },
-    { "id": "market-vendor", "name": "Vendor Rina", "currentNodeId": "npc:market-vendor" },
-    { "id": "bartender", "name": "Bartender Ivo", "currentNodeId": "npc:bartender" },
-    { "id": "checkpoint-officer", "name": "Checkpoint Officer Sena", "currentNodeId": "npc:checkpoint-officer" },
-    { "id": "zone-scavenger", "name": "Scavenger Yara", "currentNodeId": "npc:zone-scavenger" },
-    { "id": "factory-watchman", "name": "Watchman Dren", "currentNodeId": "npc:factory-watchman" },
-    { "id": "concierge", "name": "Concierge Maris", "currentNodeId": "npc:concierge" }
+    {
+      "id": "neighbor",
+      "name": "Vera, Upstairs Neighbor",
+      "currentNodeId": "npc:neighbor"
+    },
+    {
+      "id": "pharmacist",
+      "name": "Pharmacist Olek",
+      "currentNodeId": "npc:pharmacist"
+    },
+    {
+      "id": "records-clerk",
+      "name": "Records Clerk Toma",
+      "currentNodeId": "npc:records-clerk"
+    },
+    {
+      "id": "market-vendor",
+      "name": "Vendor Rina",
+      "currentNodeId": "npc:market-vendor"
+    },
+    {
+      "id": "bartender",
+      "name": "Bartender Ivo",
+      "currentNodeId": "npc:bartender"
+    },
+    {
+      "id": "checkpoint-officer",
+      "name": "Checkpoint Officer Sena",
+      "currentNodeId": "npc:checkpoint-officer"
+    },
+    {
+      "id": "zone-scavenger",
+      "name": "Scavenger Yara",
+      "currentNodeId": "npc:zone-scavenger"
+    },
+    {
+      "id": "factory-watchman",
+      "name": "Watchman Dren",
+      "currentNodeId": "npc:factory-watchman"
+    },
+    {
+      "id": "concierge",
+      "name": "Concierge Maris",
+      "currentNodeId": "npc:concierge"
+    }
   ],
   "items": {
     "defs": [
-      { "defId": "painkillers", "name": "Painkillers", "weight": 0.1, "stackable": true, "maxStack": 30 },
-      { "defId": "water", "name": "Bottled Water", "weight": 0.7, "stackable": true, "maxStack": 12 },
-      { "defId": "flashlight", "name": "Pocket Flashlight", "weight": 0.5, "stackable": false }
+      {
+        "defId": "painkillers",
+        "name": "Painkillers",
+        "weight": 0.1,
+        "stackable": true,
+        "maxStack": 30
+      },
+      {
+        "defId": "water",
+        "name": "Bottled Water",
+        "weight": 0.7,
+        "stackable": true,
+        "maxStack": 12
+      },
+      {
+        "defId": "flashlight",
+        "name": "Pocket Flashlight",
+        "weight": 0.5,
+        "stackable": false
+      }
     ],
     "instances": [
-      { "instanceId": "item:painkillers-pack", "defId": "painkillers", "qty": 4 },
-      { "instanceId": "item:water-bottle", "defId": "water", "qty": 1 },
-      { "instanceId": "item:flashlight-1", "defId": "flashlight", "qty": 1 }
+      {
+        "instanceId": "item:painkillers-pack",
+        "defId": "painkillers",
+        "qty": 4
+      },
+      {
+        "instanceId": "item:water-bottle",
+        "defId": "water",
+        "qty": 1
+      },
+      {
+        "instanceId": "item:flashlight-1",
+        "defId": "flashlight",
+        "qty": 1
+      }
     ],
     "nodeInventory": {
-      "building:night-pharmacy": ["item:painkillers-pack", "item:water-bottle"],
-      "building:apartment-204": ["item:flashlight-1"]
+      "building:night-pharmacy": [
+        "item:painkillers-pack",
+        "item:water-bottle"
+      ],
+      "building:apartment-204": [
+        "item:flashlight-1"
+      ]
     }
+  },
+  "setting": {
+    "factions": [
+      {
+        "id": "faction:city-council",
+        "name": "Larkspur City Council",
+        "kind": "civic",
+        "influence": "citywide"
+      },
+      {
+        "id": "faction:gate-watch",
+        "name": "Gate Watch",
+        "kind": "security",
+        "influence": "district"
+      },
+      {
+        "id": "faction:zone-scavengers",
+        "name": "Zone Scavengers",
+        "kind": "informal",
+        "influence": "district"
+      },
+      {
+        "id": "faction:ivory-circle",
+        "name": "Ivory Circle",
+        "kind": "elite-network",
+        "influence": "citywide"
+      }
+    ],
+    "districts": [
+      {
+        "id": "district:new-city",
+        "name": "New City District",
+        "nodeId": "district:new-city",
+        "zoneType": "residential-civic",
+        "controllingFactionId": "faction:city-council",
+        "meta": {
+          "dangerLevel": "low",
+          "accessRestrictions": [],
+          "nightAccessAllowed": true,
+          "quarantineStatus": "clear"
+        }
+      },
+      {
+        "id": "district:ashline",
+        "name": "Ashline Corridor",
+        "nodeId": "district:ashline",
+        "zoneType": "transit-cordon",
+        "controllingFactionId": "faction:gate-watch",
+        "meta": {
+          "dangerLevel": "moderate",
+          "accessRestrictions": [
+            "checkpoint-inspection"
+          ],
+          "nightAccessAllowed": true,
+          "quarantineStatus": "monitored"
+        }
+      },
+      {
+        "id": "district:old-city",
+        "name": "Old City Quarantine",
+        "nodeId": "district:old-city",
+        "zoneType": "quarantine-zone",
+        "controllingFactionId": "faction:gate-watch",
+        "meta": {
+          "dangerLevel": "high",
+          "accessRestrictions": [
+            "permit-required",
+            "escorted-entry-daytime"
+          ],
+          "nightAccessAllowed": false,
+          "quarantineStatus": "sealed"
+        }
+      },
+      {
+        "id": "district:industrial-outskirts",
+        "name": "Industrial Outskirts",
+        "nodeId": "district:industrial-outskirts",
+        "zoneType": "industrial-ruins",
+        "controllingFactionId": "faction:gate-watch",
+        "meta": {
+          "dangerLevel": "high",
+          "accessRestrictions": [
+            "protective-gear-recommended"
+          ],
+          "nightAccessAllowed": false,
+          "quarantineStatus": "restricted"
+        }
+      },
+      {
+        "id": "district:ivory-isle",
+        "name": "Ivory Isle Enclave",
+        "nodeId": "district:ivory-isle",
+        "zoneType": "elite-enclave",
+        "controllingFactionId": "faction:ivory-circle",
+        "meta": {
+          "dangerLevel": "low",
+          "accessRestrictions": [
+            "members-only-after-dark"
+          ],
+          "nightAccessAllowed": false,
+          "quarantineStatus": "clear"
+        }
+      }
+    ],
+    "pointsOfInterest": [
+      {
+        "id": "poi:apartment-204",
+        "nodeId": "building:apartment-204",
+        "districtId": "district:new-city",
+        "name": "Apartment 204",
+        "poiType": "safehouse",
+        "factionIds": [],
+        "meta": {
+          "dangerLevel": "low",
+          "accessRestrictions": [],
+          "nightAccessAllowed": true,
+          "quarantineStatus": "clear"
+        }
+      },
+      {
+        "id": "poi:night-pharmacy",
+        "nodeId": "building:night-pharmacy",
+        "districtId": "district:new-city",
+        "name": "Night Pharmacy",
+        "poiType": "service",
+        "factionIds": [
+          "faction:city-council"
+        ],
+        "meta": {
+          "dangerLevel": "low",
+          "accessRestrictions": [
+            "open-late-curfew-sensitive"
+          ],
+          "nightAccessAllowed": true,
+          "quarantineStatus": "clear"
+        }
+      },
+      {
+        "id": "poi:civic-archive",
+        "nodeId": "building:civic-archive",
+        "districtId": "district:new-city",
+        "name": "Municipal Records Office",
+        "poiType": "records-office",
+        "factionIds": [
+          "faction:city-council"
+        ],
+        "meta": {
+          "dangerLevel": "low",
+          "accessRestrictions": [
+            "records-pass-after-hours"
+          ],
+          "nightAccessAllowed": false,
+          "quarantineStatus": "clear"
+        }
+      },
+      {
+        "id": "poi:street-market",
+        "nodeId": "building:street-market",
+        "districtId": "district:new-city",
+        "name": "Rivergate Street Market",
+        "poiType": "market",
+        "factionIds": [
+          "faction:city-council"
+        ],
+        "meta": {
+          "dangerLevel": "moderate",
+          "accessRestrictions": [],
+          "nightAccessAllowed": false,
+          "quarantineStatus": "clear"
+        }
+      },
+      {
+        "id": "poi:last-light-bar",
+        "nodeId": "building:last-light-bar",
+        "districtId": "district:ashline",
+        "name": "Last Light Bar",
+        "poiType": "social-hub",
+        "factionIds": [
+          "faction:zone-scavengers"
+        ],
+        "meta": {
+          "dangerLevel": "moderate",
+          "accessRestrictions": [],
+          "nightAccessAllowed": true,
+          "quarantineStatus": "monitored"
+        }
+      },
+      {
+        "id": "poi:south-gate",
+        "nodeId": "building:south-gate",
+        "districtId": "district:ashline",
+        "name": "South Gate Checkpoint",
+        "poiType": "checkpoint",
+        "factionIds": [
+          "faction:gate-watch"
+        ],
+        "meta": {
+          "dangerLevel": "moderate",
+          "accessRestrictions": [
+            "id-check"
+          ],
+          "nightAccessAllowed": true,
+          "quarantineStatus": "monitored"
+        }
+      },
+      {
+        "id": "poi:old-plaza",
+        "nodeId": "building:old-plaza",
+        "districtId": "district:old-city",
+        "name": "Old Plaza Block",
+        "poiType": "ruins",
+        "factionIds": [
+          "faction:zone-scavengers"
+        ],
+        "meta": {
+          "dangerLevel": "high",
+          "accessRestrictions": [
+            "no-official-patrol-after-dusk"
+          ],
+          "nightAccessAllowed": true,
+          "quarantineStatus": "sealed"
+        }
+      },
+      {
+        "id": "poi:ruined-factory",
+        "nodeId": "building:ruined-factory",
+        "districtId": "district:industrial-outskirts",
+        "name": "Ruined Chemical Factory",
+        "poiType": "industrial-plant",
+        "factionIds": [
+          "faction:gate-watch"
+        ],
+        "meta": {
+          "dangerLevel": "extreme",
+          "accessRestrictions": [
+            "hazmat-gear-required"
+          ],
+          "nightAccessAllowed": false,
+          "quarantineStatus": "sealed"
+        }
+      },
+      {
+        "id": "poi:ivory-club",
+        "nodeId": "building:ivory-club",
+        "districtId": "district:ivory-isle",
+        "name": "Ivory Club Lobby",
+        "poiType": "private-club",
+        "factionIds": [
+          "faction:ivory-circle"
+        ],
+        "meta": {
+          "dangerLevel": "low",
+          "accessRestrictions": [
+            "invitation-only"
+          ],
+          "nightAccessAllowed": false,
+          "quarantineStatus": "clear"
+        }
+      }
+    ]
   }
 }

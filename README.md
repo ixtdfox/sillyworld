@@ -31,7 +31,7 @@ Create SillyTavern characters with those exact names to enable one-click chat op
 
 ## Save and resume
 
-- Save key: `sillyrpg.save.v2`
+- Save key: `sillyrpg.save.v3`
 - Core game state is persisted; UI navigation state is maintained separately in UI layer.
 - Use **Continue** or **Load Game** from Main Menu to resume.
 
@@ -41,6 +41,7 @@ Create SillyTavern characters with those exact names to enable one-click chat op
 - `world`: time-of-day and clock seed
 - `maps.levelConfigs`: data-driven map-level registry
 - `maps.nodes`: map nodes (`city`, `district`, `building`, `npc`) with parent relations
+- `setting`: normalized district zones, points of interest, factions, and location metadata
 - `player`, `characters`, `items` seeds for simulation state
 
 All image paths are local relative paths under `assets/`.
