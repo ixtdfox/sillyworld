@@ -10,6 +10,32 @@ import { deserializeGameState, serializeGameState } from '../src/world/worldPers
 
 const seed = JSON.parse(fs.readFileSync(new URL('../src/world/seed_world.json', import.meta.url), 'utf8'));
 
+test('seed world has city foundation districts and MVP locations', () => {
+  const nodes = seed.maps.nodes;
+  const hasNode = (id) => nodes.some((node) => node.id === id);
+
+  const requiredDistricts = [
+    'district:new-city',
+    'district:old-city',
+    'district:ashline',
+    'district:industrial-outskirts',
+    'district:ivory-isle'
+  ];
+  const requiredLocations = [
+    'building:apartment-204',
+    'building:last-light-bar',
+    'building:night-pharmacy',
+    'building:civic-archive',
+    'building:street-market',
+    'building:south-gate',
+    'building:ruined-factory'
+  ];
+
+  for (const nodeId of [...requiredDistricts, ...requiredLocations]) {
+    assert.equal(hasNode(nodeId), true, `missing node ${nodeId}`);
+  }
+});
+
 test('time action: advanceTime cycles night -> morning and increments day', () => {
   const store = createWorldStore(seed);
   store.setTimeOfDay(TIME_OF_DAY.Night);
@@ -21,36 +47,36 @@ test('time action: advanceTime cycles night -> morning and increments day', () =
 
 test('inventory selectors: weight and canTakeItem are deterministic', () => {
   const store = createWorldStore(seed);
-  store.addItemToPlayer('item:sword-1');
+  store.addItemToPlayer('item:flashlight-1');
 
   const state = store.getState();
-  assert.equal(getInventoryWeight(state), 3);
-  assert.equal(canTakeItem(state, 'item:apple-stack'), true);
+  assert.equal(getInventoryWeight(state), 0.5);
+  assert.equal(canTakeItem(state, 'item:painkillers-pack'), true);
 });
 
 test('store inventory action: addItemToPlayer rejects overflow', () => {
   const heavySeed = {
     ...seed,
-    player: { ...seed.player, carryCapacityWeight: 2 }
+    player: { ...seed.player, carryCapacityWeight: 0.2 }
   };
   const store = createWorldStore(heavySeed);
-  assert.equal(store.addItemToPlayer('item:sword-1'), false);
+  assert.equal(store.addItemToPlayer('item:water-bottle'), false);
 });
 
 test('equip/unequip flow', () => {
   const store = createWorldStore(seed);
-  store.addItemToPlayer('item:sword-1');
-  assert.equal(store.moveItemToSlot('item:sword-1', 'rightHand'), true);
-  assert.equal(store.getState().player.equipped.rightHand, 'item:sword-1');
+  store.addItemToPlayer('item:flashlight-1');
+  assert.equal(store.moveItemToSlot('item:flashlight-1', 'rightHand'), true);
+  assert.equal(store.getState().player.equipped.rightHand, 'item:flashlight-1');
   store.unequipSlot('rightHand');
   assert.equal(store.getState().player.equipped.rightHand, undefined);
 });
 
 test('relationship action clamps and returns level', () => {
   const store = createWorldStore(seed);
-  const result = setRelationshipAction(store.getState(), 'guard', 120);
+  const result = setRelationshipAction(store.getState(), 'checkpoint-officer', 120);
   assert.equal(result.level, 100);
-  assert.equal(result.nextState.player.relationships.guard.level, 100);
+  assert.equal(result.nextState.player.relationships['checkpoint-officer'].level, 100);
 });
 
 test('serialization + hydration + migration from v1-like payload', () => {

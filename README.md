@@ -13,8 +13,8 @@ SillyRPG is a lightweight, menu-driven RPG UI extension for SillyTavern.
 
 1. Open **SillyRPG**.
 2. Click **New Game**.
-3. Click **Market** district from the city level.
-4. Click **Shop** building.
+3. Click **New City District** from the city level.
+4. Click **Night Pharmacy** or **Apartment 204**.
 5. Click an NPC node.
 6. SillyRPG attempts to open an existing SillyTavern chat for the mapped character name.
 
@@ -23,8 +23,9 @@ SillyRPG is a lightweight, menu-driven RPG UI extension for SillyTavern.
 NPCs map by exact `stCharacterName` in `src/world/seed_world.json`.
 
 Current sample NPC mappings:
-- `Mira the Shopkeeper`
-- `Town Guard Aster`
+- `Olek Mirov`
+- `Officer Sena Holt`
+- `Ivo Rask`
 
 Create SillyTavern characters with those exact names to enable one-click chat open.
 
