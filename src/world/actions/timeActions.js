@@ -1,5 +1,12 @@
 import { TIME_OF_DAY_ORDER, TIME_PHASE, TIME_PHASE_ORDER } from '../constants/types.js';
 
+export const ACTION_TIME_COST_STEPS = Object.freeze({
+  navigation: 1,
+  inspect: 1,
+  conversation: 1,
+  inventory: 0
+});
+
 const TIME_OF_DAY_TO_PHASE = Object.freeze({
   Morning: TIME_PHASE.Morning,
   Day: TIME_PHASE.Day,
@@ -75,4 +82,22 @@ export function advanceTime(state) {
     },
     updatedAt: Date.now()
   };
+}
+
+export function advanceTimeBySteps(state, steps = 1) {
+  const normalizedSteps = Number.isFinite(steps) ? Math.max(0, Math.floor(steps)) : 0;
+  let nextState = state;
+
+  for (let index = 0; index < normalizedSteps; index += 1) {
+    nextState = advanceTime(nextState);
+  }
+
+  return nextState;
+}
+
+export function getTimeCostForAction(actionType, fallback = 0) {
+  if (typeof actionType !== 'string' || !actionType) return fallback;
+  const configured = ACTION_TIME_COST_STEPS[actionType];
+  if (!Number.isFinite(configured)) return fallback;
+  return Math.max(0, Math.floor(configured));
 }
