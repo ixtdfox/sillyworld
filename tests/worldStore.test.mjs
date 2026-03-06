@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createWorldStore } from '../src/world/worldStore.js';
-import { TIME_OF_DAY } from '../src/world/constants/types.js';
+import { TIME_OF_DAY, TIME_PHASE } from '../src/world/constants/types.js';
 import { getInventoryWeight, canTakeItem } from '../src/world/selectors/inventorySelectors.js';
 import { advanceTime } from '../src/world/actions/timeActions.js';
 import { setRelationship as setRelationshipAction } from '../src/world/actions/relationshipActions.js';
@@ -86,6 +86,7 @@ test('time action: advanceTime cycles night -> morning and increments day', () =
   store.setTimeOfDay(TIME_OF_DAY.Night);
 
   const next = advanceTime(store.getState());
+  assert.equal(next.world.timePhase, TIME_PHASE.Morning);
   assert.equal(next.world.timeOfDay, TIME_OF_DAY.Morning);
   assert.equal(next.world.clock.dayNumber, 2);
 });
@@ -270,8 +271,9 @@ test('serialization + hydration + migration from v1-like payload', () => {
     ui: { level: 'city' }
   };
   const migrated = deserializeGameState(JSON.stringify(legacyV1), seed);
-  assert.equal(migrated.schemaVersion, 3);
+  assert.equal(migrated.schemaVersion, 4);
   assert.equal(migrated.world.timeOfDay, TIME_OF_DAY.Evening);
+  assert.equal(migrated.world.timePhase, TIME_PHASE.Evening);
   assert.equal(migrated.ui, undefined);
   assert.equal(Object.keys(migrated.setting.districtsById).length > 0, true);
 });
@@ -287,9 +289,41 @@ test('migration from v2 state infers setting from map nodes when setting is abse
   };
 
   const migrated = deserializeGameState(JSON.stringify(legacyV2), seed);
-  assert.equal(migrated.schemaVersion, 3);
+  assert.equal(migrated.schemaVersion, 4);
   assert.equal(getDistrictById(migrated, 'district:new-city').id, 'district:new-city');
   assert.equal(getPointOfInterestById(migrated, 'poi:rowan-flat-2b').nodeId, 'building:rowan-flat-2b');
+});
+
+
+
+test('time phase selectors and store API expose normalized gameplay phase', () => {
+  const store = createWorldStore(seed);
+
+  assert.equal(store.getTimePhase(), TIME_PHASE.Morning);
+  store.setTimePhase(TIME_PHASE.Evening);
+  assert.equal(store.getTimePhase(), TIME_PHASE.Evening);
+  assert.equal(store.getTimeOfDay(), TIME_OF_DAY.Evening);
+
+  store.setTimeOfDay(TIME_OF_DAY.Night);
+  assert.equal(store.getTimePhase(), TIME_PHASE.Night);
+  assert.equal(store.getState().world.timePhase, TIME_PHASE.Night);
+});
+
+test('migration from schema v3 adds gameplay timePhase from legacy timeOfDay', () => {
+  const legacyV3 = {
+    schemaVersion: 3,
+    world: { timeOfDay: TIME_OF_DAY.Night, clock: { dayNumber: 7, step: 21 } },
+    player: seed.player,
+    maps: seed.maps,
+    items: seed.items,
+    characters: seed.characters,
+    setting: seed.setting
+  };
+
+  const migrated = deserializeGameState(JSON.stringify(legacyV3), seed);
+  assert.equal(migrated.schemaVersion, 4);
+  assert.equal(migrated.world.timeOfDay, TIME_OF_DAY.Night);
+  assert.equal(migrated.world.timePhase, TIME_PHASE.Night);
 });
 
 test('hydrate fails cleanly on invalid json', () => {

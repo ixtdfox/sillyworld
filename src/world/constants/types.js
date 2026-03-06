@@ -1,4 +1,13 @@
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
+
+export const TIME_PHASE = Object.freeze({
+  Morning: 'morning',
+  Day: 'day',
+  Evening: 'evening',
+  Night: 'night'
+});
+
+export const TIME_PHASE_ORDER = Object.freeze([TIME_PHASE.Morning, TIME_PHASE.Day, TIME_PHASE.Evening, TIME_PHASE.Night]);
 
 export const TIME_OF_DAY = Object.freeze({
   Morning: 'Morning',

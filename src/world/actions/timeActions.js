@@ -1,27 +1,73 @@
-import { TIME_OF_DAY_ORDER } from '../constants/types.js';
+import { TIME_OF_DAY_ORDER, TIME_PHASE, TIME_PHASE_ORDER } from '../constants/types.js';
 
-export function setTimeOfDay(state, nextTimeOfDay) {
-  if (!TIME_OF_DAY_ORDER.includes(nextTimeOfDay)) return state;
+const TIME_OF_DAY_TO_PHASE = Object.freeze({
+  Morning: TIME_PHASE.Morning,
+  Day: TIME_PHASE.Day,
+  Evening: TIME_PHASE.Evening,
+  Night: TIME_PHASE.Night
+});
+
+const PHASE_TO_TIME_OF_DAY = Object.freeze({
+  [TIME_PHASE.Morning]: 'Morning',
+  [TIME_PHASE.Day]: 'Day',
+  [TIME_PHASE.Evening]: 'Evening',
+  [TIME_PHASE.Night]: 'Night'
+});
+
+export function normalizeTimePhase(value, fallback = TIME_PHASE.Morning) {
+  if (TIME_PHASE_ORDER.includes(value)) return value;
+  if (typeof value === 'string' && TIME_OF_DAY_TO_PHASE[value]) return TIME_OF_DAY_TO_PHASE[value];
+  return fallback;
+}
+
+function toLegacyTimeOfDay(phase) {
+  return PHASE_TO_TIME_OF_DAY[phase] || PHASE_TO_TIME_OF_DAY[TIME_PHASE.Morning];
+}
+
+function normalizeWorldTime(world = {}) {
+  const normalizedPhase = normalizeTimePhase(world.timePhase, normalizeTimePhase(world.timeOfDay));
+  return {
+    phase: normalizedPhase,
+    timeOfDay: toLegacyTimeOfDay(normalizedPhase)
+  };
+}
+
+export function setTimePhase(state, nextTimePhase) {
+  const normalizedPhase = normalizeTimePhase(nextTimePhase, null);
+  if (!normalizedPhase) return state;
+
   return {
     ...state,
     world: {
       ...state.world,
-      timeOfDay: nextTimeOfDay
+      timePhase: normalizedPhase,
+      timeOfDay: toLegacyTimeOfDay(normalizedPhase)
     },
     updatedAt: Date.now()
   };
 }
 
+export function setTimeOfDay(state, nextTimeOfDay) {
+  if (TIME_OF_DAY_ORDER.includes(nextTimeOfDay)) {
+    return setTimePhase(state, normalizeTimePhase(nextTimeOfDay));
+  }
+
+  return setTimePhase(state, nextTimeOfDay);
+}
+
 export function advanceTime(state) {
-  const currentIndex = TIME_OF_DAY_ORDER.indexOf(state.world.timeOfDay);
-  const nextIndex = (currentIndex + 1) % TIME_OF_DAY_ORDER.length;
+  const current = normalizeWorldTime(state.world);
+  const currentIndex = TIME_PHASE_ORDER.indexOf(current.phase);
+  const nextIndex = (currentIndex + 1) % TIME_PHASE_ORDER.length;
   const wrapped = nextIndex === 0;
+  const nextPhase = TIME_PHASE_ORDER[nextIndex];
 
   return {
     ...state,
     world: {
       ...state.world,
-      timeOfDay: TIME_OF_DAY_ORDER[nextIndex],
+      timePhase: nextPhase,
+      timeOfDay: toLegacyTimeOfDay(nextPhase),
       clock: {
         dayNumber: wrapped ? state.world.clock.dayNumber + 1 : state.world.clock.dayNumber,
         step: state.world.clock.step + 1

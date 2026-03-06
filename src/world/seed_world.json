@@ -4,7 +4,8 @@
     "clock": {
       "dayNumber": 1,
       "step": 0
-    }
+    },
+    "timePhase": "morning"
   },
   "maps": {
     "levelConfigs": {

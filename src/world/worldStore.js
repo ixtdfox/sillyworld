@@ -1,11 +1,12 @@
 import { createGameState } from './worldState.js';
 import { deepClone } from './utils/object.js';
-import { setTimeOfDay, advanceTime } from './actions/timeActions.js';
+import { setTimeOfDay, setTimePhase, advanceTime } from './actions/timeActions.js';
 import { addItemToPlayer, moveItemToSlot, removeItemFromPlayer, unequipSlot } from './actions/inventoryActions.js';
 import { setRelationship } from './actions/relationshipActions.js';
 import { getMapConfig, getNodesForLevel, getNodeById } from './selectors/mapSelectors.js';
 import { canTakeItem, getInventoryWeight } from './selectors/inventorySelectors.js';
 import { getRelationship } from './selectors/relationshipSelectors.js';
+import { getTimeOfDay, getTimePhase, getWorldClock } from './selectors/worldSelectors.js';
 import { getDistrictById, getDistricts, getFactionById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from './selectors/settingSelectors.js';
 import { deserializeGameState, saveGameState, loadGameState, serializeGameState } from './worldPersistence.js';
 
@@ -39,6 +40,9 @@ export function createWorldStore(seed = {}) {
     setTimeOfDay(nextTimeOfDay) {
       apply(setTimeOfDay(state, nextTimeOfDay));
     },
+    setTimePhase(nextTimePhase) {
+      apply(setTimePhase(state, nextTimePhase));
+    },
     advanceTime() {
       apply(advanceTime(state));
     },
@@ -68,6 +72,15 @@ export function createWorldStore(seed = {}) {
     },
     getRelationship(characterId) {
       return getRelationship(state, characterId);
+    },
+    getTimePhase() {
+      return getTimePhase(state);
+    },
+    getTimeOfDay() {
+      return getTimeOfDay(state);
+    },
+    getWorldClock() {
+      return getWorldClock(state);
     },
     getMapConfig(level) {
       return getMapConfig(state, level);
