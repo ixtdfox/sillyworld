@@ -1,4 +1,5 @@
 const SILLYRPG_DEBUG_PREFIX = '[SillyRPG]';
+const TOOLBAR_DRAWER_ID = 'sillyrpg-toolbar-drawer';
 const TOOLBAR_BUTTON_ID = 'sillyrpg-toolbar-btn';
 const TOOLBAR_CANDIDATES = [
   '#top-toolbar',
@@ -32,22 +33,42 @@ const EXT_BASE = getExtBase();
 window.__SILLYRPG__ = { EXT_BASE };
 
 function createToolbarButton() {
-  const button = document.createElement('button');
+  const drawer = document.createElement('div');
+  drawer.id = TOOLBAR_DRAWER_ID;
+  drawer.className = 'drawer';
+
+  const drawerToggle = document.createElement('div');
+  drawerToggle.className = 'drawer-toggle drawer-header';
+
+  const button = document.createElement('div');
   button.id = TOOLBAR_BUTTON_ID;
-  button.type = 'button';
-  button.className = 'menu_button fa-solid';
+  button.className = 'drawer-icon fa-solid interactable';
   button.title = 'SillyRPG';
   button.setAttribute('aria-label', 'SillyRPG');
+  button.setAttribute('tabindex', '0');
+  button.setAttribute('role', 'button');
   button.textContent = '🎴';
-  button.addEventListener('click', async () => {
+
+  const open = async () => {
     try {
       const app = await import('./src/app.js');
       app.openApp();
     } catch (error) {
       console.debug(SILLYRPG_DEBUG_PREFIX, 'Failed to open app.', error);
     }
+  };
+
+  button.addEventListener('click', open);
+  button.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      open();
+    }
   });
-  return button;
+
+  drawerToggle.appendChild(button);
+  drawer.appendChild(drawerToggle);
+  return drawer;
 }
 
 function getToolbarHost() {
@@ -59,7 +80,7 @@ function getToolbarHost() {
 }
 
 function ensureToolbarButton() {
-  if (document.getElementById(TOOLBAR_BUTTON_ID)) return true;
+  if (document.getElementById(TOOLBAR_DRAWER_ID)) return true;
   const host = getToolbarHost();
   if (!host) return false;
 

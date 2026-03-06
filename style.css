@@ -1,10 +1,16 @@
+#sillyrpg-toolbar-drawer {
+  display: flex;
+}
+
 #sillyrpg-toolbar-btn {
   font-size: 1.1rem;
   line-height: 1;
+  cursor: pointer;
+  user-select: none;
 }
 
 #sillyrpg-root {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 60;
   background: var(--SmartThemeBlurTintColor, rgba(15, 18, 22, 0.96));
