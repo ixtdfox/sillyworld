@@ -113,7 +113,22 @@ function renderMapScreen(store) {
   const nav = navigationStore.getState();
   const config = store.getMapConfig(nav.level);
   const contextNode = store.getNodeById(nav.contextId);
-  const nodes = store.getNodesForLevel(getChildLevel(nav.level), nav.contextId);
+  const nodes = store.getNodesForLevel(getChildLevel(nav.level), nav.contextId).map((node) => {
+    const locationMeta =
+      node.level === MAP_LEVEL.District
+        ? store.getLocationMeta({ districtId: node.id })
+        : node.level === MAP_LEVEL.Building
+          ? store.getLocationMeta({ poiId: `poi:${node.id.split(':')[1] || node.id}` })
+          : null;
+
+    return {
+      ...node,
+      meta: {
+        ...node.meta,
+        locationMeta
+      }
+    };
+  });
 
   return renderMapLevelView({
     config,

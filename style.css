@@ -149,3 +149,31 @@
   object-fit: cover;
   border-radius: 999px;
 }
+#sillyrpg-root .sillyrpg-location-copy {
+  margin: 0;
+  opacity: 0.85;
+  font-size: 0.95rem;
+}
+
+#sillyrpg-root .sillyrpg-card {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+#sillyrpg-root .sillyrpg-card-title {
+  font-weight: 600;
+}
+
+#sillyrpg-root .sillyrpg-card-copy {
+  font-size: 0.87rem;
+  opacity: 0.82;
+  line-height: 1.35;
+}
+
+#sillyrpg-root .sillyrpg-card-status {
+  font-size: 0.78rem;
+  opacity: 0.92;
+  color: color-mix(in srgb, #ffcf77 70%, currentColor);
+}
