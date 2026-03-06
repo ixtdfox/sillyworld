@@ -2,14 +2,7 @@ const SILLYRPG_DEBUG_PREFIX = '[SillyRPG]';
 const TOOLBAR_DRAWER_ID = 'sillyrpg-toolbar-drawer';
 const TOOLBAR_BUTTON_ID = 'sillyrpg-toolbar-btn';
 const TOOLBAR_CANDIDATES = [
-  '#top-toolbar',
-  '#top-bar',
   '#top-settings-holder',
-  '.top-bar',
-  '.toolbar',
-  '.drawer-toolbar',
-  '#extensionsMenu',
-  'header'
 ];
 
 function getExtBase() {
