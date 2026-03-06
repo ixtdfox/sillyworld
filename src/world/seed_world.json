@@ -103,14 +103,14 @@
       },
       {
         "id": "district:new-city",
-        "name": "New City District",
+        "name": "New City",
         "level": "district",
         "type": "district",
         "parentId": "city:larkspur",
         "childrenLevel": "building",
         "meta": {
           "mapImage": "assets/districts/market_iso_placeholder.svg",
-          "description": "Fresh concrete, civic banners, and tired commuters pretending recovery is complete."
+          "description": "Glass-front offices, apartment towers, and civic plazas built to project recovery while everyone avoids talking about what lies across the cordon."
         },
         "interactions": [
           "travel"
@@ -118,14 +118,14 @@
       },
       {
         "id": "district:ashline",
-        "name": "Ashline Corridor",
+        "name": "Ashline Transition",
         "level": "district",
         "type": "district",
         "parentId": "city:larkspur",
         "childrenLevel": "building",
         "meta": {
           "mapImage": "assets/districts/market_iso_placeholder.svg",
-          "description": "Transit overpasses and checkpoint lights where every conversation lowers to a whisper."
+          "description": "A half-alive buffer of overpasses, shuttered kiosks, and checkpoint floodlights where New City order starts to crack."
         },
         "interactions": [
           "travel"
@@ -139,7 +139,8 @@
         "parentId": "city:larkspur",
         "childrenLevel": "building",
         "meta": {
-          "mapImage": "assets/districts/market_iso_placeholder.svg"
+          "mapImage": "assets/districts/market_iso_placeholder.svg",
+          "description": "Evacuated courtyards and dead streets sealed after the blast, still carrying the weight of unfinished stories and missing names."
         },
         "interactions": [
           "travel"
@@ -153,7 +154,8 @@
         "parentId": "city:larkspur",
         "childrenLevel": "building",
         "meta": {
-          "mapImage": "assets/districts/market_iso_placeholder.svg"
+          "mapImage": "assets/districts/market_iso_placeholder.svg",
+          "description": "Rail spurs, scrapyards, and chemical husks stretching toward the ruined factory zone beyond regular patrol comfort."
         },
         "interactions": [
           "travel"
@@ -167,7 +169,8 @@
         "parentId": "city:larkspur",
         "childrenLevel": "building",
         "meta": {
-          "mapImage": "assets/districts/market_iso_placeholder.svg"
+          "mapImage": "assets/districts/market_iso_placeholder.svg",
+          "description": "Private towers and controlled entrances where decision-makers remain insulated from the city they reshaped."
         },
         "interactions": [
           "travel"
@@ -257,7 +260,7 @@
         "childrenLevel": "room",
         "meta": {
           "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
-          "description": "Cordon checkpoint between normal life and quarantine, all floodlights, permit scans, and selective enforcement."
+          "description": "Primary checkpoint between monitored districts and sealed sectors. Permits, scans, and selective denial run this border."
         },
         "interactions": [
           "inspect"
@@ -286,7 +289,8 @@
         "parentId": "district:industrial-outskirts",
         "childrenLevel": "room",
         "meta": {
-          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
+          "description": "The blast site itself: collapsed process halls, rusted catwalks, and toxic pockets that still mark the city's forbidden edge."
         },
         "interactions": [
           "inspect"
