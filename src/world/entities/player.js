@@ -1,3 +1,31 @@
+function normalizeRelationshipEntry(relationship = {}) {
+  return {
+    level: Number.isFinite(relationship.level) ? relationship.level : 0,
+    tags: Array.isArray(relationship.tags) ? relationship.tags : [],
+    stance: relationship.stance || 'neutral',
+    axes: {
+      trust: relationship.axes?.trust ?? 0,
+      fear: relationship.axes?.fear ?? 0,
+      guilt: relationship.axes?.guilt ?? 0,
+      affection: relationship.axes?.affection ?? 0,
+      resentment: relationship.axes?.resentment ?? 0,
+      officialNarrativeLoyalty: relationship.axes?.officialNarrativeLoyalty ?? 0
+    },
+    flags: relationship.flags || {},
+    history: Array.isArray(relationship.history) ? relationship.history : [],
+    lastInteractionAt: relationship.lastInteractionAt || null
+  };
+}
+
+function normalizeRelationships(relationships = {}) {
+  return Object.fromEntries(
+    Object.entries(relationships).map(([characterId, relationship]) => [
+      characterId,
+      normalizeRelationshipEntry(relationship)
+    ])
+  );
+}
+
 export function createDefaultPlayer(seed = {}) {
   return {
     id: seed.id || 'player',
@@ -15,6 +43,6 @@ export function createDefaultPlayer(seed = {}) {
     carryCapacityWeight: seed.carryCapacityWeight || 40,
     inventory: { items: seed.inventory?.items || [] },
     equipped: seed.equipped || {},
-    relationships: seed.relationships || {}
+    relationships: normalizeRelationships(seed.relationships)
   };
 }
