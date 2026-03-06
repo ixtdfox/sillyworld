@@ -164,7 +164,7 @@ function render() {
   const nav = navigationStore.getState();
   const store = getStore();
   const canGoBack = nav.screen === 'settings' || nav.navStack.length > 0;
-  const breadcrumb = nav.screen === 'map' && store ? `${nav.level} · ${store.getState().world.timeOfDay}` : nav.screen;
+  const breadcrumb = nav.screen === 'map' && store ? `${nav.level} · ${store.getTimePhase()}` : nav.screen;
 
   const box = document.createElement('div');
   box.className = 'sillyrpg-panel';
