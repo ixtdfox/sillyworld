@@ -11,6 +11,33 @@ import { createNavigationStore } from './ui/state/navigationStore.js';
 const appState = { seed: null };
 const navigationStore = createNavigationStore();
 
+const PHASE_LABELS = Object.freeze({
+  morning: 'Morning',
+  day: 'Day',
+  evening: 'Evening',
+  night: 'Night'
+});
+
+const PHASE_HINTS = Object.freeze({
+  morning: 'Most civic services are open and people are easier to find.',
+  day: 'Public movement is busiest; daytime-only locations are active.',
+  evening: 'Some routines wind down while night-active contacts begin to appear.',
+  night: 'Night-only routes and contacts open up, while many daytime spots close.'
+});
+
+function getPhasePresentation(store) {
+  if (!store) return null;
+  const phaseKey = store.getTimePhase();
+  const clock = store.getWorldClock();
+
+  return {
+    key: phaseKey,
+    label: PHASE_LABELS[phaseKey] || phaseKey,
+    hint: PHASE_HINTS[phaseKey] || '',
+    dayNumber: clock?.dayNumber || 1
+  };
+}
+
 async function loadSeed() {
   if (appState.seed) return appState.seed;
   const base = window.__SILLYRPG__?.EXT_BASE || window.location.href;
@@ -179,7 +206,7 @@ function renderMapScreen(store) {
         locationMeta
       }
     };
-  }).filter((node) => node.type !== 'npc' || node.availability?.available !== false);
+  });
 
   const actions = getRestActionsForContext(store, nav, contextNode);
 
@@ -188,6 +215,7 @@ function renderMapScreen(store) {
     contextNode,
     nodes,
     actions,
+    phaseInfo: getPhasePresentation(store),
     onNodeClick: (node) => handleMapNodeClick(node, store)
   });
 }
@@ -232,12 +260,13 @@ function render() {
   const nav = navigationStore.getState();
   const store = getStore();
   const canGoBack = nav.screen === 'settings' || nav.navStack.length > 0;
-  const breadcrumb = nav.screen === 'map' && store ? `${nav.level} · ${store.getTimePhase()}` : nav.screen;
+  const breadcrumb = nav.screen === 'map' && store ? nav.level : nav.screen;
+  const phaseInfo = nav.screen === 'map' ? getPhasePresentation(store) : null;
 
   const box = document.createElement('div');
   box.className = 'sillyrpg-panel';
   box.append(
-    renderTopBar({ title: 'SillyRPG', breadcrumb, onBack: back, onExit: exit, canGoBack }),
+    renderTopBar({ title: 'SillyRPG', breadcrumb, phaseInfo, onBack: back, onExit: exit, canGoBack }),
     Object.assign(document.createElement('div'), { className: 'sillyrpg-content' })
   );
   box.lastChild.appendChild(renderScreenBody());
