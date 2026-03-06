@@ -1,4 +1,4 @@
-export function renderTopBar({ title, breadcrumb, onBack, onExit, canGoBack }) {
+export function renderTopBar({ title, breadcrumb, phaseInfo, onBack, onExit, canGoBack }) {
   const top = document.createElement('div');
   top.className = 'sillyrpg-topbar';
 
@@ -25,6 +25,22 @@ export function renderTopBar({ title, breadcrumb, onBack, onExit, canGoBack }) {
   const center = document.createElement('div');
   center.className = 'sillyrpg-topbar-center';
   center.innerHTML = `<div class="sillyrpg-title">${title}</div><div class="sillyrpg-breadcrumb">${breadcrumb || ''}</div>`;
+
+  if (phaseInfo?.label) {
+    const phase = document.createElement('div');
+    phase.className = 'sillyrpg-phase-indicator';
+
+    const phaseTitle = document.createElement('span');
+    phaseTitle.className = 'sillyrpg-phase-indicator-title';
+    phaseTitle.textContent = `Day ${phaseInfo.dayNumber} · ${phaseInfo.label}`;
+
+    const phaseHint = document.createElement('span');
+    phaseHint.className = 'sillyrpg-phase-indicator-copy';
+    phaseHint.textContent = phaseInfo.hint || '';
+
+    phase.append(phaseTitle, phaseHint);
+    center.appendChild(phase);
+  }
 
   top.append(left, center);
   return top;

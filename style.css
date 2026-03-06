@@ -56,6 +56,29 @@
   text-align: center;
 }
 
+#sillyrpg-root .sillyrpg-phase-indicator {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+#sillyrpg-root .sillyrpg-phase-indicator-title {
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid color-mix(in srgb, #ffcf77 35%, currentColor);
+  border-radius: 999px;
+  padding: 0.22rem 0.62rem;
+  background: color-mix(in srgb, #ffcf77 10%, transparent);
+}
+
+#sillyrpg-root .sillyrpg-phase-indicator-copy {
+  opacity: 0.8;
+  font-size: 0.78rem;
+}
+
 #sillyrpg-root .sillyrpg-title {
   margin: 0;
   font-size: clamp(1.3rem, 2vw, 1.8rem);
@@ -176,6 +199,19 @@
   font-size: 0.78rem;
   opacity: 0.92;
   color: color-mix(in srgb, #ffcf77 70%, currentColor);
+}
+
+#sillyrpg-root .sillyrpg-card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#sillyrpg-root .sillyrpg-phase-context {
+  margin: 0;
+  opacity: 0.95;
+  font-size: 0.9rem;
+  border-left: 2px solid color-mix(in srgb, #ffcf77 45%, currentColor);
+  padding-left: 0.65rem;
 }
 
 #sillyrpg-root .sillyrpg-phase-interstitial {

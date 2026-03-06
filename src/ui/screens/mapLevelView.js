@@ -36,11 +36,13 @@ function formatStatus(meta = {}) {
 
 function formatAvailability(availability) {
   if (!availability) return '';
+  const phaseText = availability.timePhase ? `Now: ${prettify(availability.timePhase)}.` : '';
+
   if (!availability.available) {
-    return `🚫 ${availability.reason || 'Unavailable right now.'}`;
+    return `🚫 ${phaseText} ${availability.reason || 'Unavailable right now.'}`.trim();
   }
   if (availability.preferred) {
-    return '🕯 Preferred at this phase';
+    return `🕯 ${phaseText} Preferred at this phase.`.trim();
   }
   return '';
 }
@@ -91,7 +93,7 @@ function renderActionList(actions = [], onActionClick = () => {}) {
 
   return section;
 }
-export function renderMapLevelView({ config, contextNode, nodes, onNodeClick, actions = [] }) {
+export function renderMapLevelView({ config, contextNode, nodes, onNodeClick, actions = [], phaseInfo = null }) {
   const wrap = document.createElement('div');
   wrap.className = 'sillyrpg-screen';
 
@@ -112,13 +114,21 @@ export function renderMapLevelView({ config, contextNode, nodes, onNodeClick, ac
   description.className = 'sillyrpg-location-copy';
   description.textContent = getLevelIntro(contextNode, config, nodes);
 
+  const phaseBanner = document.createElement('p');
+  phaseBanner.className = 'sillyrpg-phase-context';
+  phaseBanner.textContent = phaseInfo?.label
+    ? `Current phase: ${phaseInfo.label}. ${phaseInfo.hint || ''}`
+    : 'Current phase affects location and NPC availability.';
+
   const list = document.createElement('div');
   list.className = 'sillyrpg-card-grid';
 
   const hasContacts = (nodes || []).some((node) => node.type === 'npc');
   const listLabel = document.createElement('p');
   listLabel.className = 'sillyrpg-location-copy';
-  listLabel.textContent = hasContacts ? 'Known contacts in this location:' : 'Available destinations:';
+  listLabel.textContent = hasContacts
+    ? 'Known contacts in this location (disabled entries are currently unavailable):'
+    : 'Destinations (disabled entries are unavailable during this phase):';
 
   for (const node of nodes || []) {
     const card = document.createElement('button');
@@ -152,7 +162,7 @@ export function renderMapLevelView({ config, contextNode, nodes, onNodeClick, ac
 
   const actionList = renderActionList(actions, ({ id }) => onNodeClick({ type: 'action', id }));
 
-  wrap.append(title, subtitle, image, description, listLabel, list);
+  wrap.append(title, subtitle, image, description, phaseBanner, listLabel, list);
   if (actionList) wrap.appendChild(actionList);
   return wrap;
 }
