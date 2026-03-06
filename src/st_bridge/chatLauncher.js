@@ -3,14 +3,14 @@ import { appendContextToChat, findCharacterByName, notify, openChatWithCharacter
 export async function openNpcChat(npc, context) {
   const targetName = npc?.stCharacterName || npc?.name;
   if (!targetName) {
-    notify('NPC has no mapped SillyTavern character name.', 'warning');
+    notify('Contact has no mapped SillyTavern character name.', 'warning');
     return;
   }
 
   const character = findCharacterByName(targetName);
 
   if (!character) {
-    notify(`Create character named "${targetName}" or map this NPC.`, 'warning');
+    notify(`Create character named "${targetName}" or map this contact.`, 'warning');
     console.debug('[SillyRPG]', 'character not found', { npc, context });
     return;
   }

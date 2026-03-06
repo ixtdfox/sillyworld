@@ -6,10 +6,12 @@ function clamp(value, min, max) {
 
 export function setRelationship(state, characterId, delta) {
   const existing = getRelationship(state, characterId);
+  const timestamp = Date.now();
   const relationship = {
     ...existing,
     level: clamp(existing.level + delta, -100, 100),
-    lastInteractionAt: Date.now()
+    history: [...(existing.history || []), `delta:${delta}`].slice(-12),
+    lastInteractionAt: timestamp
   };
 
   return {
@@ -22,7 +24,7 @@ export function setRelationship(state, characterId, delta) {
           [characterId]: relationship
         }
       },
-      updatedAt: Date.now()
+      updatedAt: timestamp
     },
     level: relationship.level
   };

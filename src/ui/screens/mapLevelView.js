@@ -20,6 +20,11 @@ export function renderMapLevelView({ config, contextNode, nodes, onNodeClick }) 
   const list = document.createElement('div');
   list.className = 'sillyrpg-card-grid';
 
+  const hasContacts = (nodes || []).some((node) => node.type === 'npc');
+  const listLabel = document.createElement('p');
+  listLabel.className = 'sillyrpg-location-copy';
+  listLabel.textContent = hasContacts ? 'Known contacts in this location:' : 'Available destinations:';
+
   const description = document.createElement('p');
   description.className = 'sillyrpg-location-copy';
   description.textContent = contextNode?.meta?.description || '';
@@ -33,6 +38,6 @@ export function renderMapLevelView({ config, contextNode, nodes, onNodeClick }) 
     list.appendChild(card);
   }
 
-  wrap.append(title, image, description, list);
+  wrap.append(title, image, description, listLabel, list);
   return wrap;
 }

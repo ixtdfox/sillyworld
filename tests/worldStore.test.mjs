@@ -23,7 +23,7 @@ test('seed world has city foundation districts and MVP locations', () => {
     'district:ivory-isle'
   ];
   const requiredLocations = [
-    'building:apartment-204',
+    'building:rowan-flat-2b',
     'building:last-light-bar',
     'building:night-pharmacy',
     'building:civic-archive',
@@ -85,7 +85,7 @@ test('inventory selectors: weight and canTakeItem are deterministic', () => {
   store.addItemToPlayer('item:flashlight-1');
 
   const state = store.getState();
-  assert.equal(getInventoryWeight(state), 0.5);
+  assert.equal(getInventoryWeight(state), 0.95);
   assert.equal(canTakeItem(state, 'item:painkillers-pack'), true);
 });
 
@@ -109,9 +109,35 @@ test('equip/unequip flow', () => {
 
 test('relationship action clamps and returns level', () => {
   const store = createWorldStore(seed);
-  const result = setRelationshipAction(store.getState(), 'checkpoint-officer', 120);
+  const result = setRelationshipAction(store.getState(), 'captain-sena-holt', 120);
   assert.equal(result.level, 100);
-  assert.equal(result.nextState.player.relationships['checkpoint-officer'].level, 100);
+  assert.equal(result.nextState.player.relationships['captain-sena-holt'].level, 100);
+});
+
+test('seed world includes foundational npc roster discoverable at relevant locations', () => {
+  const requiredNpcNodes = {
+    'npc:lana-vey': 'building:ivory-club',
+    'npc:ivo-rask': 'building:last-light-bar',
+    'npc:dr-olek-mirov': 'building:night-pharmacy',
+    'npc:captain-sena-holt': 'building:south-gate',
+    'npc:yara-dene': 'building:old-plaza',
+    'npc:elena-sable': 'building:civic-archive'
+  };
+
+  for (const [npcNodeId, parentId] of Object.entries(requiredNpcNodes)) {
+    const node = seed.maps.nodes.find((entry) => entry.id === npcNodeId);
+    assert.equal(Boolean(node), true, `missing npc node ${npcNodeId}`);
+    assert.equal(node.parentId, parentId);
+    assert.equal(node.meta.stCharacterName?.length > 0, true);
+  }
+});
+
+test('relationship scaffolding includes axes, tags, stance, and flags for core contacts', () => {
+  const coreRelationship = seed.player.relationships['lana-vey'];
+  assert.equal(coreRelationship.stance, 'volatile');
+  assert.equal(Array.isArray(coreRelationship.tags), true);
+  assert.equal(typeof coreRelationship.axes.officialNarrativeLoyalty, 'number');
+  assert.equal(typeof coreRelationship.flags.blocksDirectQuestions, 'boolean');
 });
 
 test('serialization + hydration + migration from v1-like payload', () => {
@@ -150,7 +176,7 @@ test('migration from v2 state infers setting from map nodes when setting is abse
   const migrated = deserializeGameState(JSON.stringify(legacyV2), seed);
   assert.equal(migrated.schemaVersion, 3);
   assert.equal(getDistrictById(migrated, 'district:new-city').id, 'district:new-city');
-  assert.equal(getPointOfInterestById(migrated, 'poi:apartment-204').nodeId, 'building:apartment-204');
+  assert.equal(getPointOfInterestById(migrated, 'poi:rowan-flat-2b').nodeId, 'building:rowan-flat-2b');
 });
 
 test('hydrate fails cleanly on invalid json', () => {

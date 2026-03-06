@@ -197,7 +197,7 @@
         "childrenLevel": "room",
         "meta": {
           "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
-          "description": "A fluorescent pharmacy that never fully closes, serving shift workers, insomniacs, and the quietly desperate."
+          "description": "The only pharmacy window still lit after midnight, run like a triage desk for insomnia, withdrawal, and quiet panic."
         },
         "interactions": [
           "inspect"
@@ -212,7 +212,7 @@
         "childrenLevel": "room",
         "meta": {
           "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
-          "description": "A records office of redacted files and long pauses before anyone answers a direct question."
+          "description": "Rows of municipal ledgers, sealed incident files, and clerks trained to forget names on command."
         },
         "interactions": [
           "inspect"
@@ -241,7 +241,8 @@
         "parentId": "district:ashline",
         "childrenLevel": "room",
         "meta": {
-          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
+          "description": "A dim bar at the Ashline edge where off-duty workers, patrol strays, and rumor brokers share cheap drinks and expensive secrets."
         },
         "interactions": [
           "inspect"
@@ -255,7 +256,8 @@
         "parentId": "district:ashline",
         "childrenLevel": "room",
         "meta": {
-          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
+          "description": "Cordon checkpoint between normal life and quarantine, all floodlights, permit scans, and selective enforcement."
         },
         "interactions": [
           "inspect"
@@ -269,7 +271,8 @@
         "parentId": "district:old-city",
         "childrenLevel": "room",
         "meta": {
-          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
+          "description": "Collapsed courtyards and stripped storefronts where scavengers barter salvage, meds, and old-city access."
         },
         "interactions": [
           "inspect"
@@ -297,151 +300,128 @@
         "parentId": "district:ivory-isle",
         "childrenLevel": "room",
         "meta": {
-          "backgroundImage": "assets/locations/shop_bg_placeholder.svg"
+          "backgroundImage": "assets/locations/shop_bg_placeholder.svg",
+          "description": "Marble lobby and soft music masking executive meetings that decide which truths are allowed to survive."
         },
         "interactions": [
           "inspect"
         ]
       },
       {
-        "id": "npc:neighbor",
-        "name": "Vera, Upstairs Neighbor",
-        "level": "room",
-        "type": "npc",
-        "parentId": "building:rowan-flat-2b",
-        "meta": {
-          "id": "neighbor",
-          "name": "Vera, Upstairs Neighbor",
-          "stCharacterName": "Vera Kline",
-          "avatar": "assets/npcs/npc_placeholder.svg"
-        },
-        "interactions": [
-          "talk"
-        ]
-      },
-      {
-        "id": "npc:pharmacist",
-        "name": "Pharmacist Olek",
-        "level": "room",
-        "type": "npc",
-        "parentId": "building:night-pharmacy",
-        "meta": {
-          "id": "pharmacist",
-          "name": "Pharmacist Olek",
-          "stCharacterName": "Olek Mirov",
-          "avatar": "assets/npcs/npc_placeholder.svg"
-        },
-        "interactions": [
-          "talk"
-        ]
-      },
-      {
-        "id": "npc:records-clerk",
-        "name": "Records Clerk Toma",
-        "level": "room",
-        "type": "npc",
-        "parentId": "building:civic-archive",
-        "meta": {
-          "id": "records-clerk",
-          "name": "Records Clerk Toma",
-          "stCharacterName": "Toma Vey",
-          "avatar": "assets/npcs/npc_placeholder.svg"
-        },
-        "interactions": [
-          "talk"
-        ]
-      },
-      {
-        "id": "npc:market-vendor",
-        "name": "Vendor Rina",
-        "level": "room",
-        "type": "npc",
-        "parentId": "building:street-market",
-        "meta": {
-          "id": "market-vendor",
-          "name": "Vendor Rina",
-          "stCharacterName": "Rina Sol",
-          "avatar": "assets/npcs/npc_placeholder.svg"
-        },
-        "interactions": [
-          "talk"
-        ]
-      },
-      {
-        "id": "npc:bartender",
-        "name": "Bartender Ivo",
-        "level": "room",
-        "type": "npc",
-        "parentId": "building:last-light-bar",
-        "meta": {
-          "id": "bartender",
-          "name": "Bartender Ivo",
-          "stCharacterName": "Ivo Rask",
-          "avatar": "assets/npcs/npc_placeholder.svg"
-        },
-        "interactions": [
-          "talk"
-        ]
-      },
-      {
-        "id": "npc:checkpoint-officer",
-        "name": "Checkpoint Officer Sena",
-        "level": "room",
-        "type": "npc",
-        "parentId": "building:south-gate",
-        "meta": {
-          "id": "checkpoint-officer",
-          "name": "Checkpoint Officer Sena",
-          "stCharacterName": "Officer Sena Holt",
-          "avatar": "assets/npcs/npc_placeholder.svg"
-        },
-        "interactions": [
-          "talk"
-        ]
-      },
-      {
-        "id": "npc:zone-scavenger",
-        "name": "Scavenger Yara",
-        "level": "room",
-        "type": "npc",
-        "parentId": "building:old-plaza",
-        "meta": {
-          "id": "zone-scavenger",
-          "name": "Scavenger Yara",
-          "stCharacterName": "Yara Dene",
-          "avatar": "assets/npcs/npc_placeholder.svg"
-        },
-        "interactions": [
-          "talk"
-        ]
-      },
-      {
-        "id": "npc:factory-watchman",
-        "name": "Watchman Dren",
-        "level": "room",
-        "type": "npc",
-        "parentId": "building:ruined-factory",
-        "meta": {
-          "id": "factory-watchman",
-          "name": "Watchman Dren",
-          "stCharacterName": "Dren Kal",
-          "avatar": "assets/npcs/npc_placeholder.svg"
-        },
-        "interactions": [
-          "talk"
-        ]
-      },
-      {
-        "id": "npc:concierge",
-        "name": "Concierge Maris",
+        "id": "npc:lana-vey",
+        "name": "Lana Vey, Ex-Wife",
         "level": "room",
         "type": "npc",
         "parentId": "building:ivory-club",
         "meta": {
-          "id": "concierge",
-          "name": "Concierge Maris",
-          "stCharacterName": "Maris Vale",
-          "avatar": "assets/npcs/npc_placeholder.svg"
+          "id": "lana-vey",
+          "name": "Lana Vey, Ex-Wife",
+          "stCharacterName": "Lana Vey",
+          "avatar": "assets/npcs/npc_placeholder.svg",
+          "role": "Protagonist-Adjacent",
+          "affiliation": "Ivory Circle",
+          "contactType": "personal",
+          "relationshipAnchor": "estranged-ex-wife"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:ivo-rask",
+        "name": "Ivo Rask, Bar Owner",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:last-light-bar",
+        "meta": {
+          "id": "ivo-rask",
+          "name": "Ivo Rask, Bar Owner",
+          "stCharacterName": "Ivo Rask",
+          "avatar": "assets/npcs/npc_placeholder.svg",
+          "role": "Local Social Contact",
+          "affiliation": "Last Light Bar",
+          "contactType": "social",
+          "relationshipAnchor": "old-shift-acquaintance"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:dr-olek-mirov",
+        "name": "Dr. Olek Mirov",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:night-pharmacy",
+        "meta": {
+          "id": "dr-olek-mirov",
+          "name": "Dr. Olek Mirov",
+          "stCharacterName": "Dr. Olek Mirov",
+          "avatar": "assets/npcs/npc_placeholder.svg",
+          "role": "Medical Contact",
+          "affiliation": "Night Pharmacy",
+          "contactType": "medical",
+          "relationshipAnchor": "post-blast-treatment-network"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:captain-sena-holt",
+        "name": "Captain Sena Holt",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:south-gate",
+        "meta": {
+          "id": "captain-sena-holt",
+          "name": "Captain Sena Holt",
+          "stCharacterName": "Captain Sena Holt",
+          "avatar": "assets/npcs/npc_placeholder.svg",
+          "role": "Authority Contact",
+          "affiliation": "Gate Watch",
+          "contactType": "institutional",
+          "relationshipAnchor": "quarantine-enforcement"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:yara-dene",
+        "name": "Yara Dene, Zone Runner",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:old-plaza",
+        "meta": {
+          "id": "yara-dene",
+          "name": "Yara Dene, Zone Runner",
+          "stCharacterName": "Yara Dene",
+          "avatar": "assets/npcs/npc_placeholder.svg",
+          "role": "Street Contact",
+          "affiliation": "Zone Scavengers",
+          "contactType": "black-market",
+          "relationshipAnchor": "smuggling-routes"
+        },
+        "interactions": [
+          "talk"
+        ]
+      },
+      {
+        "id": "npc:elena-sable",
+        "name": "Elena Sable, Records Clerk",
+        "level": "room",
+        "type": "npc",
+        "parentId": "building:civic-archive",
+        "meta": {
+          "id": "elena-sable",
+          "name": "Elena Sable, Records Clerk",
+          "stCharacterName": "Elena Sable",
+          "avatar": "assets/npcs/npc_placeholder.svg",
+          "role": "Institutional Insider",
+          "affiliation": "City Records Office",
+          "contactType": "civic-records",
+          "relationshipAnchor": "death-registry-access"
         },
         "interactions": [
           "talk"
@@ -477,17 +457,145 @@
     },
     "equipped": {},
     "relationships": {
-      "neighbor": {
-        "level": 20,
+      "lana-vey": {
+        "level": -35,
         "tags": [
-          "trusted-neighbor",
-          "building-contact"
+          "core-relationship",
+          "estranged-spouse",
+          "ivory-circle"
+        ],
+        "stance": "volatile",
+        "axes": {
+          "trust": -55,
+          "fear": 30,
+          "guilt": 60,
+          "affection": 25,
+          "resentment": 70,
+          "officialNarrativeLoyalty": 75
+        },
+        "flags": {
+          "knowsPreBlastTimeline": true,
+          "blocksDirectQuestions": true
+        },
+        "lastInteractionAt": null,
+        "history": [
+          "hospital-silence",
+          "boardroom-distance"
         ]
       },
-      "bartender": {
-        "level": 10,
+      "ivo-rask": {
+        "level": 18,
         "tags": [
+          "bar-contact",
           "old-acquaintance"
+        ],
+        "stance": "cautiously-open",
+        "axes": {
+          "trust": 20,
+          "fear": 10,
+          "guilt": 15,
+          "affection": 5,
+          "resentment": 10,
+          "officialNarrativeLoyalty": 20
+        },
+        "flags": {
+          "offersRumorLeads": true
+        },
+        "lastInteractionAt": null,
+        "history": [
+          "shared-night-shifts"
+        ]
+      },
+      "dr-olek-mirov": {
+        "level": 8,
+        "tags": [
+          "medical-contact",
+          "harm-reduction"
+        ],
+        "stance": "professional",
+        "axes": {
+          "trust": 10,
+          "fear": 15,
+          "guilt": 20,
+          "affection": 0,
+          "resentment": 5,
+          "officialNarrativeLoyalty": 35
+        },
+        "flags": {
+          "monitorsMedicationUse": true
+        },
+        "lastInteractionAt": null,
+        "history": [
+          "treated-blast-survivors"
+        ]
+      },
+      "captain-sena-holt": {
+        "level": -10,
+        "tags": [
+          "authority-contact",
+          "checkpoint-command"
+        ],
+        "stance": "guarded",
+        "axes": {
+          "trust": -20,
+          "fear": 25,
+          "guilt": 5,
+          "affection": 0,
+          "resentment": 20,
+          "officialNarrativeLoyalty": 85
+        },
+        "flags": {
+          "requiresPermits": true
+        },
+        "lastInteractionAt": null,
+        "history": [
+          "questioned-return-to-city"
+        ]
+      },
+      "yara-dene": {
+        "level": 5,
+        "tags": [
+          "street-contact",
+          "black-market"
+        ],
+        "stance": "transactional",
+        "axes": {
+          "trust": 5,
+          "fear": 20,
+          "guilt": 0,
+          "affection": 0,
+          "resentment": 5,
+          "officialNarrativeLoyalty": -30
+        },
+        "flags": {
+          "canSourceRestrictedItems": true
+        },
+        "lastInteractionAt": null,
+        "history": [
+          "old-city-route-tip"
+        ]
+      },
+      "elena-sable": {
+        "level": 0,
+        "tags": [
+          "records-contact",
+          "institutional-insider"
+        ],
+        "stance": "hesitant",
+        "axes": {
+          "trust": 0,
+          "fear": 30,
+          "guilt": 25,
+          "affection": 0,
+          "resentment": 0,
+          "officialNarrativeLoyalty": 60
+        },
+        "flags": {
+          "canLeakFilingCodes": false
+        },
+        "lastInteractionAt": null,
+        "history": [
+          "file-window-introduction"
         ]
       }
     },
@@ -500,49 +608,64 @@
   },
   "characters": [
     {
-      "id": "neighbor",
-      "name": "Vera, Upstairs Neighbor",
-      "currentNodeId": "npc:neighbor"
+      "id": "lana-vey",
+      "name": "Lana Vey, Ex-Wife",
+      "currentNodeId": "npc:lana-vey",
+      "homeNodeId": "building:ivory-club",
+      "meta": {
+        "role": "personal",
+        "importance": "core"
+      }
     },
     {
-      "id": "pharmacist",
-      "name": "Pharmacist Olek",
-      "currentNodeId": "npc:pharmacist"
+      "id": "ivo-rask",
+      "name": "Ivo Rask, Bar Owner",
+      "currentNodeId": "npc:ivo-rask",
+      "homeNodeId": "building:last-light-bar",
+      "meta": {
+        "role": "social",
+        "importance": "core"
+      }
     },
     {
-      "id": "records-clerk",
-      "name": "Records Clerk Toma",
-      "currentNodeId": "npc:records-clerk"
+      "id": "dr-olek-mirov",
+      "name": "Dr. Olek Mirov",
+      "currentNodeId": "npc:dr-olek-mirov",
+      "homeNodeId": "building:night-pharmacy",
+      "meta": {
+        "role": "medical",
+        "importance": "core"
+      }
     },
     {
-      "id": "market-vendor",
-      "name": "Vendor Rina",
-      "currentNodeId": "npc:market-vendor"
+      "id": "captain-sena-holt",
+      "name": "Captain Sena Holt",
+      "currentNodeId": "npc:captain-sena-holt",
+      "homeNodeId": "building:south-gate",
+      "meta": {
+        "role": "authority",
+        "importance": "core"
+      }
     },
     {
-      "id": "bartender",
-      "name": "Bartender Ivo",
-      "currentNodeId": "npc:bartender"
+      "id": "yara-dene",
+      "name": "Yara Dene, Zone Runner",
+      "currentNodeId": "npc:yara-dene",
+      "homeNodeId": "building:old-plaza",
+      "meta": {
+        "role": "street",
+        "importance": "core"
+      }
     },
     {
-      "id": "checkpoint-officer",
-      "name": "Checkpoint Officer Sena",
-      "currentNodeId": "npc:checkpoint-officer"
-    },
-    {
-      "id": "zone-scavenger",
-      "name": "Scavenger Yara",
-      "currentNodeId": "npc:zone-scavenger"
-    },
-    {
-      "id": "factory-watchman",
-      "name": "Watchman Dren",
-      "currentNodeId": "npc:factory-watchman"
-    },
-    {
-      "id": "concierge",
-      "name": "Concierge Maris",
-      "currentNodeId": "npc:concierge"
+      "id": "elena-sable",
+      "name": "Elena Sable, Records Clerk",
+      "currentNodeId": "npc:elena-sable",
+      "homeNodeId": "building:civic-archive",
+      "meta": {
+        "role": "institutional",
+        "importance": "core"
+      }
     }
   ],
   "items": {
