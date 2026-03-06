@@ -30,6 +30,9 @@ export function movePlayerToNode(state, targetNodeId, options = {}) {
   }
 
   const previousPhase = state.world?.timePhase;
+  const previousPendingTransitions = Array.isArray(state.world?.phaseTransitions?.pending)
+    ? state.world.phaseTransitions.pending.length
+    : 0;
   const actionType = options.actionType || 'navigation';
   const defaultCost = getTimeCostForAction(actionType, getTimeCostForAction('navigation', 1));
   const timeCostSteps = Number.isFinite(options.timeCostSteps)
@@ -46,11 +49,15 @@ export function movePlayerToNode(state, targetNodeId, options = {}) {
   };
 
   const nextState = advanceTimeBySteps(movedState, timeCostSteps);
+  const transitions = Array.isArray(nextState.world?.phaseTransitions?.pending)
+    ? nextState.world.phaseTransitions.pending.slice(previousPendingTransitions)
+    : [];
 
   return {
     ok: true,
     state: nextState,
     timeCostSteps,
-    phaseChanged: previousPhase !== nextState.world.timePhase
+    phaseChanged: previousPhase !== nextState.world.timePhase,
+    transitions
   };
 }

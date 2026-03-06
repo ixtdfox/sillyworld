@@ -177,3 +177,19 @@
   opacity: 0.92;
   color: color-mix(in srgb, #ffcf77 70%, currentColor);
 }
+
+#sillyrpg-root .sillyrpg-phase-interstitial {
+  text-align: center;
+  align-items: center;
+}
+
+#sillyrpg-root .sillyrpg-phase-banner {
+  margin: 0;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #ffcf77 45%, currentColor);
+  background: color-mix(in srgb, #ffcf77 16%, transparent);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}

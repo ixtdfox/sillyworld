@@ -92,6 +92,9 @@ test('time action: advanceTime cycles night -> morning and increments day', () =
   assert.equal(next.world.timePhase, TIME_PHASE.Morning);
   assert.equal(next.world.timeOfDay, TIME_OF_DAY.Morning);
   assert.equal(next.world.clock.dayNumber, 2);
+  assert.equal(next.world.phaseTransitions.pending.length, 1);
+  assert.equal(next.world.phaseTransitions.pending[0].fromPhase, TIME_PHASE.Night);
+  assert.equal(next.world.phaseTransitions.pending[0].toPhase, TIME_PHASE.Morning);
 });
 
 test('time action: advanceTimeBySteps deterministically crosses phase thresholds', () => {
@@ -103,6 +106,7 @@ test('time action: advanceTimeBySteps deterministically crosses phase thresholds
   assert.equal(next.world.timeOfDay, TIME_OF_DAY.Night);
   assert.equal(next.world.clock.dayNumber, 1);
   assert.equal(next.world.clock.step, 2);
+  assert.equal(next.world.phaseTransitions.pending.length, 2);
 });
 
 test('time action: configured gameplay action costs stay explicit', () => {
@@ -337,9 +341,26 @@ test('navigation action moves player, advances time, and reports phase transitio
   assert.equal(moved.ok, true);
   assert.equal(moved.timeCostSteps, 1);
   assert.equal(moved.phaseChanged, true);
+  assert.equal(moved.transitions.length, 1);
+  assert.equal(moved.transitions[0].toPhase, TIME_PHASE.Night);
   assert.equal(store.getState().player.currentNodeId, 'building:last-light-bar');
   assert.equal(store.getState().world.timePhase, TIME_PHASE.Night);
   assert.equal(store.getState().world.clock.step, 1);
+});
+
+test('phase transition queue can be consumed without breaking world progression', () => {
+  const store = createWorldStore(seed);
+  store.setTimePhase(TIME_PHASE.Evening);
+
+  const moved = store.movePlayerToNode('building:last-light-bar');
+  assert.equal(moved.ok, true);
+  assert.equal(store.getPendingPhaseTransitions().length, 1);
+
+  const consumed = store.consumeNextPhaseTransition();
+  assert.equal(consumed.toPhase, TIME_PHASE.Night);
+  assert.equal(store.getPendingPhaseTransitions().length, 0);
+  assert.equal(store.getState().world.phaseTransitions.history.length, 1);
+  assert.equal(store.getState().player.currentNodeId, 'building:last-light-bar');
 });
 
 test('navigation action supports explicit movement time costs and day wrap', () => {

@@ -2,6 +2,7 @@ import { hideRoot, mountContent, showRoot } from './ui/mount.js';
 import { renderTopBar } from './ui/components/topBar.js';
 import { renderMainMenu, renderSettingsStub } from './ui/screens/mainMenu.js';
 import { renderMapLevelView } from './ui/screens/mapLevelView.js';
+import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionInterstitial.js';
 import { openNpcChat } from './st_bridge/chatLauncher.js';
 import { notify } from './st_bridge/stApi.js';
 import { MAP_LEVEL, SAVE_KEY, worldStore } from './world/index.js';
@@ -115,6 +116,11 @@ function handleMapNodeClick(node, store) {
   const moved = store.movePlayerToNode(node.id);
   if (!moved.ok) return;
 
+  if (moved.transitions?.length) {
+    const latest = moved.transitions[moved.transitions.length - 1];
+    notify(`Phase shift: ${latest.fromPhase} → ${latest.toPhase}`, 'info');
+  }
+
   if (node.childrenLevel) {
     navigationStore.navigateToLevel(node.childrenLevel, node.id);
     store.save();
@@ -165,7 +171,21 @@ function renderScreenBody() {
 
   if (nav.screen === 'map') {
     const store = getStore();
-    if (store) return renderMapScreen(store);
+    if (store) {
+      const transition = store.getPendingPhaseTransitions()[0];
+      if (transition) {
+        return renderPhaseTransitionInterstitial({
+          transition,
+          onContinue: () => {
+            store.consumeNextPhaseTransition();
+            store.save();
+            render();
+          }
+        });
+      }
+
+      return renderMapScreen(store);
+    }
   }
 
   return renderMainMenu({

@@ -12,6 +12,7 @@ import { getDistrictById, getDistricts, getFactionById, getFactionsForPointOfInt
 import { getLocationAvailability } from './selectors/locationAvailabilitySelectors.js';
 import { getNpcAvailability, getNpcsForLocation } from './selectors/npcAvailabilitySelectors.js';
 import { deserializeGameState, saveGameState, loadGameState, serializeGameState } from './worldPersistence.js';
+import { consumeNextPhaseTransition, getPendingPhaseTransitions } from './actions/phaseTransitionActions.js';
 
 export function createWorldStore(seed = {}) {
   let state = createGameState(deepClone(seed));
@@ -62,8 +63,18 @@ export function createWorldStore(seed = {}) {
       return {
         ok: true,
         timeCostSteps: result.timeCostSteps,
-        phaseChanged: result.phaseChanged
+        phaseChanged: result.phaseChanged,
+        transitions: result.transitions || []
       };
+    },
+    consumeNextPhaseTransition() {
+      const result = consumeNextPhaseTransition(state);
+      if (!result.transition) return null;
+      apply(result.state);
+      return result.transition;
+    },
+    getPendingPhaseTransitions() {
+      return getPendingPhaseTransitions(state);
     },
     addItemToPlayer(instanceId) {
       const result = addItemToPlayer(state, instanceId);
