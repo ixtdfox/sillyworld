@@ -2,17 +2,33 @@ import { indexBy } from '../utils/object.js';
 
 const DEFAULT_DANGER_LEVEL = 'moderate';
 const DEFAULT_QUARANTINE_STATUS = 'clear';
+const DEFAULT_AVAILABILITY_MODE = 'always';
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
 function normalizeLocationMeta(meta = {}) {
+  const allowedPhases = asArray(meta.availability?.allowedPhases || meta.allowedPhases);
+  const preferredPhases = asArray(meta.availability?.preferredPhases || meta.preferredPhases);
+
+  let mode = meta.availability?.mode || meta.availabilityMode;
+  if (!mode) {
+    mode = meta.nightAccessAllowed === false ? 'not-night' : DEFAULT_AVAILABILITY_MODE;
+  }
+
   return {
     dangerLevel: meta.dangerLevel || DEFAULT_DANGER_LEVEL,
     accessRestrictions: asArray(meta.accessRestrictions),
     nightAccessAllowed: meta.nightAccessAllowed ?? true,
-    quarantineStatus: meta.quarantineStatus || DEFAULT_QUARANTINE_STATUS
+    quarantineStatus: meta.quarantineStatus || DEFAULT_QUARANTINE_STATUS,
+    availability: {
+      mode,
+      allowedPhases,
+      preferredPhases,
+      unavailableReason: meta.availability?.unavailableReason || meta.unavailableReason || '',
+      restrictedProfile: meta.availability?.restrictedProfile || meta.restrictedProfile || ''
+    }
   };
 }
 

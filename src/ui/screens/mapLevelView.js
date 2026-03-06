@@ -34,6 +34,17 @@ function formatStatus(meta = {}) {
   return tags.join(' · ');
 }
 
+function formatAvailability(availability) {
+  if (!availability) return '';
+  if (!availability.available) {
+    return `🚫 ${availability.reason || 'Unavailable right now.'}`;
+  }
+  if (availability.preferred) {
+    return '🕯 Preferred at this phase';
+  }
+  return '';
+}
+
 function getLevelIntro(contextNode, config, nodes) {
   if (config?.level === 'city') {
     const districtCount = (nodes || []).length;
@@ -80,6 +91,7 @@ export function renderMapLevelView({ config, contextNode, nodes, onNodeClick }) 
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'sillyrpg-btn sillyrpg-card';
+    card.disabled = Boolean(node.availability && !node.availability.available);
 
     const name = document.createElement('span');
     name.className = 'sillyrpg-card-title';
@@ -92,10 +104,12 @@ export function renderMapLevelView({ config, contextNode, nodes, onNodeClick }) 
     card.append(name, nodeDescription);
 
     const status = formatStatus(node?.meta?.locationMeta);
-    if (status) {
+    const availabilityStatus = formatAvailability(node?.availability);
+    const fullStatus = [status, availabilityStatus].filter(Boolean).join(' · ');
+    if (fullStatus) {
       const badge = document.createElement('span');
       badge.className = 'sillyrpg-card-status';
-      badge.textContent = status;
+      badge.textContent = fullStatus;
       card.appendChild(badge);
     }
 

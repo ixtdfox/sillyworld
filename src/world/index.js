@@ -14,3 +14,4 @@ export * as inventorySelectors from './selectors/inventorySelectors.js';
 export * as relationshipSelectors from './selectors/relationshipSelectors.js';
 
 export * as settingSelectors from './selectors/settingSelectors.js';
+export * as locationAvailabilitySelectors from './selectors/locationAvailabilitySelectors.js';
