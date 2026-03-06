@@ -9,6 +9,7 @@ import { setRelationship as setRelationshipAction } from '../src/world/actions/r
 import { deserializeGameState, serializeGameState } from '../src/world/worldPersistence.js';
 import { getDistrictById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from '../src/world/selectors/settingSelectors.js';
 import { getLocationAvailability } from '../src/world/selectors/locationAvailabilitySelectors.js';
+import { evaluateNpcAvailability, getNpcAvailability, getNpcsForLocation } from '../src/world/selectors/npcAvailabilitySelectors.js';
 
 const seed = JSON.parse(fs.readFileSync(new URL('../src/world/seed_world.json', import.meta.url), 'utf8'));
 
@@ -385,6 +386,36 @@ test('navigation blocks movement into unavailable locations by current phase', (
   const moved = store.movePlayerToNode('building:last-light-bar');
   assert.equal(moved.ok, true);
   assert.equal(store.getState().player.currentNodeId, 'building:last-light-bar');
+});
+
+test('npc availability follows phase schedules and location ties', () => {
+  const store = createWorldStore(seed);
+
+  store.setTimePhase(TIME_PHASE.Day);
+  let availableNpcs = getNpcsForLocation(store.getState(), 'building:last-light-bar', { onlyAvailable: true });
+  assert.equal(availableNpcs.some((npc) => npc.id === 'npc:ivo-rask'), false);
+
+  store.setTimePhase(TIME_PHASE.Evening);
+  availableNpcs = getNpcsForLocation(store.getState(), 'building:last-light-bar', { onlyAvailable: true });
+  assert.equal(availableNpcs.some((npc) => npc.id === 'npc:ivo-rask'), true);
+
+  store.setTimePhase(TIME_PHASE.Night);
+  const elena = getNpcAvailability(store.getState(), { npcNodeId: 'npc:elena-sable' });
+  assert.equal(elena.available, false);
+  assert.equal(elena.reason.includes('Archive staff'), true);
+
+  const tiedToLocation = evaluateNpcAvailability(
+    {
+      availability: {
+        byPhase: {
+          evening: { available: true, locationId: 'building:last-light-bar' }
+        }
+      }
+    },
+    TIME_PHASE.Evening,
+    'building:night-pharmacy'
+  );
+  assert.equal(tiedToLocation.available, false);
 });
 
 test('migration from schema v3 adds gameplay timePhase from legacy timeOfDay', () => {

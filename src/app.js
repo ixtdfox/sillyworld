@@ -3,6 +3,7 @@ import { renderTopBar } from './ui/components/topBar.js';
 import { renderMainMenu, renderSettingsStub } from './ui/screens/mainMenu.js';
 import { renderMapLevelView } from './ui/screens/mapLevelView.js';
 import { openNpcChat } from './st_bridge/chatLauncher.js';
+import { notify } from './st_bridge/stApi.js';
 import { MAP_LEVEL, SAVE_KEY, worldStore } from './world/index.js';
 import { createNavigationStore } from './ui/state/navigationStore.js';
 
@@ -93,6 +94,11 @@ function getChildLevel(level) {
 
 function handleMapNodeClick(node, store) {
   if (node.type === 'npc') {
+    if (node.availability && !node.availability.available) {
+      notify(node.availability.reason || 'This contact is unavailable right now.', 'warning');
+      return;
+    }
+
     const parent = store.getNodeById(node.parentId);
     openNpcChat(node.meta, {
       cityName: 'Larkspur',
@@ -131,6 +137,8 @@ function renderMapScreen(store) {
           : null;
     const availability = (node.level === MAP_LEVEL.District || node.level === MAP_LEVEL.Building)
       ? store.getLocationAvailability({ districtId, poiId })
+      : node.type === 'npc'
+        ? store.getNpcAvailability({ npcNodeId: node.id, locationNodeId: nav.contextId })
       : null;
 
     return {
@@ -141,7 +149,7 @@ function renderMapScreen(store) {
         locationMeta
       }
     };
-  });
+  }).filter((node) => node.type !== 'npc' || node.availability?.available !== false);
 
   return renderMapLevelView({
     config,

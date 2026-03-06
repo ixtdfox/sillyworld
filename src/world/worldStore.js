@@ -10,6 +10,7 @@ import { getRelationship } from './selectors/relationshipSelectors.js';
 import { getTimeOfDay, getTimePhase, getWorldClock } from './selectors/worldSelectors.js';
 import { getDistrictById, getDistricts, getFactionById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from './selectors/settingSelectors.js';
 import { getLocationAvailability } from './selectors/locationAvailabilitySelectors.js';
+import { getNpcAvailability, getNpcsForLocation } from './selectors/npcAvailabilitySelectors.js';
 import { deserializeGameState, saveGameState, loadGameState, serializeGameState } from './worldPersistence.js';
 
 export function createWorldStore(seed = {}) {
@@ -136,6 +137,12 @@ export function createWorldStore(seed = {}) {
     },
     getLocationAvailability(args) {
       return getLocationAvailability(state, args);
+    },
+    getNpcAvailability(args) {
+      return getNpcAvailability(state, args);
+    },
+    getNpcsForLocation(locationNodeId, options) {
+      return getNpcsForLocation(state, locationNodeId, options);
     },
     canTakeItem(instanceId) {
       return canTakeItem(state, instanceId);
