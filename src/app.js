@@ -1,64 +1,47 @@
 import { hideRoot, mountContent, showRoot } from './ui/mount.js';
 import { renderTopBar } from './ui/components/topBar.js';
 import { renderMainMenu, renderSettingsStub } from './ui/screens/mainMenu.js';
-import { renderCityMap } from './ui/screens/cityMap.js';
-import { renderDistrictMap } from './ui/screens/districtMap.js';
-import { renderLocationView } from './ui/screens/locationView.js';
+import { renderMapLevelView } from './ui/screens/mapLevelView.js';
 import { openNpcChat } from './st_bridge/chatLauncher.js';
-import { createNewGameState, load as loadState, save as saveState, withNavigation } from './world/worldState.js';
+import { MAP_LEVEL, SAVE_KEY, worldStore } from './world/index.js';
+import { createNavigationStore } from './ui/state/navigationStore.js';
 
-const DEBUG = '[SillyRPG]';
-
-const state = {
-  screen: 'mainMenu',
-  payload: null,
-  navStack: [],
-  game: null,
-  seed: null
-};
+const appState = { seed: null };
+const navigationStore = createNavigationStore();
 
 async function loadSeed() {
-  if (state.seed) return state.seed;
+  if (appState.seed) return appState.seed;
   const base = window.__SILLYRPG__?.EXT_BASE || window.location.href;
   const url = new URL('src/world/seed_world.json', base).toString();
   const response = await fetch(url);
-  state.seed = await response.json();
-  return state.seed;
+  appState.seed = await response.json();
+  return appState.seed;
 }
 
-function getDistrictById(districtId) {
-  return state.game?.world?.city?.districts?.find((entry) => entry.id === districtId) || null;
-}
-
-function getLocationById(locationId) {
-  return state.game?.world?.locations?.find((entry) => entry.id === locationId) || null;
+function getStore() {
+  return worldStore.get();
 }
 
 function hasSaveData() {
-  return Boolean(loadState());
-}
-
-function persistGame() {
-  if (!state.game) return;
-  state.game = withNavigation(state.game, state.screen, state.payload, state.navStack);
-  saveState(state.game);
-}
-
-function navigate(screen, payload = null) {
-  state.navStack.push({ screen: state.screen, payload: state.payload });
-  state.screen = screen;
-  state.payload = payload;
-  persistGame();
-  render();
+  try {
+    return Boolean(localStorage.getItem(SAVE_KEY));
+  } catch {
+    return false;
+  }
 }
 
 function back() {
-  const prev = state.navStack.pop();
-  if (!prev) return;
-  state.screen = prev.screen;
-  state.payload = prev.payload;
-  persistGame();
-  render();
+  const nav = navigationStore.getState();
+  if (nav.screen === 'settings') {
+    navigationStore.setScreen('mainMenu');
+    render();
+    return;
+  }
+
+  if (nav.screen === 'map') {
+    const moved = navigationStore.navigateBackLevel();
+    if (moved) render();
+  }
 }
 
 function exit() {
@@ -67,93 +50,100 @@ function exit() {
 
 async function startNewGame() {
   const seed = await loadSeed();
-  state.game = createNewGameState(seed);
-  state.navStack = [];
-  state.screen = 'cityMap';
-  state.payload = null;
-  persistGame();
+  const store = worldStore.init(seed);
+  store.reset(seed);
+  navigationStore.reset({ screen: 'map', level: MAP_LEVEL.City, contextId: 'city:larkspur', navStack: [] });
+  store.save();
   render();
 }
 
-function loadAndResumeGame() {
-  const loaded = loadState();
-  if (!loaded) return;
-  state.game = loaded;
-  state.screen = loaded.screen || 'cityMap';
-  state.payload = loaded.payload || null;
-  state.navStack = loaded.navStack || [];
+async function loadAndResumeGame() {
+  const seed = await loadSeed();
+  const store = worldStore.init(seed);
+  const loaded = store.load();
+  if (loaded) {
+    navigationStore.reset({ screen: 'map', level: MAP_LEVEL.City, contextId: 'city:larkspur', navStack: [] });
+  }
   render();
+}
+
+function getChildLevel(level) {
+  if (level === MAP_LEVEL.City) return MAP_LEVEL.District;
+  if (level === MAP_LEVEL.District) return MAP_LEVEL.Building;
+  return MAP_LEVEL.Room;
+}
+
+function handleMapNodeClick(node, store) {
+  if (node.type === 'npc') {
+    const parent = store.getNodeById(node.parentId);
+    openNpcChat(node.meta, {
+      cityName: 'Larkspur',
+      districtName: parent?.name,
+      locationName: parent?.name
+    });
+    return;
+  }
+
+  if (node.childrenLevel) {
+    navigationStore.navigateToLevel(node.childrenLevel, node.id);
+    store.save();
+    render();
+  }
+}
+
+function renderMapScreen(store) {
+  const nav = navigationStore.getState();
+  const config = store.getMapConfig(nav.level);
+  const contextNode = store.getNodeById(nav.contextId);
+  const nodes = store.getNodesForLevel(getChildLevel(nav.level), nav.contextId);
+
+  return renderMapLevelView({
+    config,
+    contextNode,
+    nodes,
+    onNodeClick: (node) => handleMapNodeClick(node, store)
+  });
 }
 
 function renderScreenBody() {
-  if (state.screen === 'settings') {
-    return renderSettingsStub({ onBack: back });
-  }
+  const nav = navigationStore.getState();
+  if (nav.screen === 'settings') return renderSettingsStub({ onBack: back });
 
-  if (state.screen === 'cityMap') {
-    return renderCityMap({
-      world: state.game?.world,
-      onOpenDistrict: (districtId) => navigate('districtMap', { districtId })
-    });
-  }
-
-  if (state.screen === 'districtMap') {
-    const district = getDistrictById(state.payload?.districtId);
-    return renderDistrictMap({
-      district,
-      onOpenLocation: (locationId) => navigate('locationView', { locationId, districtId: district?.id })
-    });
-  }
-
-  if (state.screen === 'locationView') {
-    const district = getDistrictById(state.payload?.districtId);
-    const location = getLocationById(state.payload?.locationId);
-    return renderLocationView({
-      location,
-      onNpcClick: (npc) => openNpcChat(npc, {
-        cityName: state.game?.world?.city?.name,
-        districtName: district?.name,
-        locationName: location?.name
-      })
-    });
+  if (nav.screen === 'map') {
+    const store = getStore();
+    if (store) return renderMapScreen(store);
   }
 
   return renderMainMenu({
-    onNewGame: () => {
-      startNewGame().catch((error) => console.debug(DEBUG, 'new game failed', error));
+    onNewGame: () => startNewGame().catch(() => {}),
+    onContinue: () => loadAndResumeGame().catch(() => {}),
+    onLoadGame: () => loadAndResumeGame().catch(() => {}),
+    onSettings: () => {
+      navigationStore.setScreen('settings');
+      render();
     },
-    onContinue: loadAndResumeGame,
-    onLoadGame: loadAndResumeGame,
-    onSettings: () => navigate('settings'),
     onExit: exit,
     hasSave: hasSaveData()
   });
 }
 
 function render() {
+  const nav = navigationStore.getState();
+  const store = getStore();
+  const canGoBack = nav.screen === 'settings' || nav.navStack.length > 0;
+  const breadcrumb = nav.screen === 'map' && store ? `${nav.level} · ${store.getState().world.timeOfDay}` : nav.screen;
+
   const box = document.createElement('div');
   box.className = 'sillyrpg-panel';
-
-  const top = renderTopBar({
-    title: 'SillyRPG',
-    breadcrumb: state.screen,
-    onBack: back,
-    onExit: exit,
-    canGoBack: state.navStack.length > 0
-  });
-
-  const body = document.createElement('div');
-  body.className = 'sillyrpg-content';
-  body.appendChild(renderScreenBody());
-
-  box.append(top, body);
+  box.append(
+    renderTopBar({ title: 'SillyRPG', breadcrumb, onBack: back, onExit: exit, canGoBack }),
+    Object.assign(document.createElement('div'), { className: 'sillyrpg-content' })
+  );
+  box.lastChild.appendChild(renderScreenBody());
   mountContent(box);
 }
 
 export function openApp() {
   showRoot();
-  if (hasSaveData() && state.screen === 'mainMenu') {
-    state.screen = 'mainMenu';
-  }
-  render();
+  loadSeed().then(() => render());
 }

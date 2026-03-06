@@ -13,9 +13,9 @@ SillyRPG is a lightweight, menu-driven RPG UI extension for SillyTavern.
 
 1. Open **SillyRPG**.
 2. Click **New Game**.
-3. Click **Market** district in city map.
-4. Click **Shop** POI.
-5. Click an NPC.
+3. Click **Market** district from the city level.
+4. Click **Shop** building.
+5. Click an NPC node.
 6. SillyRPG attempts to open an existing SillyTavern chat for the mapped character name.
 
 ## Character mapping for NPC chat launch
@@ -30,17 +30,17 @@ Create SillyTavern characters with those exact names to enable one-click chat op
 
 ## Save and resume
 
-- Save key: `sillyrpg.save.v1`
-- Navigation state is persisted while moving between screens.
+- Save key: `sillyrpg.save.v2`
+- Core game state is persisted; UI navigation state is maintained separately in UI layer.
 - Use **Continue** or **Load Game** from Main Menu to resume.
 
 ## World data format
 
 `src/world/seed_world.json` includes:
-- `city`: city metadata + `mapImage` + district list
-- district `pois`: each points to a `locationId`
-- `locations`: each location has `backgroundImage` + `npcs`
-- each NPC has `id`, `name`, `stCharacterName`, optional `avatar`
+- `world`: time-of-day and clock seed
+- `maps.levelConfigs`: data-driven map-level registry
+- `maps.nodes`: map nodes (`city`, `district`, `building`, `npc`) with parent relations
+- `player`, `characters`, `items` seeds for simulation state
 
 All image paths are local relative paths under `assets/`.
 
@@ -57,3 +57,14 @@ MVP placeholders are included locally:
 - If NPC click does not open chat, confirm the SillyTavern character name exactly matches `stCharacterName`.
 - If no API hooks are available in your ST build, SillyRPG falls back to notification + debug logs.
 - Open browser console and filter logs by `[SillyRPG]` for diagnostics.
+
+## World core
+
+Core game state now lives under `src/world/` via `worldStore`:
+- `src/world/types.js`: enums and constants (`TIME_OF_DAY`, `MAP_LEVEL`)
+- `src/world/worldStore.js`: thin composition store (wires actions/selectors/persistence only)
+- `src/world/seed_world.json`: data-driven map level configs + nodes + item/character/player seed data
+
+Map screens are rendered by a generic level view (`src/ui/screens/mapLevelView.js`), so new levels/nodes are added through config/data, not UI rewrites.
+
+- `src/world/actions/`, `selectors/`, `entities/`, `worldPersistence.js`, `worldMigrations.js`: separated domain responsibilities.

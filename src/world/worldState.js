@@ -1,42 +1,18 @@
-export const SAVE_KEY = 'sillyrpg.save.v1';
+import { SCHEMA_VERSION } from './constants/types.js';
+import { createDefaultWorld } from './entities/world.js';
+import { createDefaultPlayer } from './entities/player.js';
+import { createDefaultItems } from './entities/items.js';
+import { createDefaultCharacters } from './entities/characters.js';
+import { createDefaultMaps } from './entities/maps.js';
 
-export function createNewGameState(seed) {
+export function createGameState(seed = {}) {
   return {
-    screen: 'cityMap',
-    payload: null,
-    navStack: [],
-    world: seed,
+    schemaVersion: SCHEMA_VERSION,
+    world: createDefaultWorld(seed.world),
+    player: createDefaultPlayer(seed.player),
+    characters: createDefaultCharacters(seed.characters),
+    items: createDefaultItems(seed.items),
+    maps: createDefaultMaps(seed.maps),
     updatedAt: Date.now()
   };
-}
-
-export function withNavigation(game, screen, payload, navStack) {
-  return {
-    ...game,
-    screen,
-    payload: payload ?? null,
-    navStack: Array.isArray(navStack) ? navStack : [],
-    updatedAt: Date.now()
-  };
-}
-
-export function save(state) {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-    return true;
-  } catch (error) {
-    console.debug('[SillyRPG] save failed', error);
-    return false;
-  }
-}
-
-export function load() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (error) {
-    console.debug('[SillyRPG] load failed', error);
-    return null;
-  }
 }
