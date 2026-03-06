@@ -9,6 +9,7 @@ import { canTakeItem, getInventoryWeight } from './selectors/inventorySelectors.
 import { getRelationship } from './selectors/relationshipSelectors.js';
 import { getTimeOfDay, getTimePhase, getWorldClock } from './selectors/worldSelectors.js';
 import { getDistrictById, getDistricts, getFactionById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from './selectors/settingSelectors.js';
+import { getLocationAvailability } from './selectors/locationAvailabilitySelectors.js';
 import { deserializeGameState, saveGameState, loadGameState, serializeGameState } from './worldPersistence.js';
 
 export function createWorldStore(seed = {}) {
@@ -49,7 +50,13 @@ export function createWorldStore(seed = {}) {
     },
     movePlayerToNode(nodeId, options = {}) {
       const result = movePlayerToNode(state, nodeId, options);
-      if (!result.ok) return { ok: false };
+      if (!result.ok) {
+        return {
+          ok: false,
+          blockedByAvailability: Boolean(result.blockedByAvailability),
+          reason: result.reason || ''
+        };
+      }
       apply(result.state);
       return {
         ok: true,
@@ -126,6 +133,9 @@ export function createWorldStore(seed = {}) {
     },
     getLocationMeta(args) {
       return getLocationMeta(state, args);
+    },
+    getLocationAvailability(args) {
+      return getLocationAvailability(state, args);
     },
     canTakeItem(instanceId) {
       return canTakeItem(state, instanceId);

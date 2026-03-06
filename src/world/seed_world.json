@@ -794,7 +794,10 @@
           "dangerLevel": "low",
           "accessRestrictions": [],
           "nightAccessAllowed": true,
-          "quarantineStatus": "clear"
+          "quarantineStatus": "clear",
+          "availability": {
+            "mode": "always"
+          }
         }
       },
       {
@@ -809,7 +812,15 @@
             "checkpoint-inspection"
           ],
           "nightAccessAllowed": true,
-          "quarantineStatus": "monitored"
+          "quarantineStatus": "monitored",
+          "availability": {
+            "mode": "phase-list",
+            "allowedPhases": [
+              "day",
+              "evening",
+              "night"
+            ]
+          }
         }
       },
       {
@@ -825,7 +836,12 @@
             "escorted-entry-daytime"
           ],
           "nightAccessAllowed": false,
-          "quarantineStatus": "sealed"
+          "quarantineStatus": "sealed",
+          "availability": {
+            "mode": "restricted",
+            "restrictedProfile": "old-city-epic-lock",
+            "unavailableReason": "Old City routes are sealed until the dedicated excursion arc begins."
+          }
         }
       },
       {
@@ -840,7 +856,13 @@
             "protective-gear-recommended"
           ],
           "nightAccessAllowed": false,
-          "quarantineStatus": "restricted"
+          "quarantineStatus": "restricted",
+          "availability": {
+            "mode": "night-only",
+            "preferredPhases": [
+              "night"
+            ]
+          }
         }
       },
       {
@@ -855,7 +877,14 @@
             "members-only-after-dark"
           ],
           "nightAccessAllowed": false,
-          "quarantineStatus": "clear"
+          "quarantineStatus": "clear",
+          "availability": {
+            "mode": "phase-list",
+            "allowedPhases": [
+              "day",
+              "evening"
+            ]
+          }
         }
       }
     ],
@@ -871,7 +900,10 @@
           "dangerLevel": "low",
           "accessRestrictions": [],
           "nightAccessAllowed": true,
-          "quarantineStatus": "clear"
+          "quarantineStatus": "clear",
+          "availability": {
+            "mode": "always"
+          }
         }
       },
       {
@@ -889,7 +921,14 @@
             "open-late-curfew-sensitive"
           ],
           "nightAccessAllowed": true,
-          "quarantineStatus": "clear"
+          "quarantineStatus": "clear",
+          "availability": {
+            "mode": "always",
+            "preferredPhases": [
+              "evening",
+              "night"
+            ]
+          }
         }
       },
       {
@@ -907,7 +946,14 @@
             "records-pass-after-hours"
           ],
           "nightAccessAllowed": false,
-          "quarantineStatus": "clear"
+          "quarantineStatus": "clear",
+          "availability": {
+            "mode": "phase-list",
+            "allowedPhases": [
+              "day",
+              "evening"
+            ]
+          }
         }
       },
       {
@@ -923,7 +969,14 @@
           "dangerLevel": "moderate",
           "accessRestrictions": [],
           "nightAccessAllowed": false,
-          "quarantineStatus": "clear"
+          "quarantineStatus": "clear",
+          "availability": {
+            "mode": "phase-list",
+            "allowedPhases": [
+              "day",
+              "evening"
+            ]
+          }
         }
       },
       {
@@ -939,7 +992,17 @@
           "dangerLevel": "moderate",
           "accessRestrictions": [],
           "nightAccessAllowed": true,
-          "quarantineStatus": "monitored"
+          "quarantineStatus": "monitored",
+          "availability": {
+            "mode": "phase-list",
+            "allowedPhases": [
+              "evening",
+              "night"
+            ],
+            "preferredPhases": [
+              "night"
+            ]
+          }
         }
       },
       {
@@ -957,7 +1020,15 @@
             "id-check"
           ],
           "nightAccessAllowed": true,
-          "quarantineStatus": "monitored"
+          "quarantineStatus": "monitored",
+          "availability": {
+            "mode": "phase-list",
+            "allowedPhases": [
+              "day",
+              "evening",
+              "night"
+            ]
+          }
         }
       },
       {
@@ -975,7 +1046,13 @@
             "no-official-patrol-after-dusk"
           ],
           "nightAccessAllowed": true,
-          "quarantineStatus": "sealed"
+          "quarantineStatus": "sealed",
+          "availability": {
+            "mode": "night-only",
+            "preferredPhases": [
+              "night"
+            ]
+          }
         }
       },
       {
@@ -993,7 +1070,13 @@
             "hazmat-gear-required"
           ],
           "nightAccessAllowed": false,
-          "quarantineStatus": "sealed"
+          "quarantineStatus": "sealed",
+          "availability": {
+            "mode": "night-only",
+            "preferredPhases": [
+              "night"
+            ]
+          }
         }
       },
       {
@@ -1011,7 +1094,14 @@
             "invitation-only"
           ],
           "nightAccessAllowed": false,
-          "quarantineStatus": "clear"
+          "quarantineStatus": "clear",
+          "availability": {
+            "mode": "phase-list",
+            "allowedPhases": [
+              "day",
+              "evening"
+            ]
+          }
         }
       }
     ]

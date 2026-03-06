@@ -102,7 +102,12 @@ function handleMapNodeClick(node, store) {
     return;
   }
 
-  store.movePlayerToNode(node.id);
+  if (node.availability && !node.availability.available) {
+    return;
+  }
+
+  const moved = store.movePlayerToNode(node.id);
+  if (!moved.ok) return;
 
   if (node.childrenLevel) {
     navigationStore.navigateToLevel(node.childrenLevel, node.id);
@@ -116,15 +121,21 @@ function renderMapScreen(store) {
   const config = store.getMapConfig(nav.level);
   const contextNode = store.getNodeById(nav.contextId);
   const nodes = store.getNodesForLevel(getChildLevel(nav.level), nav.contextId).map((node) => {
+    const districtId = node.level === MAP_LEVEL.District ? node.id : node.parentId;
+    const poiId = node.level === MAP_LEVEL.Building ? `poi:${node.id.split(':')[1] || node.id}` : null;
     const locationMeta =
       node.level === MAP_LEVEL.District
         ? store.getLocationMeta({ districtId: node.id })
         : node.level === MAP_LEVEL.Building
           ? store.getLocationMeta({ poiId: `poi:${node.id.split(':')[1] || node.id}` })
           : null;
+    const availability = (node.level === MAP_LEVEL.District || node.level === MAP_LEVEL.Building)
+      ? store.getLocationAvailability({ districtId, poiId })
+      : null;
 
     return {
       ...node,
+      availability,
       meta: {
         ...node.meta,
         locationMeta

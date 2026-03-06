@@ -8,6 +8,7 @@ import { advanceTime, advanceTimeBySteps, getTimeCostForAction } from '../src/wo
 import { setRelationship as setRelationshipAction } from '../src/world/actions/relationshipActions.js';
 import { deserializeGameState, serializeGameState } from '../src/world/worldPersistence.js';
 import { getDistrictById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from '../src/world/selectors/settingSelectors.js';
+import { getLocationAvailability } from '../src/world/selectors/locationAvailabilitySelectors.js';
 
 const seed = JSON.parse(fs.readFileSync(new URL('../src/world/seed_world.json', import.meta.url), 'utf8'));
 
@@ -59,6 +60,7 @@ test('setting model seed defines districts, POIs, factions, and location metadat
   const factory = seed.setting.pointsOfInterest.find((poi) => poi.id === 'poi:ruined-factory');
   assert.equal(factory.meta.dangerLevel, 'extreme');
   assert.deepEqual(factory.meta.accessRestrictions, ['hazmat-gear-required']);
+  assert.equal(factory.meta.availability.mode, 'night-only');
 });
 
 test('setting selectors resolve district/poi/faction links', () => {
@@ -349,6 +351,40 @@ test('navigation action supports explicit movement time costs and day wrap', () 
   assert.equal(store.getState().world.timePhase, TIME_PHASE.Day);
   assert.equal(store.getState().world.clock.dayNumber, 2);
   assert.equal(store.getState().world.clock.step, 2);
+});
+
+test('location availability supports always/day-evening/night-only and restricted profiles', () => {
+  const store = createWorldStore(seed);
+
+  let availability = getLocationAvailability(store.getState(), { districtId: 'district:new-city' });
+  assert.equal(availability.available, true);
+
+  store.setTimePhase(TIME_PHASE.Night);
+  availability = getLocationAvailability(store.getState(), { poiId: 'poi:civic-archive', districtId: 'district:new-city' });
+  assert.equal(availability.available, false);
+  assert.equal(availability.reason.includes('Available only during'), true);
+
+  availability = getLocationAvailability(store.getState(), { poiId: 'poi:last-light-bar', districtId: 'district:ashline' });
+  assert.equal(availability.available, true);
+  assert.equal(availability.preferred, true);
+
+  availability = getLocationAvailability(store.getState(), { districtId: 'district:old-city' });
+  assert.equal(availability.available, false);
+  assert.equal(availability.reason.includes('excursion arc'), true);
+});
+
+test('navigation blocks movement into unavailable locations by current phase', () => {
+  const store = createWorldStore(seed);
+  store.setTimePhase(TIME_PHASE.Night);
+
+  const blocked = store.movePlayerToNode('building:civic-archive');
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.blockedByAvailability, true);
+  assert.equal(store.getState().player.currentNodeId, 'building:rowan-flat-2b');
+
+  const moved = store.movePlayerToNode('building:last-light-bar');
+  assert.equal(moved.ok, true);
+  assert.equal(store.getState().player.currentNodeId, 'building:last-light-bar');
 });
 
 test('migration from schema v3 adds gameplay timePhase from legacy timeOfDay', () => {
