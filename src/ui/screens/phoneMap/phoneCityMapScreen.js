@@ -2,20 +2,12 @@ import { resolveAsset } from '../../../st_bridge/asset.js';
 import { createInteractiveAtlasButton, createAtlasImage } from '../../components/interactiveAtlasButton.js';
 import { ensureBabylonRuntime, createBabylonUiRuntime } from '../../rendering/babylonRuntime.js';
 import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.js';
+import { PHONE_DISPLAY_BOUNDS } from './phoneDisplayLayout.js';
+import { WORLD_MAP_REGIONS } from './worldMapRegions.js';
+import { createWorldMapViewport } from './worldMapViewport.js';
 
 const SCREEN_SIZE = Object.freeze({ width: 1280, height: 920 });
 const PHONE_SIZE = Object.freeze({ width: 555, height: 918, scale: 0.78 });
-
-function createButtonCallbacks() {
-  return {
-    map: () => console.log('MAP clicked'),
-    log: () => console.log('LOG clicked'),
-    msg: () => console.log('MSG clicked'),
-    inv: () => console.log('INV clicked'),
-    acceptCall: () => console.log('CALL_ACCEPT clicked'),
-    endCall: () => console.log('CALL_END clicked')
-  };
-}
 
 function createPhoneScaler(phoneWidth, phoneHeight) {
   const scaleX = phoneWidth / PHONE_SIZE.width;
@@ -29,7 +21,52 @@ function createPhoneScaler(phoneWidth, phoneHeight) {
   };
 }
 
-function buildPhoneGui({ GUI, textureUrl, callbacks }) {
+function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl }) {
+  const displayArea = new GUI.Rectangle('phone-display-area');
+  displayArea.width = `${scale.w(PHONE_DISPLAY_BOUNDS.width)}px`;
+  displayArea.height = `${scale.h(PHONE_DISPLAY_BOUNDS.height)}px`;
+  displayArea.left = `${scale.x(PHONE_DISPLAY_BOUNDS.left)}px`;
+  displayArea.top = `${scale.y(PHONE_DISPLAY_BOUNDS.top)}px`;
+  displayArea.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+  displayArea.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
+  displayArea.thickness = 0;
+  displayArea.background = '#10141F';
+  displayArea.clipChildren = true;
+
+  const mapViewport = createWorldMapViewport({
+    GUI,
+    mapTextureUrl,
+    viewportWidth: scale.w(PHONE_DISPLAY_BOUNDS.width),
+    viewportHeight: scale.h(PHONE_DISPLAY_BOUNDS.height),
+    regions: WORLD_MAP_REGIONS,
+    onRegionOpen: (regionId) => {
+      console.log('Open region:', regionId);
+    }
+  });
+
+  mapViewport.isVisible = false;
+  displayArea.addControl(mapViewport);
+
+  return {
+    displayArea,
+    openMap: () => {
+      mapViewport.isVisible = true;
+    }
+  };
+}
+
+function createButtonCallbacks({ phoneDisplay }) {
+  return {
+    map: () => phoneDisplay.openMap(),
+    log: () => console.log('LOG clicked'),
+    msg: () => console.log('MSG clicked'),
+    inv: () => console.log('INV clicked'),
+    acceptCall: () => console.log('CALL_ACCEPT clicked'),
+    endCall: () => console.log('CALL_END clicked')
+  };
+}
+
+function buildPhoneGui({ GUI, textureUrl, mapTextureUrl }) {
   const uiRoot = new GUI.Rectangle('phone-root');
   uiRoot.width = `${SCREEN_SIZE.width}px`;
   uiRoot.height = `${SCREEN_SIZE.height}px`;
@@ -58,6 +95,11 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
   phoneFrame.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
   phoneFrame.isPointerBlocker = false;
   phoneFrame.zIndex = 10;
+
+  const phoneDisplay = createPhoneDisplayLayer({ GUI, scale, mapTextureUrl });
+  phoneDisplay.displayArea.zIndex = 5;
+
+  const callbacks = createButtonCallbacks({ phoneDisplay });
 
   const menuButtonPlacement = [
     { id: 'map', top: 180 },
@@ -135,6 +177,7 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
   });
   redCallButton.zIndex = 40;
 
+  phoneLayer.addControl(phoneDisplay.displayArea);
   phoneLayer.addControl(phoneFrame);
   phoneLayer.addControl(statusLocSig);
   phoneLayer.addControl(statusMoneyTime);
@@ -149,8 +192,8 @@ async function mountPhoneScene(canvas) {
   await ensureBabylonRuntime();
   const runtime = createBabylonUiRuntime(canvas);
   const GUI = runtime.BABYLON.GUI;
-  const callbacks = createButtonCallbacks();
   const textureUrl = resolveAsset('assets/sprites.png');
+  const mapTextureUrl = resolveAsset('assets/map.png');
 
   const adt = GUI.AdvancedDynamicTexture.CreateFullscreenUI('phone-city-map-ui', true, runtime.scene);
   adt.idealWidth = SCREEN_SIZE.width;
@@ -158,7 +201,7 @@ async function mountPhoneScene(canvas) {
   adt.renderAtIdealSize = true;
   adt.useSmallestIdeal = true;
 
-  const ui = buildPhoneGui({ GUI, textureUrl, callbacks });
+  const ui = buildPhoneGui({ GUI, textureUrl, mapTextureUrl });
   adt.addControl(ui);
 
   return () => {
