@@ -1,28 +1,28 @@
 export const PHONE_UI_TEXTURE_SIZE = Object.freeze({ width: 1536, height: 1024 });
 
 export const PHONE_UI_ATLAS = Object.freeze({
-  phoneFrame: { x: 978, y: 0, width: 558, height: 950 },
+  phoneFrame: { x: 978, y: 0, width: 555, height: 918 },
   menuButtons: {
     map: {
-      normal: { x: 0, y: 0, width: 128, height: 76 },
-      pressed: { x: 129, y: 0, width: 128, height: 76 }
+      normal: { x: 0, y: 0, width: 166, height: 93 },
+      pressed: { x: 172, y: 0, width: 166, height: 93 }
     },
     inv: {
-      normal: { x: 0, y: 78, width: 128, height: 76 },
-      pressed: { x: 129, y: 78, width: 128, height: 76 }
+      normal: { x: 0, y: 93, width: 166, height: 93 },
+      pressed: { x: 172, y: 93, width: 166, height: 93 }
     },
     log: {
-      normal: { x: 0, y: 156, width: 128, height: 76 },
-      pressed: { x: 129, y: 156, width: 128, height: 76 }
+      normal: { x: 0, y: 186, width: 166, height: 93 },
+      pressed: { x: 172, y: 186, width: 166, height: 93 }
     },
     msg: {
-      normal: { x: 0, y: 234, width: 128, height: 76 },
-      pressed: { x: 129, y: 234, width: 128, height: 76 }
+      normal: { x: 0, y: 279, width: 166, height: 93 },
+      pressed: { x: 172 , y: 279, width: 166, height: 93 }
     }
   },
   statusStrip: {
-    moneyTime: { x: 0, y: 313, width: 500, height: 74 },
-    locSig: { x: 0, y: 390, width: 500, height: 74 }
+    moneyTime: { x: 0, y: 373, width: 478, height: 81 },
+    locSig: { x: 0, y: 448, width: 496, height: 81 }
   },
   callButtons: {
     green: {
