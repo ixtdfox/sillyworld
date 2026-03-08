@@ -1,15 +1,14 @@
 import { hideRoot, mountContent, showRoot } from './ui/mount.js';
 import { renderTopBar } from './ui/components/topBar.js';
 import { renderMainMenu, renderSettingsStub } from './ui/screens/mainMenu.js';
-import { renderMapLevelView } from './ui/screens/mapLevelView.js';
 import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionInterstitial.js';
-import { openNpcChat } from './st_bridge/chatLauncher.js';
-import { notify } from './st_bridge/stApi.js';
+import { renderPhoneCityMapScreen } from './ui/screens/phoneMap/phoneCityMapScreen.js';
 import { MAP_LEVEL, SAVE_KEY, worldStore } from './world/index.js';
 import { createNavigationStore } from './ui/state/navigationStore.js';
 
 const appState = { seed: null };
 const navigationStore = createNavigationStore();
+let activeScreenUnmount = null;
 
 const PHASE_LABELS = Object.freeze({
   morning: 'Morning',
@@ -74,6 +73,11 @@ function back() {
 }
 
 function exit() {
+  if (activeScreenUnmount) {
+    activeScreenUnmount();
+    activeScreenUnmount = null;
+  }
+
   hideRoot();
 }
 
@@ -114,110 +118,8 @@ async function loadAndResumeGame() {
   render();
 }
 
-function getChildLevel(level) {
-  if (level === MAP_LEVEL.City) return MAP_LEVEL.District;
-  if (level === MAP_LEVEL.District) return MAP_LEVEL.Building;
-  return MAP_LEVEL.Room;
-}
-
-
-function getRestActionsForContext(store, nav, contextNode) {
-  if (!contextNode || nav.level !== MAP_LEVEL.Building) return [];
-  if (contextNode.id !== store.getState().player.homeNodeId) return [];
-  return store.getAvailableRestActions();
-}
-
-function handleMapNodeClick(node, store) {
-  if (node.type === 'action') {
-    const restResult = store.performRestAction(node.id);
-    if (!restResult.ok) {
-      notify(restResult.reason || 'Cannot perform this action right now.', 'warning');
-      return;
-    }
-
-    if (restResult.transitions?.length) {
-      const latest = restResult.transitions[restResult.transitions.length - 1];
-      notify(`Phase shift: ${latest.fromPhase} → ${latest.toPhase}`, 'info');
-    }
-
-    store.save();
-    render();
-    return;
-  }
-
-  if (node.type === 'npc') {
-    if (node.availability && !node.availability.available) {
-      notify(node.availability.reason || 'This contact is unavailable right now.', 'warning');
-      return;
-    }
-
-    const parent = store.getNodeById(node.parentId);
-    openNpcChat(node.meta, {
-      cityName: 'Larkspur',
-      districtName: parent?.name,
-      locationName: parent?.name
-    });
-    return;
-  }
-
-  if (node.availability && !node.availability.available) {
-    return;
-  }
-
-  const moved = store.movePlayerToNode(node.id);
-  if (!moved.ok) return;
-
-  if (moved.transitions?.length) {
-    const latest = moved.transitions[moved.transitions.length - 1];
-    notify(`Phase shift: ${latest.fromPhase} → ${latest.toPhase}`, 'info');
-  }
-
-  if (node.childrenLevel) {
-    navigationStore.navigateToLevel(node.childrenLevel, node.id);
-    store.save();
-    render();
-  }
-}
-
-function renderMapScreen(store) {
-  const nav = navigationStore.getState();
-  const config = store.getMapConfig(nav.level);
-  const contextNode = store.getNodeById(nav.contextId);
-  const nodes = store.getNodesForLevel(getChildLevel(nav.level), nav.contextId).map((node) => {
-    const districtId = node.level === MAP_LEVEL.District ? node.id : node.parentId;
-    const poiId = node.level === MAP_LEVEL.Building ? `poi:${node.id.split(':')[1] || node.id}` : null;
-    const locationMeta =
-      node.level === MAP_LEVEL.District
-        ? store.getLocationMeta({ districtId: node.id })
-        : node.level === MAP_LEVEL.Building
-          ? store.getLocationMeta({ poiId: `poi:${node.id.split(':')[1] || node.id}` })
-          : null;
-    const availability = (node.level === MAP_LEVEL.District || node.level === MAP_LEVEL.Building)
-      ? store.getLocationAvailability({ districtId, poiId })
-      : node.type === 'npc'
-        ? store.getNpcAvailability({ npcNodeId: node.id, locationNodeId: nav.contextId })
-      : null;
-
-    return {
-      ...node,
-      availability,
-      meta: {
-        ...node.meta,
-        locationMeta
-      }
-    };
-  });
-
-  const actions = getRestActionsForContext(store, nav, contextNode);
-
-  return renderMapLevelView({
-    config,
-    contextNode,
-    nodes,
-    actions,
-    phaseInfo: getPhasePresentation(store),
-    onNodeClick: (node) => handleMapNodeClick(node, store)
-  });
+function renderMapScreen() {
+  return renderPhoneCityMapScreen();
 }
 
 function renderScreenBody() {
@@ -239,7 +141,7 @@ function renderScreenBody() {
         });
       }
 
-      return renderMapScreen(store);
+      return renderMapScreen();
     }
   }
 
@@ -269,8 +171,22 @@ function render() {
     renderTopBar({ title: 'SillyRPG', breadcrumb, phaseInfo, onBack: back, onExit: exit, canGoBack }),
     Object.assign(document.createElement('div'), { className: 'sillyrpg-content' })
   );
-  box.lastChild.appendChild(renderScreenBody());
+  const screenNode = renderScreenBody();
+  if (activeScreenUnmount) {
+    activeScreenUnmount();
+    activeScreenUnmount = null;
+  }
+
+  box.lastChild.appendChild(screenNode);
+  if (typeof screenNode.__sillyOnUnmount === 'function') {
+    activeScreenUnmount = screenNode.__sillyOnUnmount;
+  }
+
   mountContent(box);
+
+  if (typeof screenNode.__sillyOnMount === 'function') {
+    screenNode.__sillyOnMount();
+  }
 }
 
 export function openApp() {
