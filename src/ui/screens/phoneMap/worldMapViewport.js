@@ -44,6 +44,19 @@ function createRegionPin({ GUI, region, onRegionOpen }) {
   return pin;
 }
 
+function getPointerPosition(pointerInfo) {
+  if (!pointerInfo) return null;
+  if (typeof pointerInfo.x === 'number' && typeof pointerInfo.y === 'number') {
+    return { x: pointerInfo.x, y: pointerInfo.y };
+  }
+
+  if (pointerInfo.event && typeof pointerInfo.event.clientX === 'number' && typeof pointerInfo.event.clientY === 'number') {
+    return { x: pointerInfo.event.clientX, y: pointerInfo.event.clientY };
+  }
+
+  return null;
+}
+
 export function createWorldMapViewport({
   GUI,
   mapTextureUrl,
@@ -69,7 +82,7 @@ export function createWorldMapViewport({
   mapLayer.background = 'transparent';
   mapLayer.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
   mapLayer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-  mapLayer.isPointerBlocker = false;
+  mapLayer.isPointerBlocker = true;
 
   const mapImage = new GUI.Image('phone-world-map-image', mapTextureUrl);
   mapImage.width = `${MAP_NATIVE_SIZE.width}px`;
@@ -111,10 +124,17 @@ export function createWorldMapViewport({
     didDrag: false
   };
 
-  viewport.onPointerDownObservable.add((pointerCoords) => {
+  const logMapPosition = () => {
+    console.log(`map position x=${Math.round(offsetX)}, y=${Math.round(offsetY)}`);
+  };
+
+  mapLayer.onPointerDownObservable.add((pointerCoords) => {
+    const pointer = getPointerPosition(pointerCoords);
+    if (!pointer) return;
+    console.log('map pointer down');
     dragState.isDragging = true;
-    dragState.startX = pointerCoords.x;
-    dragState.startY = pointerCoords.y;
+    dragState.startX = pointer.x;
+    dragState.startY = pointer.y;
     dragState.originX = offsetX;
     dragState.originY = offsetY;
     dragState.didDrag = false;
@@ -122,24 +142,40 @@ export function createWorldMapViewport({
 
   viewport.onPointerMoveObservable.add((pointerCoords) => {
     if (!dragState.isDragging) return;
+    const pointer = getPointerPosition(pointerCoords);
+    if (!pointer) return;
 
-    const dx = pointerCoords.x - dragState.startX;
-    const dy = pointerCoords.y - dragState.startY;
+    const dx = pointer.x - dragState.startX;
+    const dy = pointer.y - dragState.startY;
 
     if (Math.abs(dx) >= DRAG_THRESHOLD_PX || Math.abs(dy) >= DRAG_THRESHOLD_PX) {
+      if (!dragState.didDrag) {
+        console.log('map drag start');
+      }
       dragState.didDrag = true;
     }
 
     offsetX = clamp(dragState.originX + dx, xBounds.min, xBounds.max);
     offsetY = clamp(dragState.originY + dy, yBounds.min, yBounds.max);
     applyMapOffset();
+
+    if (dragState.didDrag) {
+      console.log(`map drag move dx=${Math.round(dx)}, dy=${Math.round(dy)}`);
+      logMapPosition();
+    }
   });
 
   const endDrag = () => {
+    if (!dragState.isDragging) return;
+    console.log('map drag end');
     if (dragState.didDrag) {
       suppressPinClicksUntil = Date.now() + CLICK_SUPPRESSION_MS;
     }
     dragState.isDragging = false;
+    offsetX = clamp(offsetX, xBounds.min, xBounds.max);
+    offsetY = clamp(offsetY, yBounds.min, yBounds.max);
+    applyMapOffset();
+    logMapPosition();
   };
 
   viewport.onPointerUpObservable.add(endDrag);
