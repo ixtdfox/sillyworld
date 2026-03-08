@@ -8,12 +8,12 @@ const PHONE_SIZE = Object.freeze({ width: 558, height: 950, scale: 0.78 });
 
 function createButtonCallbacks() {
   return {
-    map: () => console.debug('[SillyRPG] MAP pressed (stub).'),
-    log: () => console.debug('[SillyRPG] LOG pressed (stub).'),
-    msg: () => console.debug('[SillyRPG] MSG pressed (stub).'),
-    inv: () => console.debug('[SillyRPG] INV pressed (stub).'),
-    acceptCall: () => console.debug('[SillyRPG] Green call button pressed (stub).'),
-    endCall: () => console.debug('[SillyRPG] Red call button pressed (stub).')
+    map: () => console.log('MAP clicked'),
+    log: () => console.log('LOG clicked'),
+    msg: () => console.log('MSG clicked'),
+    inv: () => console.log('INV clicked'),
+    acceptCall: () => console.log('CALL_ACCEPT clicked'),
+    endCall: () => console.log('CALL_END clicked')
   };
 }
 
@@ -42,6 +42,8 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
   });
   phoneFrame.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
   phoneFrame.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+  phoneFrame.isPointerBlocker = false;
+  phoneFrame.zIndex = 10;
 
   const menuButtonPlacement = [
     { id: 'map', top: 182 },
@@ -63,6 +65,7 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
     left: 44,
     top: 729
   });
+  statusLocSig.zIndex = 30;
 
   const statusMoneyTime = createAtlasImage({
     GUI,
@@ -73,6 +76,7 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
     left: 174,
     top: 729
   });
+  statusMoneyTime.zIndex = 30;
 
   for (const entry of menuButtonPlacement) {
     const buttonRegion = PHONE_UI_ATLAS.menuButtons[entry.id];
@@ -87,6 +91,7 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
       top: entry.top,
       onClick: callbacks[entry.id]
     });
+    menuButton.zIndex = 20;
     phoneLayer.addControl(menuButton);
   }
 
@@ -101,6 +106,7 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
     top: 797,
     onClick: callbacks.acceptCall
   });
+  greenCallButton.zIndex = 20;
 
   const redCallButton = createInteractiveAtlasButton({
     GUI,
@@ -113,6 +119,7 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
     top: 797,
     onClick: callbacks.endCall
   });
+  redCallButton.zIndex = 20;
 
   phoneLayer.addControl(phoneFrame);
   phoneLayer.addControl(statusLocSig);
