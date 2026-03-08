@@ -3,8 +3,8 @@ import { createInteractiveAtlasButton, createAtlasImage } from '../../components
 import { ensureBabylonRuntime, createBabylonUiRuntime } from '../../rendering/babylonRuntime.js';
 import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.js';
 
-const SCREEN_SIZE = Object.freeze({ width: 1280, height: 900 });
-const PHONE_SIZE = Object.freeze({ width: 558, height: 950, scale: 0.78 });
+const SCREEN_SIZE = Object.freeze({ width: 1280, height: 920 });
+const PHONE_SIZE = Object.freeze({ width: 555, height: 918, scale: 0.78 });
 
 function createButtonCallbacks() {
   return {
@@ -17,14 +17,28 @@ function createButtonCallbacks() {
   };
 }
 
+function createPhoneScaler(phoneWidth, phoneHeight) {
+  const scaleX = phoneWidth / PHONE_SIZE.width;
+  const scaleY = phoneHeight / PHONE_SIZE.height;
+
+  return {
+    x: (value) => Math.round(value * scaleX),
+    y: (value) => Math.round(value * scaleY),
+    w: (value) => Math.round(value * scaleX),
+    h: (value) => Math.round(value * scaleY)
+  };
+}
+
 function buildPhoneGui({ GUI, textureUrl, callbacks }) {
   const uiRoot = new GUI.Rectangle('phone-root');
   uiRoot.width = `${SCREEN_SIZE.width}px`;
   uiRoot.height = `${SCREEN_SIZE.height}px`;
   uiRoot.thickness = 0;
+  uiRoot.background = '#FFF';
 
   const phoneWidth = Math.round(PHONE_SIZE.width * PHONE_SIZE.scale);
   const phoneHeight = Math.round(PHONE_SIZE.height * PHONE_SIZE.scale);
+  const scale = createPhoneScaler(phoneWidth, phoneHeight);
 
   const phoneLayer = new GUI.Rectangle('phone-layer');
   phoneLayer.width = `${phoneWidth}px`;
@@ -46,24 +60,24 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
   phoneFrame.zIndex = 10;
 
   const menuButtonPlacement = [
-    { id: 'map', top: 182 },
-    { id: 'log', top: 227 },
-    { id: 'msg', top: 272 },
-    { id: 'inv', top: 317 }
+    { id: 'map', top: 180 },
+    { id: 'log', top: 225 },
+    { id: 'msg', top: 268 },
+    { id: 'inv', top: 309 }
   ];
 
-  const menuButtonWidth = 50;
-  const menuButtonHeight = 32;
-  const menuLeft = 20;
+  const menuButtonWidth = 56;
+  const menuButtonHeight = 36;
+  const menuLeft = 6;
 
   const statusLocSig = createAtlasImage({
     GUI,
     textureUrl,
     region: PHONE_UI_ATLAS.statusStrip.locSig,
-    width: 128,
-    height: 19,
-    left: 44,
-    top: 729
+    width: scale.w(218),
+    height: scale.h(40),
+    left: scale.x(58),
+    top: scale.y(689)
   });
   statusLocSig.zIndex = 30;
 
@@ -71,10 +85,10 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
     GUI,
     textureUrl,
     region: PHONE_UI_ATLAS.statusStrip.moneyTime,
-    width: 206,
-    height: 19,
-    left: 174,
-    top: 729
+    width: scale.w(228),
+    height: scale.h(40),
+    left: scale.x(274),
+    top: scale.y(690)
   });
   statusMoneyTime.zIndex = 30;
 
@@ -85,10 +99,10 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
       textureUrl,
       normalRegion: buttonRegion.normal,
       pressedRegion: buttonRegion.pressed,
-      width: menuButtonWidth,
-      height: menuButtonHeight,
-      left: menuLeft,
-      top: entry.top,
+      width: scale.w(menuButtonWidth),
+      height: scale.h(menuButtonHeight),
+      left: scale.x(menuLeft),
+      top: scale.y(entry.top),
       onClick: callbacks[entry.id]
     });
     menuButton.zIndex = 20;
@@ -100,26 +114,26 @@ function buildPhoneGui({ GUI, textureUrl, callbacks }) {
     textureUrl,
     normalRegion: PHONE_UI_ATLAS.callButtons.green.normal,
     pressedRegion: PHONE_UI_ATLAS.callButtons.green.pressed,
-    width: 132,
-    height: 66,
-    left: 28,
-    top: 797,
+    width: scale.w(135),
+    height: scale.h(60),
+    left: scale.x(42),
+    top: scale.y(749),
     onClick: callbacks.acceptCall
   });
-  greenCallButton.zIndex = 20;
+  greenCallButton.zIndex = 40;
 
   const redCallButton = createInteractiveAtlasButton({
     GUI,
     textureUrl,
     normalRegion: PHONE_UI_ATLAS.callButtons.red.normal,
     pressedRegion: PHONE_UI_ATLAS.callButtons.red.pressed,
-    width: 132,
-    height: 66,
-    left: 399,
-    top: 797,
+    width: scale.w(135),
+    height: scale.h(60),
+    left: scale.x(385),
+    top: scale.y(749),
     onClick: callbacks.endCall
   });
-  redCallButton.zIndex = 20;
+  redCallButton.zIndex = 40;
 
   phoneLayer.addControl(phoneFrame);
   phoneLayer.addControl(statusLocSig);
@@ -166,12 +180,12 @@ export function renderPhoneCityMapScreen() {
 
   wrap.__sillyOnMount = () => {
     mountPhoneScene(canvas)
-      .then((dispose) => {
-        cleanup = dispose;
-      })
-      .catch((error) => {
-        console.error('[SillyRPG] Failed to mount Babylon phone UI.', error);
-      });
+        .then((dispose) => {
+          cleanup = dispose;
+        })
+        .catch((error) => {
+          console.error('[SillyRPG] Failed to mount Babylon phone UI.', error);
+        });
   };
 
   wrap.__sillyOnUnmount = () => {
