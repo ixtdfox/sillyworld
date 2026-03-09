@@ -89,3 +89,34 @@ lerna-debug.log
 # System Files
 .DS_Store
 Thumbs.db
+
+
+# Editor / IDE
+assets/.bjseditor/
+assets/.vscode/
+
+# Babylon editor project files
+assets/project.bjseditor
+
+# Blend backup files
+assets/*.blend1
+
+# Krita/temp backup files
+assets/*~
+
+# Local frontend/dev environment junk inside assets
+assets/next-env.d.ts
+assets/next.config.js
+assets/package.json
+assets/postcss.config.js
+assets/tailwind.config.ts
+assets/tsconfig.json
+assets/src/
+assets/public/
+
+# Nested accidental asset dumps
+assets/assets/
+
+
+# Docs that are probably editor-generated / local
+assets/README.md
