@@ -94,6 +94,7 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl }) {
   phoneFrame.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
   phoneFrame.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
   phoneFrame.isPointerBlocker = false;
+  phoneFrame.isHitTestVisible = false; // <-- важно
   phoneFrame.zIndex = 10;
 
   const phoneDisplay = createPhoneDisplayLayer({ GUI, scale, mapTextureUrl });
@@ -122,6 +123,8 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl }) {
     top: scale.y(689)
   });
   statusLocSig.zIndex = 30;
+  statusLocSig.isPointerBlocker = false;
+  statusLocSig.isHitTestVisible = false;
 
   const statusMoneyTime = createAtlasImage({
     GUI,
@@ -133,6 +136,8 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl }) {
     top: scale.y(690)
   });
   statusMoneyTime.zIndex = 30;
+  statusMoneyTime.isPointerBlocker = false;
+  statusMoneyTime.isHitTestVisible = false;
 
   for (const entry of menuButtonPlacement) {
     const buttonRegion = PHONE_UI_ATLAS.menuButtons[entry.id];

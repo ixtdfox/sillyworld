@@ -88,8 +88,10 @@ export function createWorldMapViewport({
   dragSurface.width = `${viewportWidth}px`;
   dragSurface.height = `${viewportHeight}px`;
   dragSurface.thickness = 0;
-  dragSurface.background = 'transparent';
-  dragSurface.alpha = 0.01;
+  //dragSurface.background = 'transparent';
+  dragSurface.background = '#00000001';
+  dragSurface.isHitTestVisible = true;
+  //dragSurface.alpha = 0.01;
   dragSurface.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
   dragSurface.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
   dragSurface.isPointerBlocker = true;
@@ -146,15 +148,21 @@ export function createWorldMapViewport({
 
   const logPointer = (phase, pointerCoords) => {
     const pointer = getPointerPosition(pointerCoords);
-    const details = pointer ? `x=${Math.round(pointer.x)}, y=${Math.round(pointer.y)}` : 'x=unknown, y=unknown';
-    console.log(`[world-map] ${phase} on=${getControlName(pointerCoords)} ${details}`);
     return pointer;
   };
 
   const getRegionIdAtPointer = (pointer) => {
     if (!pointer) return null;
-    const mapX = pointer.x - offsetX;
-    const mapY = pointer.y - offsetY;
+
+    const viewportLeft = viewport._currentMeasure.left;
+    const viewportTop = viewport._currentMeasure.top;
+
+    const localX = pointer.x - viewportLeft;
+    const localY = pointer.y - viewportTop;
+
+    const mapX = localX - offsetX;
+    const mapY = localY - offsetY;
+
     for (let index = pinsByRegion.length - 1; index >= 0; index -= 1) {
       const pin = pinsByRegion[index];
       const dx = mapX - pin.centerX;
@@ -186,33 +194,22 @@ export function createWorldMapViewport({
     const dy = pointer.y - dragState.startY;
 
     if (Math.abs(dx) >= DRAG_THRESHOLD_PX || Math.abs(dy) >= DRAG_THRESHOLD_PX) {
-      if (!dragState.didDrag) {
-        console.log(`[world-map] drag start on=${getControlName(pointerCoords)} startX=${Math.round(dragState.startX)}, startY=${Math.round(dragState.startY)}`);
-      }
       dragState.didDrag = true;
     }
 
     offsetX = clamp(dragState.originX + dx, xBounds.min, xBounds.max);
     offsetY = clamp(dragState.originY + dy, yBounds.min, yBounds.max);
     applyMapOffset();
-
-    if (dragState.didDrag) {
-      console.log(`[world-map] drag move on=${getControlName(pointerCoords)} dx=${Math.round(dx)}, dy=${Math.round(dy)}`);
-      console.log(`[world-map] drag offsets x=${Math.round(offsetX)}, y=${Math.round(offsetY)}`);
-    }
   });
 
   const endDrag = (pointerCoords, reason) => {
     if (!dragState.isDragging) return;
-    console.log(`[world-map] ${reason} on=${getControlName(pointerCoords)}`);
     const pointer = getPointerPosition(pointerCoords);
     if (dragState.didDrag) {
       suppressPinClicksUntil = Date.now() + CLICK_SUPPRESSION_MS;
-      console.log(`[world-map] drag end suppressed pin clicks until=${suppressPinClicksUntil}`);
     } else {
       const regionId = getRegionIdAtPointer(pointer);
       if (regionId && Date.now() >= suppressPinClicksUntil) {
-        console.log(`[world-map] pin click resolved from drag surface region=${regionId}`);
         onRegionOpen(regionId);
       }
     }
@@ -220,7 +217,6 @@ export function createWorldMapViewport({
     offsetX = clamp(offsetX, xBounds.min, xBounds.max);
     offsetY = clamp(offsetY, yBounds.min, yBounds.max);
     applyMapOffset();
-    console.log(`[world-map] drag end offsets x=${Math.round(offsetX)}, y=${Math.round(offsetY)}`);
   };
 
   dragSurface.onPointerUpObservable.add((pointerCoords) => {
@@ -236,3 +232,6 @@ export function createWorldMapViewport({
   viewport.addControl(dragSurface);
   return viewport;
 }
+
+//c: x:333, y:0 s: x:133, y:135
+//start: x:1060, y:160
