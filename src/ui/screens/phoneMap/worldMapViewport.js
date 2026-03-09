@@ -20,7 +20,14 @@ function getClampBounds(viewportSize, contentSize) {
   return { min: viewportSize - contentSize, max: 0 };
 }
 
-function createRegionPin({ GUI, region, onRegionOpen, suppressPinClickUntilRef, isDraggingRef }) {
+function createRegionPin({
+  GUI,
+  region,
+  onRegionOpen,
+  suppressPinClickUntilRef,
+  isDraggingRef,
+  onSuppressionEnd
+}) {
   const pin = new GUI.Ellipse(`map-pin-${region.regionId}`);
   pin.width = `${PIN_SIZE}px`;
   pin.height = `${PIN_SIZE}px`;
@@ -50,9 +57,17 @@ function createRegionPin({ GUI, region, onRegionOpen, suppressPinClickUntilRef, 
   });
 
   pin.onPointerClickObservable.add(() => {
-    if (isDraggingRef.value || Date.now() < suppressPinClickUntilRef.value) {
+    const now = Date.now();
+    if (isDraggingRef.value || now < suppressPinClickUntilRef.value) {
+      console.log(`pin click suppressed for regionId=${region.regionId}`);
       return;
     }
+
+    if (typeof onSuppressionEnd === 'function') {
+      onSuppressionEnd(now);
+    }
+
+    console.log(`pin click allowed for regionId=${region.regionId}`);
     console.log(`pin click: ${region.regionId}`);
     onRegionOpen(region.regionId, region.label);
   });
@@ -109,11 +124,24 @@ export function createWorldMapViewport({
   mapImage.stretch = GUI.Image.STRETCH_FILL;
   mapLayer.addControl(mapImage);
 
-  const suppressPinClicksUntilRef = { value: 0 };
+  const suppressPinClickUntilRef = { value: 0 };
+  const suppressionLoggedRef = { value: false };
   const isDraggingRef = { value: false };
 
+  const maybeLogSuppressionEnd = (now = Date.now()) => {
+    if (!suppressionLoggedRef.value) return;
+    if (now < suppressPinClickUntilRef.value) return;
+    suppressionLoggedRef.value = false;
+    console.log(`pin click suppression end at=${now}`);
+  };
+
   const openRegion = (regionId, regionLabel) => {
-    if (Date.now() < suppressPinClicksUntilRef.value) return;
+    const now = Date.now();
+    if (now < suppressPinClickUntilRef.value) {
+      console.log(`pin click suppressed for regionId=${regionId}`);
+      return;
+    }
+    maybeLogSuppressionEnd(now);
     console.log(`selected pin: ${regionId}${regionLabel ? ` (${regionLabel})` : ''}`);
     onRegionOpen(regionId);
   };
@@ -124,7 +152,8 @@ export function createWorldMapViewport({
       region,
       onRegionOpen: openRegion,
       suppressPinClickUntilRef,
-      isDraggingRef
+      isDraggingRef,
+      onSuppressionEnd: maybeLogSuppressionEnd
     }));
   }
 
@@ -182,7 +211,11 @@ export function createWorldMapViewport({
   const endDrag = (pointerCoords) => {
     if (!dragState.isDragging) return;
     if (dragState.didDrag) {
-      suppressPinClicksUntilRef.value = Date.now() + CLICK_SUPPRESSION_MS;
+      suppressPinClickUntilRef.value = Date.now() + CLICK_SUPPRESSION_MS;
+      suppressionLoggedRef.value = true;
+      console.log(`pin click suppression start until=${suppressPinClickUntilRef.value}`);
+    } else {
+      maybeLogSuppressionEnd();
     }
 
     dragState.isDragging = false;
