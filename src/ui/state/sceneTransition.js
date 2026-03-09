@@ -1,8 +1,7 @@
 export function createSceneTransitionController({ onEnterScene }) {
   return {
     onMapPinClick(regionId) {
-      console.log('[SillyRPG] Map pin clicked:', regionId);
-      console.log('[SillyRPG] Scene transition start.');
+      console.log(`scene transition start from pin: ${regionId}`);
       onEnterScene({ regionId });
     }
   };
