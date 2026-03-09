@@ -5,6 +5,7 @@ import { attachPlayerMovementController } from './playerMovementController.js';
 import { loadPlayerCharacter } from './playerCharacterLoader.js';
 import { spawnPlayerCharacter } from './playerSpawn.js';
 import { attachGroundClickInput } from './sceneGroundClickInput.js';
+import { attachGameplayIsometricCamera } from './gameplayCameraController.js';
 import { loadWorldScene } from './worldSceneLoader.js';
 
 export async function mountSceneRuntime(canvas) {
@@ -12,6 +13,7 @@ export async function mountSceneRuntime(canvas) {
   const runtime = createBabylonWorldRuntime(canvas);
   let detachGroundClickInput = null;
   let detachPlayerMovementController = null;
+  let detachGameplayCameraController = null;
 
   try {
     await loadWorldScene(runtime);
@@ -19,6 +21,7 @@ export async function mountSceneRuntime(canvas) {
     const playerCharacter = await loadPlayerCharacter(runtime);
     spawnPlayerCharacter(runtime, playerCharacter);
     const playerAnimationController = createPlayerAnimationController(playerCharacter);
+    detachGameplayCameraController = attachGameplayIsometricCamera(runtime, playerCharacter.rootNode);
 
     const movementTargetState = createMovementTargetState();
     detachGroundClickInput = attachGroundClickInput(runtime, movementTargetState);
@@ -28,6 +31,7 @@ export async function mountSceneRuntime(canvas) {
   } catch (error) {
     detachGroundClickInput?.();
     detachPlayerMovementController?.();
+    detachGameplayCameraController?.();
     runtime.dispose();
     throw error;
   }
@@ -35,6 +39,7 @@ export async function mountSceneRuntime(canvas) {
   return () => {
     detachGroundClickInput?.();
     detachPlayerMovementController?.();
+    detachGameplayCameraController?.();
     runtime.dispose();
   };
 }

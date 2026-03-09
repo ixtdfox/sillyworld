@@ -101,16 +101,8 @@ export function createBabylonWorldRuntime(canvas) {
   const scene = new BABYLON.Scene(engine);
   scene.clearColor = new BABYLON.Color4(0.04, 0.04, 0.06, 1);
 
-  const camera = new BABYLON.ArcRotateCamera(
-    'worldCamera',
-    -Math.PI / 2,
-    Math.PI / 2.3,
-    10,
-    new BABYLON.Vector3(0, 0, 0),
-    scene
-  );
-  camera.attachControl(canvas, true);
-  camera.wheelDeltaPercentage = 0.01;
+  const camera = new BABYLON.FreeCamera('worldBootstrapCamera', new BABYLON.Vector3(0, 8, -10), scene);
+  camera.setTarget(new BABYLON.Vector3(0, 0, 0));
 
   const hemi = new BABYLON.HemisphericLight('worldHemiLight', new BABYLON.Vector3(0, 1, 0), scene);
   hemi.intensity = 0.8;
