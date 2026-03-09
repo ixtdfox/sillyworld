@@ -84,7 +84,7 @@ export function createWorldMapViewport({
   mapLayer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
   mapLayer.isPointerBlocker = true;
 
-  const dragSurface = GUI.Button.CreateSimpleButton('phone-map-drag-surface', '');
+  const dragSurface = new GUI.Rectangle('phone-map-drag-surface');
   dragSurface.width = `${viewportWidth}px`;
   dragSurface.height = `${viewportHeight}px`;
   dragSurface.thickness = 0;
@@ -121,10 +121,8 @@ export function createWorldMapViewport({
   let offsetY = clamp(getCenteredOffset(viewportHeight, MAP_NATIVE_SIZE.height), yBounds.min, yBounds.max);
 
   const applyMapOffset = () => {
-    mapLayer.floatLeft = offsetX;
-    mapLayer.floatTop = offsetY;
-    mapLayer.left = `${Math.round(mapLayer.floatLeft)}px`;
-    mapLayer.top = `${Math.round(mapLayer.floatTop)}px`;
+    mapLayer.leftInPixels = Math.round(offsetX);
+    mapLayer.topInPixels = Math.round(offsetY);
   };
   applyMapOffset();
 
