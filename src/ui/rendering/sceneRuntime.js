@@ -1,19 +1,19 @@
-import { resolveAsset } from '../../st_bridge/asset.js';
 import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.js';
-
-const SCENE_FILE = 'assets/scene_test.glb';
+import { loadPlayerCharacter } from './playerCharacterLoader.js';
+import { spawnPlayerCharacter } from './playerSpawn.js';
+import { loadWorldScene } from './worldSceneLoader.js';
 
 export async function mountSceneRuntime(canvas) {
   await ensureBabylonRuntime();
   const runtime = createBabylonWorldRuntime(canvas);
 
-  console.log('[SillyRPG] Scene GLB loading start:', SCENE_FILE);
-
   try {
-    await runtime.BABYLON.SceneLoader.AppendAsync('', resolveAsset(SCENE_FILE), runtime.scene);
-    console.log('[SillyRPG] Scene GLB loading success:', SCENE_FILE);
+    await loadWorldScene(runtime);
+
+    const playerCharacter = await loadPlayerCharacter(runtime);
+    spawnPlayerCharacter(runtime, playerCharacter);
   } catch (error) {
-    console.error('[SillyRPG] Scene GLB loading failure:', SCENE_FILE, error);
+    runtime.dispose();
     throw error;
   }
 
