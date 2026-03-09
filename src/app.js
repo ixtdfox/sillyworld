@@ -3,12 +3,21 @@ import { renderTopBar } from './ui/components/topBar.js';
 import { renderMainMenu, renderSettingsStub } from './ui/screens/mainMenu.js';
 import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionInterstitial.js';
 import { renderPhoneCityMapScreen } from './ui/screens/phoneMap/phoneCityMapScreen.js';
+import { renderSceneViewScreen } from './ui/screens/sceneViewScreen.js';
 import { MAP_LEVEL, SAVE_KEY, worldStore } from './world/index.js';
 import { createNavigationStore } from './ui/state/navigationStore.js';
+import { createSceneTransitionController } from './ui/state/sceneTransition.js';
 
 const appState = { seed: null };
 const navigationStore = createNavigationStore();
 let activeScreenUnmount = null;
+
+const sceneTransitionController = createSceneTransitionController({
+  onEnterScene: () => {
+    navigationStore.setScreen('scene');
+    render();
+  }
+});
 
 const PHASE_LABELS = Object.freeze({
   morning: 'Morning',
@@ -66,6 +75,12 @@ function back() {
     return;
   }
 
+  if (nav.screen === 'scene') {
+    navigationStore.setScreen('map');
+    render();
+    return;
+  }
+
   if (nav.screen === 'map') {
     const moved = navigationStore.navigateBackLevel();
     if (moved) render();
@@ -119,12 +134,18 @@ async function loadAndResumeGame() {
 }
 
 function renderMapScreen() {
-  return renderPhoneCityMapScreen();
+  return renderPhoneCityMapScreen({
+    onRegionOpen: (regionId) => sceneTransitionController.onMapPinClick(regionId)
+  });
 }
 
 function renderScreenBody() {
   const nav = navigationStore.getState();
   if (nav.screen === 'settings') return renderSettingsStub({ onBack: back });
+
+  if (nav.screen === 'scene') {
+    return renderSceneViewScreen();
+  }
 
   if (nav.screen === 'map') {
     const store = getStore();

@@ -242,3 +242,13 @@
   image-rendering: pixelated;
   border-radius: 10px;
 }
+
+#sillyrpg-root .sillyrpg-scene-view-screen {
+  width: min(920px, 100%);
+  height: min(78vh, 760px);
+}
+
+#sillyrpg-root .sillyrpg-scene-canvas {
+  border-radius: 12px;
+  background: #05070d;
+}
