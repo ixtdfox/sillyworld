@@ -4,8 +4,18 @@ const DEFAULT_STOP_DISTANCE = 0.1;
 export function attachPlayerMovementController(runtime, playerCharacter, movementTargetState, options = {}) {
   const moveSpeed = options.moveSpeed ?? DEFAULT_MOVE_SPEED;
   const stopDistance = options.stopDistance ?? DEFAULT_STOP_DISTANCE;
+  const onMovingStateChange = options.onMovingStateChange ?? (() => {});
 
   let isMoving = false;
+
+  const setMoving = (nextMovingState) => {
+    if (isMoving === nextMovingState) {
+      return;
+    }
+
+    isMoving = nextMovingState;
+    onMovingStateChange(isMoving);
+  };
 
   const beforeRenderObserver = runtime.scene.onBeforeRenderObservable.add(() => {
     if (!movementTargetState.hasTarget()) {
@@ -19,14 +29,14 @@ export function attachPlayerMovementController(runtime, playerCharacter, movemen
     const distanceToTarget = toTarget.length();
 
     if (!isMoving) {
-      isMoving = true;
+      setMoving(true);
       console.log('[SillyRPG] Movement start');
     }
 
     if (distanceToTarget <= stopDistance) {
       currentPosition.copyFrom(target);
       movementTargetState.clearTarget();
-      isMoving = false;
+      setMoving(false);
       console.log('[SillyRPG] Movement stop');
       return;
     }
