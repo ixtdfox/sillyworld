@@ -20,7 +20,7 @@ function getClampBounds(viewportSize, contentSize) {
   return { min: viewportSize - contentSize, max: 0 };
 }
 
-function createRegionPin({ GUI, region, onRegionOpen }) {
+function createRegionPin({ GUI, region, onRegionOpen, suppressPinClickUntilRef, isDraggingRef }) {
   const pin = new GUI.Ellipse(`map-pin-${region.regionId}`);
   pin.width = `${PIN_SIZE}px`;
   pin.height = `${PIN_SIZE}px`;
@@ -32,6 +32,7 @@ function createRegionPin({ GUI, region, onRegionOpen }) {
   pin.left = `${Math.round(region.x - PIN_SIZE / 2)}px`;
   pin.top = `${Math.round(region.y - PIN_SIZE / 2)}px`;
   pin.isPointerBlocker = true;
+  pin.zIndex = 20;
 
   const label = new GUI.TextBlock(`map-pin-label-${region.regionId}`, region.label);
   label.color = '#FFF';
@@ -40,7 +41,22 @@ function createRegionPin({ GUI, region, onRegionOpen }) {
   label.top = '-28px';
   pin.addControl(label);
 
-  pin.onPointerClickObservable.add(() => onRegionOpen(region.regionId));
+  pin.onPointerDownObservable.add(() => {
+    console.log(`pin pointer down: ${region.regionId}`);
+  });
+
+  pin.onPointerUpObservable.add(() => {
+    console.log(`pin pointer up: ${region.regionId}`);
+  });
+
+  pin.onPointerClickObservable.add(() => {
+    if (isDraggingRef.value || Date.now() < suppressPinClickUntilRef.value) {
+      return;
+    }
+    console.log(`pin click: ${region.regionId}`);
+    onRegionOpen(region.regionId, region.label);
+  });
+
   return pin;
 }
 
@@ -84,36 +100,32 @@ export function createWorldMapViewport({
   mapLayer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
   mapLayer.isPointerBlocker = true;
 
-  const dragSurface = new GUI.Rectangle('phone-map-drag-surface');
-  dragSurface.width = `${viewportWidth}px`;
-  dragSurface.height = `${viewportHeight}px`;
-  dragSurface.thickness = 0;
-  //dragSurface.background = 'transparent';
-  dragSurface.background = '#00000001';
-  dragSurface.isHitTestVisible = true;
-  //dragSurface.alpha = 0.01;
-  dragSurface.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-  dragSurface.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-  dragSurface.isPointerBlocker = true;
-  dragSurface.zIndex = 10;
-
   const mapImage = new GUI.Image('phone-world-map-image', mapTextureUrl);
   mapImage.width = `${MAP_NATIVE_SIZE.width}px`;
   mapImage.height = `${MAP_NATIVE_SIZE.height}px`;
   mapImage.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
   mapImage.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-  mapImage.isPointerBlocker = false;
+  mapImage.isPointerBlocker = true;
   mapImage.stretch = GUI.Image.STRETCH_FILL;
   mapLayer.addControl(mapImage);
 
-  let suppressPinClicksUntil = 0;
-  const openRegion = (regionId) => {
-    if (Date.now() < suppressPinClicksUntil) return;
+  const suppressPinClicksUntilRef = { value: 0 };
+  const isDraggingRef = { value: false };
+
+  const openRegion = (regionId, regionLabel) => {
+    if (Date.now() < suppressPinClicksUntilRef.value) return;
+    console.log(`selected pin: ${regionId}${regionLabel ? ` (${regionLabel})` : ''}`);
     onRegionOpen(regionId);
   };
 
   for (const region of regions) {
-    mapLayer.addControl(createRegionPin({ GUI, region, onRegionOpen: openRegion }));
+    mapLayer.addControl(createRegionPin({
+      GUI,
+      region,
+      onRegionOpen: openRegion,
+      suppressPinClickUntilRef,
+      isDraggingRef
+    }));
   }
 
   const xBounds = getClampBounds(viewportWidth, MAP_NATIVE_SIZE.width);
@@ -137,47 +149,11 @@ export function createWorldMapViewport({
     didDrag: false
   };
 
-  const pinsByRegion = regions.map((region) => ({
-    regionId: region.regionId,
-    centerX: region.x,
-    centerY: region.y,
-    radius: PIN_SIZE / 2
-  }));
-
-  const getControlName = (pointerCoords) => pointerCoords?.currentTarget?.name || dragSurface.name;
-
-  const logPointer = (phase, pointerCoords) => {
+  mapImage.onPointerDownObservable.add((pointerCoords) => {
     const pointer = getPointerPosition(pointerCoords);
-    return pointer;
-  };
-
-  const getRegionIdAtPointer = (pointer) => {
-    if (!pointer) return null;
-
-    const viewportLeft = viewport._currentMeasure.left;
-    const viewportTop = viewport._currentMeasure.top;
-
-    const localX = pointer.x - viewportLeft;
-    const localY = pointer.y - viewportTop;
-
-    const mapX = localX - offsetX;
-    const mapY = localY - offsetY;
-
-    for (let index = pinsByRegion.length - 1; index >= 0; index -= 1) {
-      const pin = pinsByRegion[index];
-      const dx = mapX - pin.centerX;
-      const dy = mapY - pin.centerY;
-      if ((dx * dx) + (dy * dy) <= (pin.radius * pin.radius)) {
-        return pin.regionId;
-      }
-    }
-    return null;
-  };
-
-  dragSurface.onPointerDownObservable.add((pointerCoords) => {
-    const pointer = logPointer('pointer down', pointerCoords);
     if (!pointer) return;
     dragState.isDragging = true;
+    isDraggingRef.value = false;
     dragState.startX = pointer.x;
     dragState.startY = pointer.y;
     dragState.originX = offsetX;
@@ -185,8 +161,8 @@ export function createWorldMapViewport({
     dragState.didDrag = false;
   });
 
-  dragSurface.onPointerMoveObservable.add((pointerCoords) => {
-    const pointer = logPointer('pointer move', pointerCoords);
+  mapImage.onPointerMoveObservable.add((pointerCoords) => {
+    const pointer = getPointerPosition(pointerCoords);
     if (!dragState.isDragging) return;
     if (!pointer) return;
 
@@ -195,6 +171,7 @@ export function createWorldMapViewport({
 
     if (Math.abs(dx) >= DRAG_THRESHOLD_PX || Math.abs(dy) >= DRAG_THRESHOLD_PX) {
       dragState.didDrag = true;
+      isDraggingRef.value = true;
     }
 
     offsetX = clamp(dragState.originX + dx, xBounds.min, xBounds.max);
@@ -202,34 +179,27 @@ export function createWorldMapViewport({
     applyMapOffset();
   });
 
-  const endDrag = (pointerCoords, reason) => {
+  const endDrag = (pointerCoords) => {
     if (!dragState.isDragging) return;
-    const pointer = getPointerPosition(pointerCoords);
     if (dragState.didDrag) {
-      suppressPinClicksUntil = Date.now() + CLICK_SUPPRESSION_MS;
-    } else {
-      const regionId = getRegionIdAtPointer(pointer);
-      if (regionId && Date.now() >= suppressPinClicksUntil) {
-        onRegionOpen(regionId);
-      }
+      suppressPinClicksUntilRef.value = Date.now() + CLICK_SUPPRESSION_MS;
     }
+
     dragState.isDragging = false;
+    isDraggingRef.value = false;
     offsetX = clamp(offsetX, xBounds.min, xBounds.max);
     offsetY = clamp(offsetY, yBounds.min, yBounds.max);
     applyMapOffset();
   };
 
-  dragSurface.onPointerUpObservable.add((pointerCoords) => {
-    logPointer('pointer up', pointerCoords);
-    endDrag(pointerCoords, 'drag end');
+  mapImage.onPointerUpObservable.add((pointerCoords) => {
+    endDrag(pointerCoords);
   });
-  dragSurface.onPointerOutObservable.add((pointerCoords) => {
-    logPointer('pointer out', pointerCoords);
-    endDrag(pointerCoords, 'drag out');
+  mapImage.onPointerOutObservable.add((pointerCoords) => {
+    endDrag(pointerCoords);
   });
 
   viewport.addControl(mapLayer);
-  viewport.addControl(dragSurface);
   return viewport;
 }
 
