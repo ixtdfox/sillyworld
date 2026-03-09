@@ -5,6 +5,7 @@ import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.js';
 import { PHONE_DISPLAY_BOUNDS } from './phoneDisplayLayout.js';
 import { WORLD_MAP_REGIONS } from './worldMapRegions.js';
 import { createWorldMapViewport } from './worldMapViewport.js';
+import { createInventoryScreen } from './inventory/inventoryScreen.js';
 
 const SCREEN_SIZE = Object.freeze({ width: 1280, height: 920 });
 const PHONE_SIZE = Object.freeze({ width: 555, height: 918, scale: 0.78 });
@@ -47,10 +48,30 @@ function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl }) {
   mapViewport.isVisible = false;
   displayArea.addControl(mapViewport);
 
+  const inventoryViewport = createInventoryScreen({
+    GUI,
+    textureUrl: resolveAsset('assets/sprites.png'),
+    scale,
+    viewportWidth: scale.w(PHONE_DISPLAY_BOUNDS.width),
+    viewportHeight: scale.h(PHONE_DISPLAY_BOUNDS.height)
+  });
+  inventoryViewport.isVisible = false;
+  displayArea.addControl(inventoryViewport);
+
+  const hideAllScreens = () => {
+    mapViewport.isVisible = false;
+    inventoryViewport.isVisible = false;
+  };
+
   return {
     displayArea,
     openMap: () => {
+      hideAllScreens();
       mapViewport.isVisible = true;
+    },
+    openInventory: () => {
+      hideAllScreens();
+      inventoryViewport.isVisible = true;
     }
   };
 }
@@ -60,7 +81,10 @@ function createButtonCallbacks({ phoneDisplay }) {
     map: () => phoneDisplay.openMap(),
     log: () => console.log('LOG clicked'),
     msg: () => console.log('MSG clicked'),
-    inv: () => console.log('INV clicked'),
+    inv: () => {
+      console.log('Open inventory screen');
+      phoneDisplay.openInventory();
+    },
     acceptCall: () => console.log('CALL_ACCEPT clicked'),
     endCall: () => console.log('CALL_END clicked')
   };
