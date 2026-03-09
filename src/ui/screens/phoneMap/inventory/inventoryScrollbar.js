@@ -11,25 +11,61 @@ export function createInventoryScrollbar({
   maxScroll,
   onScroll
 }) {
-  const slider = new GUI.Slider('inventory-scrollbar');
+  const control = new GUI.Rectangle('inventory-scrollbar-root');
+  control.width = `${width}px`;
+  control.height = `${viewportHeight}px`;
+  control.left = `${left}px`;
+  control.top = `${top}px`;
+  control.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+  control.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
+  control.thickness = 1;
+  control.color = '#0E1218';
+  control.background = '#1F2530';
+  control.isPointerBlocker = true;
+  control.zIndex = 55;
+
+  const thumbMinHeight = Math.max(16, Math.round(width * 1.4));
+  const thumbHeight = maxScroll <= 0
+    ? viewportHeight
+    : Math.max(thumbMinHeight, Math.round((viewportHeight / (viewportHeight + maxScroll)) * viewportHeight));
+
+  const thumb = new GUI.Rectangle('inventory-scrollbar-thumb');
+  thumb.width = `${Math.max(2, width - 4)}px`;
+  thumb.height = `${thumbHeight}px`;
+  thumb.leftInPixels = 0;
+  thumb.topInPixels = 0;
+  thumb.thickness = 1;
+  thumb.color = '#DDE4EF';
+  thumb.background = '#AEB8C8';
+  thumb.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+  thumb.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
+  thumb.isPointerBlocker = false;
+  control.addControl(thumb);
+
+  const slider = new GUI.Slider('inventory-scrollbar-slider');
   slider.minimum = 0;
   slider.maximum = Math.max(0, maxScroll);
   slider.value = 0;
   slider.width = `${width}px`;
   slider.height = `${viewportHeight}px`;
-  slider.left = `${left}px`;
-  slider.top = `${top}px`;
   slider.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
   slider.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
   slider.isVertical = true;
-  slider.background = '#2B2F36';
-  slider.color = '#A8B0BD';
-  slider.borderColor = '#0F1114';
-  slider.thumbColor = '#D1D7DF';
+  slider.background = '#00000000';
+  slider.color = '#00000000';
+  slider.thumbColor = '#00000000';
+  slider.borderColor = '#00000000';
   slider.barOffset = 0;
-  slider.thickness = 1;
+  slider.thickness = 0;
   slider.isPointerBlocker = true;
-  slider.zIndex = 55;
+  slider.zIndex = 56;
+  control.addControl(slider);
+
+  const updateThumbPosition = (value) => {
+    const travel = Math.max(0, viewportHeight - thumbHeight);
+    const ratio = slider.maximum <= 0 ? 0 : value / slider.maximum;
+    thumb.topInPixels = Math.round(travel * ratio);
+  };
 
   const setValue = (nextValue) => {
     const value = clamp(nextValue, 0, slider.maximum);
@@ -37,15 +73,19 @@ export function createInventoryScrollbar({
       slider.value = value;
       return;
     }
+    updateThumbPosition(value);
     onScroll(value);
   };
 
   slider.onValueChangedObservable.add((value) => {
+    updateThumbPosition(value);
     onScroll(value);
   });
 
+  updateThumbPosition(0);
+
   return {
-    control: slider,
+    control,
     setValue,
     getValue: () => slider.value,
     max: () => slider.maximum

@@ -109,7 +109,7 @@ export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth,
       scrollOffset = clamp(value, 0, maxScroll);
       gridLayer.topInPixels = Math.round(metrics.originY - scrollOffset);
       updateSelectionPresentation();
-      console.log('Inventory scroll offset:', Math.round(scrollOffset));
+      console.log(`inventory scrollOffset=${Math.round(scrollOffset)}`);
     }
   });
 
@@ -123,30 +123,35 @@ export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth,
     const bounds = pointerLayer._currentMeasure;
     const localX = pointerX - bounds.left;
     const localY = pointerY - bounds.top;
+    console.log(`inventory click screen=(${Math.round(pointerX)},${Math.round(pointerY)})`);
+    console.log(`inventory click local=(${Math.round(localX)},${Math.round(localY)})`);
 
-    if (localX < metrics.originX || localX >= metrics.originX + metrics.contentWidth) return null;
-    if (localY < metrics.originY || localY >= viewportHeight) return null;
+    const insideGridX = localX >= metrics.originX && localX < metrics.originX + metrics.contentWidth;
+    const insideGridY = localY >= metrics.originY && localY < metrics.originY + metrics.visibleHeight;
+    if (!insideGridX || !insideGridY) return null;
 
+    const contentX = localX - metrics.originX;
     const contentY = localY - metrics.originY + scrollOffset;
+
     if (contentY < 0 || contentY >= metrics.contentHeight) return null;
 
-    const col = Math.floor((localX - metrics.originX) / metrics.slotWidth);
+    const col = Math.floor(contentX / metrics.slotWidth);
     const row = Math.floor(contentY / metrics.slotHeight);
 
     if (col < 0 || col >= INVENTORY_LAYOUT.columns || row < 0 || row >= INVENTORY_LAYOUT.rows) {
       return null;
     }
 
-    return {
-      col,
-      row,
-      index: row * INVENTORY_LAYOUT.columns + col
-    };
+    const index = row * INVENTORY_LAYOUT.columns + col;
+    console.log(`inventory row=${row}, col=${col}, slotIndex=${index}`);
+    console.log(`inventory scrollOffset=${Math.round(scrollOffset)}`);
+
+    return { col, row, index };
   }
 
   function clearSelection() {
     if (selectedIndex !== null) {
-      console.log('Deselect slot', selectedIndex);
+      console.log(`inventory selected slot=${selectedIndex} -> cleared`);
     }
     selectedIndex = null;
     isMenuVisible = false;
@@ -196,6 +201,10 @@ export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth,
       return;
     }
 
+    if (selectedIndex !== null && selectedIndex !== cell.index) {
+      isMenuVisible = false;
+    }
+
     if (selectedIndex === cell.index) {
       isMenuVisible = !isMenuVisible;
       updateSelectionPresentation();
@@ -204,7 +213,7 @@ export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth,
 
     selectedIndex = cell.index;
     isMenuVisible = true;
-    console.log('Select slot', selectedIndex);
+    console.log(`inventory selected slot=${selectedIndex}`);
     updateSelectionPresentation();
   });
 
