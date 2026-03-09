@@ -18,23 +18,40 @@ export function attachGroundClickInput(runtime, movementTargetState) {
       return;
     }
 
-    console.log('[SillyRPG] Scene click');
+    const rejectClick = (reason, pickedMeshName) => {
+      movementTargetState.clearTarget();
+      console.log('[SillyRPG] Scene click rejected:', {
+        reason,
+        pickedMeshName: pickedMeshName ?? 'none',
+        accepted: false
+      });
+    };
 
     const pickResult = runtime.scene.pick(runtime.scene.pointerX, runtime.scene.pointerY);
-    console.log('[SillyRPG] Picked mesh name:', pickResult?.pickedMesh?.name ?? 'none');
+    const pickedMeshName = pickResult?.pickedMesh?.name ?? 'none';
+    console.log('[SillyRPG] Picked mesh name:', pickedMeshName);
 
     if (!pickResult?.hit || !pickResult.pickedPoint) {
+      rejectClick('no hit', pickedMeshName);
+      return;
+    }
+
+    if (pickedMeshName === 'Wall') {
+      rejectClick('Wall', pickedMeshName);
       return;
     }
 
     if (!isGroundNode(pickResult.pickedMesh)) {
+      rejectClick('not Ground', pickedMeshName);
       return;
     }
 
     const target = pickResult.pickedPoint.clone();
     movementTargetState.setTarget(target);
 
-    console.log('[SillyRPG] Accepted ground target position:', {
+    console.log('[SillyRPG] Scene click accepted:', {
+      accepted: true,
+      pickedMeshName,
       x: target.x,
       y: target.y,
       z: target.z
