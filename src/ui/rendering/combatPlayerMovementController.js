@@ -55,7 +55,7 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    if (isMoving || getActiveUnit()?.id !== playerUnit.id) {
+    if (combatState.status !== 'active' || !playerUnit.isAlive || isMoving || getActiveUnit()?.id !== playerUnit.id) {
       return;
     }
 
