@@ -2,6 +2,7 @@ import { loadWorldScene } from './worldSceneLoader.js';
 import { loadPlayerCharacter } from './playerCharacterLoader.js';
 import { loadEnemyCharacter } from './enemyCharacterLoader.js';
 import { attachGameplayIsometricCamera } from './gameplayCameraController.js';
+import { createCombatTurnManager } from './combatTurnManager.js';
 
 const COMBAT_SCENE_FILE = 'assets/combat.glb';
 const DEFAULT_PLAYER_SPAWN = Object.freeze({ x: -1.5, y: 0, z: 1.5 });
@@ -19,10 +20,11 @@ function placeOnGround(runtime, rootNode, spawn) {
   rootNode.position.copyFrom(new runtime.BABYLON.Vector3(spawn.x, y, spawn.z));
 }
 
-function createCombatUnit(id, team, entity) {
+function createCombatUnit(id, team, entity, initiative = 0) {
   return {
     id,
     team,
+    initiative,
     rootNode: entity.rootNode,
     meshes: entity.meshes,
     skeletons: entity.skeletons,
@@ -30,20 +32,18 @@ function createCombatUnit(id, team, entity) {
   };
 }
 
-function createCombatState({ combatScene, playerUnit, enemyUnit }) {
+function createCombatState({ combatScene, playerUnit, enemyUnit, turnManager }) {
+  const turnState = turnManager.getState();
+
   return {
     mode: 'combat',
-    phase: 'start',
+    phase: turnState.phase,
     combatScene,
     units: {
       player: playerUnit,
       enemy: enemyUnit
     },
-    turn: {
-      order: [playerUnit.id, enemyUnit.id],
-      activeUnitId: playerUnit.id,
-      round: 1
-    }
+    turn: turnState
   };
 }
 
@@ -59,9 +59,52 @@ export async function createCombatRuntime(runtime, options = {}) {
   placeOnGround(runtime, playerEntity.rootNode, options.playerSpawn ?? DEFAULT_PLAYER_SPAWN);
   placeOnGround(runtime, enemyEntity.rootNode, options.enemySpawn ?? DEFAULT_ENEMY_SPAWN);
 
-  const playerUnit = createCombatUnit('player_1', 'player', playerEntity);
-  const enemyUnit = createCombatUnit('enemy_1', 'enemy', enemyEntity);
-  const combatState = createCombatState({ combatScene, playerUnit, enemyUnit });
+  const playerUnit = createCombatUnit('player_1', 'player', playerEntity, options.playerInitiative ?? 100);
+  const enemyUnit = createCombatUnit('enemy_1', 'enemy', enemyEntity, options.enemyInitiative ?? 10);
+  const turnManager = createCombatTurnManager([playerUnit, enemyUnit]);
+  const combatState = createCombatState({ combatScene, playerUnit, enemyUnit, turnManager });
+
+  const syncTurnState = () => {
+    combatState.turn = turnManager.getState();
+    combatState.phase = combatState.turn.phase;
+  };
+
+  const startTurn = () => {
+    turnManager.startTurn();
+    syncTurnState();
+  };
+
+  const endTurn = () => {
+    turnManager.endTurn();
+    turnManager.advanceToNextUnit();
+    startTurn();
+  };
+
+  const runEnemyTurnsIfNeeded = () => {
+    let safetyCounter = 0;
+
+    while (turnManager.getActiveUnit()?.team === 'enemy' && safetyCounter < combatState.turn.orderedUnits.length) {
+      endTurn();
+      safetyCounter += 1;
+    }
+  };
+
+  combatState.startCombat = () => {
+    turnManager.startCombat();
+    startTurn();
+    runEnemyTurnsIfNeeded();
+    syncTurnState();
+    return combatState.turn;
+  };
+
+  combatState.endActiveTurn = () => {
+    endTurn();
+    runEnemyTurnsIfNeeded();
+    syncTurnState();
+    return combatState.turn;
+  };
+
+  combatState.startCombat();
 
   const detachCamera = attachGameplayIsometricCamera(runtime, playerEntity.rootNode, {
     distance: 12,
