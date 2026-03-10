@@ -50,6 +50,11 @@ export async function createDistrictExplorationRuntime(runtime, options = {}) {
     playerEntity,
     playerMeshRoot: playerEntity.rootNode,
     enemyEntity,
-    enemyMeshRoot: enemyEntity.rootNode
+    enemyMeshRoot: enemyEntity.rootNode,
+    dispose: () => {
+      enemyEntity.rootNode?.dispose(false, true);
+      playerEntity.rootNode?.dispose(false, true);
+      districtScene.sceneContainer?.dispose(false, true);
+    }
   };
 }
