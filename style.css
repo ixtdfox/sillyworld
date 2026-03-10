@@ -246,9 +246,28 @@
 #sillyrpg-root .sillyrpg-scene-view-screen {
   width: min(920px, 100%);
   height: min(78vh, 760px);
+  position: relative;
 }
 
 #sillyrpg-root .sillyrpg-scene-canvas {
   border-radius: 12px;
   background: #05070d;
+}
+
+#sillyrpg-root .sillyrpg-scene-debug-overlay {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  margin: 0;
+  padding: 0.6rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(4, 6, 12, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #d8f0ff;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  white-space: pre;
+  pointer-events: none;
+  z-index: 2;
 }

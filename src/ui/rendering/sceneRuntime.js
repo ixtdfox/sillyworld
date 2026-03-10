@@ -5,8 +5,20 @@ import { attachPlayerMovementController } from './playerMovementController.js';
 import { attachGroundClickInput } from './sceneGroundClickInput.js';
 import { attachGameplayIsometricCamera } from './gameplayCameraController.js';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.js';
-import { attachEncounterInteractionInput } from './encounterInteractionInput.js';
+import { attachEncounterInteractionInput, ENCOUNTER_INTERACTION_DISTANCE } from './encounterInteractionInput.js';
 import { createCombatRuntime } from './combatRuntime.js';
+
+function toPositionSnapshot(node) {
+  if (!node?.position) {
+    return null;
+  }
+
+  return {
+    x: node.position.x,
+    y: node.position.y,
+    z: node.position.z
+  };
+}
 
 function createExplorationInputScope() {
   let detachGroundClickInput = null;
@@ -41,6 +53,63 @@ export async function mountSceneRuntime(canvas, options = {}) {
   const explorationInputScope = createExplorationInputScope();
   let activeGameplayRuntime = null;
   let combatTransitionStarted = false;
+  let sceneMode = 'loading';
+  const encounterInteractionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
+
+  const emitDebugState = () => {
+    if (!options.onDebugStateChange) {
+      return;
+    }
+
+    const explorationRuntime = sceneMode === 'exploration' ? activeGameplayRuntime : null;
+    const combatRuntime = sceneMode === 'combat' ? activeGameplayRuntime : null;
+
+    if (sceneMode === 'combat' && combatRuntime?.combatState) {
+      const combatState = combatRuntime.combatState;
+      const activeUnit = combatState.getActiveUnit?.() ?? null;
+
+      options.onDebugStateChange({
+        mode: sceneMode,
+        combat: {
+          state: combatState.status,
+          phase: combatState.phase,
+          round: combatState.turn?.round ?? null,
+          activeUnit: activeUnit ? `${activeUnit.team}:${activeUnit.id}` : null,
+          activeUnitAp: activeUnit?.ap ?? null,
+          activeUnitMp: activeUnit?.mp ?? null,
+          playerHp: combatState.units?.player?.hp ?? null,
+          enemyHp: combatState.units?.enemy?.hp ?? null
+        }
+      });
+      return;
+    }
+
+    if (sceneMode === 'exploration' && explorationRuntime?.playerMeshRoot && explorationRuntime?.enemyMeshRoot) {
+      const playerPosition = toPositionSnapshot(explorationRuntime.playerMeshRoot);
+      const enemyPosition = toPositionSnapshot(explorationRuntime.enemyMeshRoot);
+      const distanceToEnemy = runtime.BABYLON.Vector3.Distance(
+        explorationRuntime.playerMeshRoot.position,
+        explorationRuntime.enemyMeshRoot.position
+      );
+
+      options.onDebugStateChange({
+        mode: sceneMode,
+        exploration: {
+          playerPosition,
+          enemyPosition,
+          distanceToEnemy,
+          enemyInteractionAllowed: !combatTransitionStarted && distanceToEnemy <= encounterInteractionDistance
+        }
+      });
+      return;
+    }
+
+    options.onDebugStateChange({ mode: sceneMode });
+  };
+
+  const debugObserver = runtime.scene.onBeforeRenderObservable.add(() => {
+    emitDebugState();
+  });
 
   const teardownActiveGameplayRuntime = () => {
     explorationInputScope.dispose();
@@ -54,6 +123,8 @@ export async function mountSceneRuntime(canvas, options = {}) {
     }
 
     combatTransitionStarted = true;
+    sceneMode = 'transitioning';
+    emitDebugState();
     teardownActiveGameplayRuntime();
 
     const combatRuntime = await createCombatRuntime(runtime, {
@@ -63,6 +134,8 @@ export async function mountSceneRuntime(canvas, options = {}) {
     });
 
     activeGameplayRuntime = combatRuntime;
+    sceneMode = 'combat';
+    emitDebugState();
 
     options.onEncounterStart?.({
       ...encounterDetails,
@@ -81,6 +154,8 @@ export async function mountSceneRuntime(canvas, options = {}) {
       enemySpawn: options.enemySpawn
     });
     activeGameplayRuntime = explorationRuntime;
+    sceneMode = 'exploration';
+    emitDebugState();
 
     const playerAnimationController = createPlayerAnimationController(explorationRuntime.playerEntity);
     const movementTargetState = createMovementTargetState();
@@ -113,6 +188,7 @@ export async function mountSceneRuntime(canvas, options = {}) {
   }
 
   return () => {
+    runtime.scene.onBeforeRenderObservable.remove(debugObserver);
     teardownActiveGameplayRuntime();
     runtime.dispose();
   };
