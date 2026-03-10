@@ -9,6 +9,7 @@ import { createPlayerAnimationController } from './playerAnimationController.js'
 import { attachCombatPlayerMovementController } from './combatPlayerMovementController.js';
 import { createCombatActionResolver } from './combatActionResolver.js';
 import { attachCombatAttackInputController } from './combatAttackInputController.js';
+import { resolveOrCreateSceneCamera } from './babylonRuntime.js';
 
 const COMBAT_SCENE_FILE = 'assets/combat.glb';
 const DEFAULT_PLAYER_SPAWN = Object.freeze({ x: -1.5, y: 0, z: 1.5 });
@@ -72,6 +73,13 @@ export async function createCombatRuntime(runtime, options = {}) {
   const combatScene = await loadWorldScene(runtime, {
     sceneFile: options.sceneFile ?? COMBAT_SCENE_FILE,
     containerName: options.sceneContainerName ?? 'combatSceneRoot'
+  });
+
+  resolveOrCreateSceneCamera(runtime, {
+    preferredCameras: combatScene.cameras,
+    fallbackCameraName: 'combatFallbackCamera',
+    fallbackPosition: options.fallbackCameraPosition ?? { x: 0, y: 11, z: -12 },
+    fallbackTarget: options.fallbackCameraTarget ?? { x: 0, y: 0, z: 0 }
   });
 
   const playerEntity = await loadPlayerCharacter(runtime, { playerFile: options.playerFile });

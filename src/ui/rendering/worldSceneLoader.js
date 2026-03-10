@@ -52,6 +52,7 @@ export async function loadWorldScene(runtime, options = {}) {
       sceneContainer,
       sceneRoots,
       meshes: result.meshes,
+      cameras: result.cameras ?? [],
       groundMesh
     };
   } catch (error) {

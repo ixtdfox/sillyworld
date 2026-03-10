@@ -111,7 +111,19 @@ export function createBabylonWorldRuntime(canvas) {
   dir.position = new BABYLON.Vector3(6, 10, 6);
   dir.intensity = 0.7;
 
-  engine.runRenderLoop(() => scene.render());
+  let hasLoggedMissingCamera = false;
+  engine.runRenderLoop(() => {
+    if (!scene.activeCamera) {
+      if (!hasLoggedMissingCamera) {
+        console.warn('[SillyRPG] Skipping world scene render because no active camera is available yet.');
+        hasLoggedMissingCamera = true;
+      }
+      return;
+    }
+
+    hasLoggedMissingCamera = false;
+    scene.render();
+  });
 
   const onResize = () => engine.resize();
   window.addEventListener('resize', onResize);
@@ -127,4 +139,55 @@ export function createBabylonWorldRuntime(canvas) {
       engine.dispose();
     }
   };
+}
+
+export function resolveOrCreateSceneCamera(runtime, options = {}) {
+  const BABYLON = runtime.BABYLON;
+  const scene = runtime.scene;
+  const preferredCameras = options.preferredCameras ?? [];
+  const fallbackPosition = options.fallbackPosition ?? { x: 0, y: 10, z: -12 };
+  const fallbackTarget = options.fallbackTarget ?? { x: 0, y: 0, z: 0 };
+
+  const resolveUsableCamera = () => {
+    const candidateCameras = [
+      ...preferredCameras,
+      scene.activeCamera,
+      ...(scene.cameras ?? [])
+    ];
+
+    for (const candidate of candidateCameras) {
+      if (!candidate || candidate.isDisposed?.()) {
+        continue;
+      }
+
+      return candidate;
+    }
+
+    return null;
+  };
+
+  let camera = resolveUsableCamera();
+  let source = 'imported';
+  if (!camera) {
+    source = 'fallback';
+    camera = new BABYLON.FreeCamera(
+      options.fallbackCameraName ?? 'sceneFallbackCamera',
+      new BABYLON.Vector3(fallbackPosition.x, fallbackPosition.y, fallbackPosition.z),
+      scene
+    );
+    camera.setTarget(new BABYLON.Vector3(fallbackTarget.x, fallbackTarget.y, fallbackTarget.z));
+    camera.minZ = 0.1;
+    camera.maxZ = 1000;
+  }
+
+  scene.activeCamera = camera;
+  runtime.camera = camera;
+
+  console.log('[SillyRPG] Scene camera resolved', {
+    source,
+    cameraName: camera.name,
+    activeCameraName: scene.activeCamera?.name ?? null
+  });
+
+  return camera;
 }
