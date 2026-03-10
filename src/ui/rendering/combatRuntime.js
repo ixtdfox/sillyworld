@@ -7,12 +7,17 @@ import { createCombatGrid } from './combatGrid.js';
 import { createCombatGridMapper } from './combatGridMapper.js';
 import { createPlayerAnimationController } from './playerAnimationController.js';
 import { attachCombatPlayerMovementController } from './combatPlayerMovementController.js';
+import { createCombatActionResolver } from './combatActionResolver.js';
+import { attachCombatAttackInputController } from './combatAttackInputController.js';
 
 const COMBAT_SCENE_FILE = 'assets/combat.glb';
 const DEFAULT_PLAYER_SPAWN = Object.freeze({ x: -1.5, y: 0, z: 1.5 });
 const DEFAULT_ENEMY_SPAWN = Object.freeze({ x: 1.5, y: 0, z: -1.5 });
 const DEFAULT_AP_PER_TURN = 2;
 const DEFAULT_MP_PER_TURN = 6;
+const DEFAULT_HP = 20;
+const DEFAULT_BASIC_ATTACK_RANGE = 1;
+const DEFAULT_BASIC_ATTACK_DAMAGE = 4;
 
 function resolveGroundY({ runtime, x, z, fallbackY = 0 }) {
   const origin = new runtime.BABYLON.Vector3(x, fallbackY + 25, z);
@@ -33,6 +38,11 @@ function createCombatUnit(id, team, entity, initiative = 0) {
     initiative,
     maxAp: DEFAULT_AP_PER_TURN,
     maxMp: DEFAULT_MP_PER_TURN,
+    maxHp: DEFAULT_HP,
+    hp: DEFAULT_HP,
+    isAlive: true,
+    attackRange: DEFAULT_BASIC_ATTACK_RANGE,
+    attackPower: DEFAULT_BASIC_ATTACK_DAMAGE,
     ap: DEFAULT_AP_PER_TURN,
     mp: DEFAULT_MP_PER_TURN,
     gridCell: null,
@@ -92,7 +102,13 @@ export async function createCombatRuntime(runtime, options = {}) {
   grid.setOccupied(enemyUnit.gridCell, enemyUnit.id);
 
   const turnManager = createCombatTurnManager([playerUnit, enemyUnit]);
+  const actionResolver = createCombatActionResolver({
+    basicAttackApCost: options.basicAttackApCost ?? 1,
+    basicAttackDamage: options.basicAttackDamage ?? DEFAULT_BASIC_ATTACK_DAMAGE
+  });
   const combatState = createCombatState({ combatScene, playerUnit, enemyUnit, turnManager });
+  combatState.status = 'active';
+  combatState.result = null;
 
   combatState.grid = grid;
   combatState.gridMapper = gridMapper;
@@ -105,6 +121,9 @@ export async function createCombatRuntime(runtime, options = {}) {
   };
 
   const resetUnitResourcesForTurn = (unit) => {
+    if (!unit?.isAlive) {
+      return;
+    }
     unit.ap = unit.maxAp;
     unit.mp = unit.maxMp;
   };
@@ -115,6 +134,15 @@ export async function createCombatRuntime(runtime, options = {}) {
   };
 
   const startTurn = () => {
+    if (combatState.status !== 'active') {
+      return;
+    }
+
+    if (!combatState.getActiveUnit()?.isAlive) {
+      turnManager.endTurn();
+      turnManager.advanceToNextUnit();
+    }
+
     turnManager.startTurn();
     const activeUnit = combatState.getActiveUnit();
     if (activeUnit) {
@@ -124,15 +152,68 @@ export async function createCombatRuntime(runtime, options = {}) {
   };
 
   const endTurn = () => {
+    if (combatState.status !== 'active') {
+      return;
+    }
     turnManager.endTurn();
     turnManager.advanceToNextUnit();
     startTurn();
   };
 
+  const evaluateAndFinalizeCombat = () => {
+    const outcome = actionResolver.evaluateCombatOutcome(Object.values(combatState.units));
+    if (!outcome.ended) {
+      return outcome;
+    }
+
+    combatState.status = 'ended';
+    combatState.result = outcome.result;
+    combatState.phase = 'combat_end';
+    return outcome;
+  };
+
+  combatState.tryBasicAttack = ({ attackerId, targetId }) => {
+    const attacker = Object.values(combatState.units).find((unit) => unit.id === attackerId) ?? null;
+    const target = Object.values(combatState.units).find((unit) => unit.id === targetId) ?? null;
+    const activeUnitId = turnManager.getActiveUnit()?.unitId ?? null;
+
+    const result = actionResolver.resolveBasicAttack({ attacker, target, activeUnitId });
+    if (!result.success) {
+      return result;
+    }
+
+    if (result.targetDied && target?.gridCell) {
+      combatState.grid.clearOccupied(target.gridCell);
+    }
+
+    const outcome = evaluateAndFinalizeCombat();
+    return {
+      ...result,
+      combatResult: outcome.result
+    };
+  };
+
+  const runEnemyAction = () => {
+    const activeUnit = combatState.getActiveUnit();
+    if (!activeUnit || activeUnit.team !== 'enemy' || combatState.status !== 'active') {
+      return;
+    }
+
+    combatState.tryBasicAttack({
+      attackerId: activeUnit.id,
+      targetId: playerUnit.id
+    });
+  };
+
   const runEnemyTurnsIfNeeded = () => {
     let safetyCounter = 0;
 
-    while (turnManager.getActiveUnit()?.team === 'enemy' && safetyCounter < combatState.turn.orderedUnits.length) {
+    while (
+      combatState.status === 'active'
+      && turnManager.getActiveUnit()?.team === 'enemy'
+      && safetyCounter < combatState.turn.orderedUnits.length
+    ) {
+      runEnemyAction();
       endTurn();
       safetyCounter += 1;
     }
@@ -147,6 +228,10 @@ export async function createCombatRuntime(runtime, options = {}) {
   };
 
   combatState.endActiveTurn = () => {
+    if (combatState.status !== 'active') {
+      return combatState.turn;
+    }
+
     endTurn();
     runEnemyTurnsIfNeeded();
     syncTurnState();
@@ -172,6 +257,13 @@ export async function createCombatRuntime(runtime, options = {}) {
     targetHeight: 1.1
   });
 
+  const detachCombatAttackInputController = attachCombatAttackInputController(runtime, {
+    combatState,
+    attackerUnit: playerUnit,
+    targetUnit: enemyUnit,
+    targetRoot: enemyEntity.rootNode
+  });
+
   return {
     combatState,
     combatScene,
@@ -180,6 +272,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     dispose: () => {
       detachCamera?.();
       detachCombatMovementController?.();
+      detachCombatAttackInputController?.();
       enemyEntity.rootNode?.dispose(false, true);
       playerEntity.rootNode?.dispose(false, true);
       combatScene.sceneContainer?.dispose(false, true);

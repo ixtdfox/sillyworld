@@ -93,6 +93,7 @@ test('does not start movement when path cost exceeds MP', () => {
 
   const playerUnit = {
     id: 'player_1',
+    isAlive: true,
     mp: 1,
     rootNode: { position: new Vector3(0, 0, 0) },
     gridCell: { x: 0, z: 0 }
@@ -101,6 +102,7 @@ test('does not start movement when path cost exceeds MP', () => {
   let moved = false;
   const detach = attachCombatPlayerMovementController(runtime, {
     combatState: {
+      status: 'active',
       getActiveUnit: () => playerUnit
     },
     playerUnit,
@@ -137,6 +139,7 @@ test('moves unit along path and spends MP', () => {
 
   const playerUnit = {
     id: 'player_1',
+    isAlive: true,
     mp: 6,
     rootNode: { position: new Vector3(0, 0, 0) },
     gridCell: { x: 0, z: 0 }
@@ -145,6 +148,7 @@ test('moves unit along path and spends MP', () => {
   let moved = false;
   const detach = attachCombatPlayerMovementController(runtime, {
     combatState: {
+      status: 'active',
       getActiveUnit: () => playerUnit
     },
     playerUnit,
