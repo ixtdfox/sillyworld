@@ -2,13 +2,11 @@ import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntim
 import { createMovementTargetState } from './movementTargetState.js';
 import { createPlayerAnimationController } from './playerAnimationController.js';
 import { attachPlayerMovementController } from './playerMovementController.js';
-import { loadPlayerCharacter } from './playerCharacterLoader.js';
-import { spawnPlayerCharacter } from './playerSpawn.js';
 import { attachGroundClickInput } from './sceneGroundClickInput.js';
 import { attachGameplayIsometricCamera } from './gameplayCameraController.js';
-import { loadWorldScene } from './worldSceneLoader.js';
+import { createDistrictExplorationRuntime } from './districtExplorationRuntime.js';
 
-export async function mountSceneRuntime(canvas) {
+export async function mountSceneRuntime(canvas, options = {}) {
   await ensureBabylonRuntime();
   const runtime = createBabylonWorldRuntime(canvas);
   let detachGroundClickInput = null;
@@ -16,18 +14,23 @@ export async function mountSceneRuntime(canvas) {
   let detachGameplayCameraController = null;
 
   try {
-    await loadWorldScene(runtime);
+    const explorationRuntime = await createDistrictExplorationRuntime(runtime, {
+      districtId: options.districtId
+    });
 
-    const playerCharacter = await loadPlayerCharacter(runtime);
-    spawnPlayerCharacter(runtime, playerCharacter);
-    const playerAnimationController = createPlayerAnimationController(playerCharacter);
-    detachGameplayCameraController = attachGameplayIsometricCamera(runtime, playerCharacter.rootNode);
+    const playerAnimationController = createPlayerAnimationController(explorationRuntime.playerEntity);
+    detachGameplayCameraController = attachGameplayIsometricCamera(runtime, explorationRuntime.playerMeshRoot);
 
     const movementTargetState = createMovementTargetState();
     detachGroundClickInput = attachGroundClickInput(runtime, movementTargetState);
-    detachPlayerMovementController = attachPlayerMovementController(runtime, playerCharacter, movementTargetState, {
-      onMovingStateChange: (isMoving) => playerAnimationController.setMoving(isMoving)
-    });
+    detachPlayerMovementController = attachPlayerMovementController(
+      runtime,
+      explorationRuntime.playerEntity,
+      movementTargetState,
+      {
+        onMovingStateChange: (isMoving) => playerAnimationController.setMoving(isMoving)
+      }
+    );
   } catch (error) {
     detachGroundClickInput?.();
     detachPlayerMovementController?.();

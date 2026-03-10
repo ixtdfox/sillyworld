@@ -13,7 +13,8 @@ const navigationStore = createNavigationStore();
 let activeScreenUnmount = null;
 
 const sceneTransitionController = createSceneTransitionController({
-  onEnterScene: () => {
+  onEnterScene: ({ regionId }) => {
+    navigationStore.setContextId(regionId);
     navigationStore.setScreen('scene');
     render();
   }
@@ -144,7 +145,7 @@ function renderScreenBody() {
   if (nav.screen === 'settings') return renderSettingsStub({ onBack: back });
 
   if (nav.screen === 'scene') {
-    return renderSceneViewScreen();
+    return renderSceneViewScreen({ districtId: nav.contextId });
   }
 
   if (nav.screen === 'map') {
