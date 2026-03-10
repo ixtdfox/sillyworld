@@ -19,6 +19,10 @@ export function createNavigationStore(seed = {}) {
     setScreen(screen) {
       state = { ...state, screen };
     },
+
+    setContextId(contextId) {
+      state = { ...state, contextId: contextId || null };
+    },
     navigateToLevel(level, contextId) {
       state = {
         ...state,

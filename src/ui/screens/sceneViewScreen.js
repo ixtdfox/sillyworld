@@ -1,6 +1,6 @@
 import { mountSceneRuntime } from '../rendering/sceneRuntime.js';
 
-export function renderSceneViewScreen() {
+export function renderSceneViewScreen({ districtId } = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'sillyrpg-screen sillyrpg-scene-view-screen';
 
@@ -12,7 +12,7 @@ export function renderSceneViewScreen() {
   let cleanup = null;
 
   wrap.__sillyOnMount = () => {
-    mountSceneRuntime(canvas)
+    mountSceneRuntime(canvas, { districtId })
       .then((dispose) => {
         cleanup = dispose;
       })
