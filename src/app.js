@@ -145,7 +145,16 @@ function renderScreenBody() {
   if (nav.screen === 'settings') return renderSettingsStub({ onBack: back });
 
   if (nav.screen === 'scene') {
-    return renderSceneViewScreen({ districtId: nav.contextId });
+    return renderSceneViewScreen({
+      districtId: nav.contextId,
+      onEncounterStart: ({ distanceToEnemy, interactionDistance }) => {
+        console.log('[SillyRPG] Transitioning exploration mode into combat mode.', {
+          districtId: nav.contextId,
+          distanceToEnemy,
+          interactionDistance
+        });
+      }
+    });
   }
 
   if (nav.screen === 'map') {
