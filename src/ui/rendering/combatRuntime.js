@@ -14,6 +14,7 @@ import { createCombatDebugHud } from './combatDebugHud.js';
 import { resolveCombatGridConfig } from './combatGridConfig.js';
 import { createCombatGridOverlayRenderer } from './combatGridOverlayRenderer.js';
 import { createCombatMovementRangeHighlighter } from './combatMovementRangeHighlighter.js';
+import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from './playerActionModeStateMachine.js';
 
 const COMBAT_SCENE_FILE = 'assets/combat.glb';
 const DEFAULT_PLAYER_SPAWN = Object.freeze({ x: -1.5, y: 0, z: 1.5 });
@@ -138,7 +139,10 @@ export async function createCombatRuntime(runtime, options = {}) {
   const combatState = createCombatState({ combatScene, playerUnit, enemyUnit, turnManager });
   combatState.status = 'active';
   combatState.result = null;
-  combatState.inputMode = 'move';
+  const actionMode = createPlayerActionModeStateMachine({
+    initialMode: PLAYER_ACTION_MODES.IDLE
+  });
+  combatState.inputMode = actionMode.getMode();
   combatState.selectedTargetId = null;
   combatState.lastActionResult = null;
 
@@ -215,11 +219,27 @@ export async function createCombatRuntime(runtime, options = {}) {
     };
   };
   combatState.setInputMode = (inputMode) => {
-    if (inputMode !== 'move' && inputMode !== 'attack') {
+    const isPlayerTurn = combatState.status === 'active'
+      && combatState.phase === 'turn_active'
+      && combatState.getActiveUnit()?.id === playerUnit.id;
+
+    if (!isPlayerTurn && inputMode !== PLAYER_ACTION_MODES.IDLE) {
+      actionMode.reset();
+      combatState.inputMode = actionMode.getMode();
       return combatState.inputMode;
     }
 
-    combatState.inputMode = inputMode;
+    const result = actionMode.setMode(inputMode);
+    if (!result.success) {
+      return combatState.inputMode;
+    }
+
+    combatState.inputMode = result.mode;
+
+    if (combatState.inputMode !== PLAYER_ACTION_MODES.ATTACK) {
+      combatState.selectedTargetId = null;
+    }
+
     return combatState.inputMode;
   };
 
@@ -234,6 +254,12 @@ export async function createCombatRuntime(runtime, options = {}) {
   const syncTurnState = () => {
     combatState.turn = turnManager.getState();
     combatState.phase = combatState.turn.phase;
+    const activeUnit = combatState.getActiveUnit();
+    if (activeUnit?.id !== playerUnit.id || combatState.phase !== 'turn_active' || combatState.status !== 'active') {
+      actionMode.reset();
+      combatState.inputMode = actionMode.getMode();
+      combatState.selectedTargetId = null;
+    }
   };
 
   const startTurn = () => {
@@ -250,6 +276,9 @@ export async function createCombatRuntime(runtime, options = {}) {
     const activeUnit = combatState.getActiveUnit();
     if (activeUnit) {
       resetUnitResourcesForTurn(activeUnit);
+      if (activeUnit.id === playerUnit.id) {
+        combatState.setInputMode(PLAYER_ACTION_MODES.MOVE);
+      }
     }
     syncTurnState();
   };
@@ -351,7 +380,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     playerUnit,
     grid,
     gridMapper,
-    isMovementEnabled: () => combatState.inputMode === 'move',
+    isMovementEnabled: () => combatState.inputMode === PLAYER_ACTION_MODES.MOVE,
     resolveGroundY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: playerUnit.rootNode.position.y }),
     onMovingStateChange: (isMoving) => playerAnimationController.setMoving(isMoving),
     movementCost
@@ -370,7 +399,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     getPotentialTargets: () => Object.values(combatState.units)
       .filter((unit) => unit.team !== playerUnit.team)
       .map((unit) => ({ unit, targetRoot: unit.rootNode })),
-    isAttackEnabled: () => combatState.inputMode === 'attack'
+    isAttackEnabled: () => combatState.inputMode === PLAYER_ACTION_MODES.ATTACK
   });
 
   const detachCombatDebugHud = createCombatDebugHud(runtime, { combatState });
@@ -383,7 +412,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     playerUnit,
     grid,
     gridMapper,
-    isVisible: () => combatState.inputMode === 'move',
+    isVisible: () => combatState.inputMode === PLAYER_ACTION_MODES.MOVE,
     resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 }),
     movementCost
   });

@@ -118,15 +118,18 @@ export function createCombatDebugHud(runtime, options = {}) {
   actionRow.horizontalAlignment = runtime.BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
   content.addControl(actionRow);
 
+  const idleButton = createActionButton(runtime, 'Idle mode', () => combatState.setInputMode?.('idle'));
   const moveButton = createActionButton(runtime, 'Move mode', () => combatState.setInputMode?.('move'));
   const attackButton = createActionButton(runtime, 'Attack mode', () => combatState.setInputMode?.('attack'));
   const endTurnButton = createActionButton(runtime, 'End Turn', () => combatState.endActiveTurn?.());
+  actionRow.addControl(idleButton.button);
   actionRow.addControl(moveButton.button);
   actionRow.addControl(attackButton.button);
   actionRow.addControl(endTurnButton.button);
 
   const setButtonState = () => {
-    const mode = combatState.inputMode ?? 'move';
+    const mode = combatState.inputMode ?? 'idle';
+    idleButton.button.background = mode === 'idle' ? '#2f6f7ddd' : '#2e4961cc';
     moveButton.button.background = mode === 'move' ? '#2f7d42dd' : '#2e4961cc';
     attackButton.button.background = mode === 'attack' ? '#964040dd' : '#2e4961cc';
     endTurnButton.button.background = '#4f5a91dd';
@@ -144,7 +147,7 @@ export function createCombatDebugHud(runtime, options = {}) {
     playerValue.text = formatUnitResources(combatState.units?.player);
     enemyValue.text = formatUnitResources(combatState.units?.enemy);
     phaseValue.text = combatState.phase ?? combatState.turn?.phase ?? 'n/a';
-    actionModeValue.text = combatState.inputMode ?? 'move';
+    actionModeValue.text = combatState.inputMode ?? 'idle';
     selectedTargetValue.text = combatState.selectedTargetId ?? 'n/a';
     actionResultValue.text = combatState.lastActionResult?.success
       ? `${combatState.lastActionResult.action} hit ${combatState.lastActionResult.targetId} for ${combatState.lastActionResult.damage}`
