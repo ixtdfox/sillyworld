@@ -12,5 +12,15 @@ test('maps world positions to grid and back with 1.5 cell size', () => {
   const world = mapper.gridCellToWorld(cell, {
     resolveY: ({ x, z }) => x + z
   });
-  assert.deepEqual(world, { x: -1.5, y: 0, z: 1.5 });
+  assert.deepEqual(world, { x: -0.75, y: 1.5, z: 2.25 });
+});
+
+test('supports mapping to tile corners for grid edge rendering', () => {
+  const mapper = createCombatGridMapper({ cellSize: 2, originWorldX: 10, originWorldZ: -4 });
+
+  const center = mapper.gridCellToWorld({ x: 1, z: 2 });
+  const corner = mapper.gridCellToWorld({ x: 1, z: 2 }, { anchor: 'corner' });
+
+  assert.deepEqual(center, { x: 13, y: 0, z: 1 });
+  assert.deepEqual(corner, { x: 12, y: 0, z: 0 });
 });
