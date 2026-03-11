@@ -16,6 +16,22 @@ function formatNumber(value) {
   return value.toFixed(2);
 }
 
+function formatNormalizationLine(label, normalization) {
+  if (!normalization) {
+    return `${label}: n/a`;
+  }
+
+  return [
+    `${label}: ${normalization.entityId ?? 'n/a'}`,
+    `targetH:${formatNumber(normalization.targetHeight)}`,
+    `currentH:${formatNumber(normalization.currentHeight)}`,
+    `scale:${formatNumber(normalization.scaleFactor)}`,
+    `colR:${formatNumber(normalization.collisionRadius)}`,
+    `colH:${formatNumber(normalization.collisionHeight)}`,
+    `range:${formatNumber(normalization.attackRange)}`
+  ].join(' | ');
+}
+
 function buildDebugLines(debugState) {
   const mode = debugState?.mode ?? 'loading';
 
@@ -37,13 +53,17 @@ function buildDebugLines(debugState) {
 
   if (mode === 'exploration') {
     const exploration = debugState.exploration ?? {};
+    const normalization = exploration.normalization ?? debugState.normalization ?? {};
+
     return [
       '[Debug Overlay]',
       `mode: ${mode}`,
       `player: ${formatPosition(exploration.playerPosition)}`,
       `enemy: ${formatPosition(exploration.enemyPosition)}`,
       `distance: ${formatNumber(exploration.distanceToEnemy)}`,
-      `interaction allowed: ${exploration.enemyInteractionAllowed ? 'yes' : 'no'}`
+      `interaction allowed: ${exploration.enemyInteractionAllowed ? 'yes' : 'no'}`,
+      formatNormalizationLine('norm player', normalization.player),
+      formatNormalizationLine('norm enemy', normalization.enemy)
     ];
   }
 
@@ -51,6 +71,24 @@ function buildDebugLines(debugState) {
     '[Debug Overlay]',
     `mode: ${mode}`
   ];
+}
+
+function resolveSceneDebugEnabled() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const queryFlag = params.get('debugScene');
+  if (queryFlag === '1' || queryFlag === 'true') {
+    return true;
+  }
+
+  if (queryFlag === '0' || queryFlag === 'false') {
+    return false;
+  }
+
+  return false;
 }
 
 export function renderSceneViewScreen({ districtId, onEncounterStart } = {}) {
@@ -63,8 +101,11 @@ export function renderSceneViewScreen({ districtId, onEncounterStart } = {}) {
   canvas.setAttribute('aria-label', '3D scene view');
   wrap.appendChild(canvas);
 
+  const debugEnabled = resolveSceneDebugEnabled();
+
   const debugOverlay = document.createElement('pre');
   debugOverlay.className = 'sillyrpg-scene-debug-overlay';
+  debugOverlay.hidden = !debugEnabled;
   debugOverlay.setAttribute('aria-live', 'polite');
   wrap.appendChild(debugOverlay);
 
@@ -83,6 +124,10 @@ export function renderSceneViewScreen({ districtId, onEncounterStart } = {}) {
   };
 
   const updateDebugOverlay = (debugState) => {
+    if (!debugEnabled) {
+      return;
+    }
+
     const mode = debugState?.mode ?? 'loading';
     wrap.dataset.mode = mode;
     debugOverlay.textContent = buildDebugLines(debugState).join('\n');
@@ -93,6 +138,7 @@ export function renderSceneViewScreen({ districtId, onEncounterStart } = {}) {
   wrap.__sillyOnMount = () => {
     mountSceneRuntime(canvas, {
       districtId,
+      debugEnabled,
       onEncounterStart: startCombat,
       onDebugStateChange: updateDebugOverlay
     })

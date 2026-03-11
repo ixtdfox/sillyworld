@@ -154,7 +154,8 @@ export function applyEntityNormalization(runtime, entity, normalizationConfig) {
     throw new Error('Cannot normalize entity without a root node.');
   }
 
-  fitModelToHeight(rootNode, normalizationConfig.targetHeight, {
+  const normalization = fitModelToHeight(rootNode, normalizationConfig.targetHeight, {
+    includeMetrics: true,
     debugLabel: normalizationConfig.debugLabel
   });
 
@@ -176,6 +177,12 @@ export function applyEntityNormalization(runtime, entity, normalizationConfig) {
   }
 
   refreshEntityWorldMatrices(rootNode);
+
+  return {
+    targetHeight: normalizationConfig.targetHeight,
+    sourceHeight: normalization.sourceHeight,
+    scaleFactor: normalization.scaleFactor
+  };
 }
 
 export function fitModelToHeight(entityOrRootNode, targetHeight, options = {}) {
@@ -200,6 +207,13 @@ export function fitModelToHeight(entityOrRootNode, targetHeight, options = {}) {
 
   rootNode.scaling.scaleInPlace(uniformScale);
   refreshEntityWorldMatrices(rootNode);
+
+  if (options.includeMetrics) {
+    return {
+      sourceHeight,
+      scaleFactor: uniformScale
+    };
+  }
 
   return uniformScale;
 }
