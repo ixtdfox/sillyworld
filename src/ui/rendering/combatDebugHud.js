@@ -63,7 +63,7 @@ export function createCombatDebugHud(runtime, options = {}) {
 
   const rootPanel = new runtime.BABYLON.GUI.Rectangle();
   rootPanel.width = '420px';
-  rootPanel.height = '380px';
+  rootPanel.height = '430px';
   rootPanel.cornerRadius = 8;
   rootPanel.thickness = 1;
   rootPanel.color = '#9bc9ff';
@@ -100,6 +100,8 @@ export function createCombatDebugHud(runtime, options = {}) {
   const enemyValue = createValueRow(runtime, content, 'Enemy HP/AP/MP');
   const phaseValue = createValueRow(runtime, content, 'Combat phase');
   const actionModeValue = createValueRow(runtime, content, 'Action mode');
+  const selectedTargetValue = createValueRow(runtime, content, 'Selected target');
+  const actionResultValue = createValueRow(runtime, content, 'Last action result');
 
   const actionSectionTitle = new runtime.BABYLON.GUI.TextBlock();
   actionSectionTitle.text = 'Actions';
@@ -143,6 +145,10 @@ export function createCombatDebugHud(runtime, options = {}) {
     enemyValue.text = formatUnitResources(combatState.units?.enemy);
     phaseValue.text = combatState.phase ?? combatState.turn?.phase ?? 'n/a';
     actionModeValue.text = combatState.inputMode ?? 'move';
+    selectedTargetValue.text = combatState.selectedTargetId ?? 'n/a';
+    actionResultValue.text = combatState.lastActionResult?.success
+      ? `${combatState.lastActionResult.action} hit ${combatState.lastActionResult.targetId} for ${combatState.lastActionResult.damage}`
+      : (combatState.lastActionResult?.reason ?? 'n/a');
 
     setButtonState();
   };
