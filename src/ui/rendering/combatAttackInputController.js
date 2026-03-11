@@ -27,7 +27,12 @@ export function attachCombatAttackInputController(runtime, options = {}) {
 
   const detachTargetSelectionFlow = attachCombatTargetSelectionFlow(runtime, {
     getTargetEntries: () => resolveTargetEntries(options),
-    isEnabled: () => combatState.status === 'active' && isAttackEnabled(),
+    isEnabled: () => {
+      const activeUnit = combatState.getActiveUnit?.() ?? null;
+      return combatState.status === 'active'
+        && isAttackEnabled()
+        && activeUnit?.id === attackerUnit.id;
+    },
     onSelectionChanged: (entry) => {
       combatState.selectedTargetId = entry?.unit?.id ?? null;
     },

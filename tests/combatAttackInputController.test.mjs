@@ -67,6 +67,7 @@ test('selects enemy target in attack mode and performs attack on click', () => {
     status: 'active',
     inputMode: 'attack',
     selectedTargetId: null,
+    getActiveUnit: () => ({ id: 'player_1' }),
     tryBasicAttack: ({ attackerId, targetId }) => ({ success: true, action: 'basic_attack', attackerId, targetId, damage: 4 })
   };
 
@@ -98,6 +99,7 @@ test('ignores target clicks when attack mode is disabled and clears selection', 
     status: 'active',
     inputMode: 'attack',
     selectedTargetId: null,
+    getActiveUnit: () => ({ id: 'player_1' }),
     tryBasicAttack: () => {
       attackCalls += 1;
       return { success: true };
@@ -134,6 +136,7 @@ test('stores failed attack result without mutating selection state', () => {
     status: 'active',
     inputMode: 'attack',
     selectedTargetId: null,
+    getActiveUnit: () => ({ id: 'player_1' }),
     tryBasicAttack: () => ({ success: false, reason: 'target_out_of_range' })
   };
 
@@ -150,6 +153,40 @@ test('stores failed attack result without mutating selection state', () => {
   assert.equal(combatState.lastActionResult.success, false);
   assert.equal(combatState.lastActionResult.reason, 'target_out_of_range');
   assert.equal(combatState.selectedTargetId, 'enemy_1');
+
+  detach();
+});
+
+test('does not allow attack input when it is not attacker turn', () => {
+  const runtime = createRuntime();
+  const enemyRoot = createMesh('enemy_root');
+
+  let attackCalls = 0;
+  const combatState = {
+    status: 'active',
+    inputMode: 'attack',
+    selectedTargetId: null,
+    getActiveUnit: () => ({ id: 'enemy_1' }),
+    tryBasicAttack: () => {
+      attackCalls += 1;
+      return { success: true };
+    }
+  };
+
+  const detach = attachCombatAttackInputController(runtime, {
+    combatState,
+    attackerUnit: { id: 'player_1' },
+    getPotentialTargets: () => [{ unit: { id: 'enemy_1', isAlive: true }, targetRoot: enemyRoot }],
+    isAttackEnabled: () => true
+  });
+
+  runtime.setPickResult({ hit: true, pickedMesh: enemyRoot });
+  runtime.pointerMove();
+  runtime.pointerDown();
+
+  assert.equal(attackCalls, 0);
+  assert.equal(combatState.selectedTargetId, null);
+  assert.equal(enemyRoot.renderOutline, false);
 
   detach();
 });
