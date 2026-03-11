@@ -88,7 +88,7 @@ function resolveSceneDebugEnabled() {
     return false;
   }
 
-  return false;
+  return true;
 }
 
 export function renderSceneViewScreen({ districtId, onEncounterStart } = {}) {
