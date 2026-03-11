@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   applyEntityNormalization,
   createEntityNormalizationConfigStore,
+  fitModelToHeight,
   getEntityNormalizationConfig,
   hasEntityNormalizationConfig,
   resolveEnemyNormalizationConfigId,
@@ -85,6 +86,64 @@ test('validates orientationCorrection values', () => {
       }
     }),
     /orientationCorrection" must be an object/
+  );
+});
+
+test('fitModelToHeight throws when measured height is invalid', () => {
+  const rootNode = {
+    scaling: {
+      value: 1,
+      scaleInPlace(amount) {
+        this.value *= amount;
+      }
+    },
+    computeWorldMatrix() {},
+    getHierarchyBoundingVectors() {
+      return {
+        min: { y: 0 },
+        max: { y: 0 }
+      };
+    },
+    getDescendants() {
+      return [];
+    },
+    getChildMeshes() {
+      return [];
+    }
+  };
+
+  assert.throws(
+    () => fitModelToHeight(rootNode, 2, { debugLabel: 'test_entity' }),
+    /Cannot fit model to height for test_entity: measured source height must be a finite number > 0/
+  );
+});
+
+test('fitModelToHeight throws for invalid target height', () => {
+  const rootNode = {
+    scaling: {
+      value: 1,
+      scaleInPlace(amount) {
+        this.value *= amount;
+      }
+    },
+    computeWorldMatrix() {},
+    getHierarchyBoundingVectors() {
+      return {
+        min: { y: 0 },
+        max: { y: 2 }
+      };
+    },
+    getDescendants() {
+      return [];
+    },
+    getChildMeshes() {
+      return [];
+    }
+  };
+
+  assert.throws(
+    () => fitModelToHeight(rootNode, 0),
+    /targetHeight must be a finite number > 0/
   );
 });
 

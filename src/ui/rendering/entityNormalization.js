@@ -3,7 +3,7 @@ import {
   DEFAULT_PLAYER_NORMALIZATION_ID,
   ENTITY_NORMALIZATION_CONFIG
 } from './entityNormalizationConfig.js';
-import { getEntityVisualHeight } from './entityVisualBounds.js';
+import { getEntityVisualHeight, refreshEntityWorldMatrices } from './entityVisualBounds.js';
 
 function toRadians(degrees) {
   return (degrees * Math.PI) / 180;
@@ -150,16 +150,9 @@ export function applyEntityNormalization(runtime, entity, normalizationConfig) {
     throw new Error('Cannot normalize entity without a root node.');
   }
 
-  const sourceHeight = getEntityVisualHeight(rootNode);
-
-  if (Number.isFinite(sourceHeight) && sourceHeight > 0) {
-    const uniformScale = normalizationConfig.targetHeight / sourceHeight;
-    rootNode.scaling.scaleInPlace(uniformScale);
-  } else {
-    console.warn('[SillyRPG] Entity normalization skipped source scale calibration because source bounds were invalid.', {
-      debugLabel: normalizationConfig.debugLabel
-    });
-  }
+  fitModelToHeight(rootNode, normalizationConfig.targetHeight, {
+    debugLabel: normalizationConfig.debugLabel
+  });
 
   if (Number.isFinite(normalizationConfig.groundOffset)) {
     rootNode.position.y += normalizationConfig.groundOffset;
@@ -176,6 +169,34 @@ export function applyEntityNormalization(runtime, entity, normalizationConfig) {
       toRadians(rollDegrees)
     );
   }
+
+  refreshEntityWorldMatrices(rootNode);
+}
+
+export function fitModelToHeight(entityOrRootNode, targetHeight, options = {}) {
+  if (!Number.isFinite(targetHeight) || targetHeight <= 0) {
+    throw new Error(`Cannot fit model to height: targetHeight must be a finite number > 0 (received ${String(targetHeight)}).`);
+  }
+
+  const rootNode = refreshEntityWorldMatrices(entityOrRootNode);
+  const sourceHeight = getEntityVisualHeight(rootNode);
+
+  if (!Number.isFinite(sourceHeight) || sourceHeight <= 0) {
+    const debugLabel = options.debugLabel ? ` for ${options.debugLabel}` : '';
+    throw new Error(
+      `Cannot fit model to height${debugLabel}: measured source height must be a finite number > 0 (received ${String(sourceHeight)}).`
+    );
+  }
+
+  const uniformScale = targetHeight / sourceHeight;
+  if (typeof rootNode.scaling?.scaleInPlace !== 'function') {
+    throw new Error('Cannot fit model to height: root node scaling.scaleInPlace(amount) is required.');
+  }
+
+  rootNode.scaling.scaleInPlace(uniformScale);
+  refreshEntityWorldMatrices(rootNode);
+
+  return uniformScale;
 }
 
 export function resolvePlayerNormalizationConfigId(options = {}) {
