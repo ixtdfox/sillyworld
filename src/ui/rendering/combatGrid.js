@@ -20,6 +20,7 @@ function toCellMap(cells = []) {
 export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) {
   const blocked = toCellMap(blockedCells);
   const occupiedByCell = new Map();
+  let occupancyRevision = 0;
 
   const bounds = Object.freeze({ minX, maxX, minZ, maxZ });
 
@@ -51,11 +52,19 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
   };
 
   const setOccupied = (cell, unitId) => {
-    occupiedByCell.set(createCellKey(normalizeCell(cell)), unitId);
+    const key = createCellKey(normalizeCell(cell));
+    if (occupiedByCell.get(key) === unitId) {
+      return;
+    }
+
+    occupiedByCell.set(key, unitId);
+    occupancyRevision += 1;
   };
 
   const clearOccupied = (cell) => {
-    occupiedByCell.delete(createCellKey(normalizeCell(cell)));
+    if (occupiedByCell.delete(createCellKey(normalizeCell(cell)))) {
+      occupancyRevision += 1;
+    }
   };
 
   const moveOccupant = (fromCell, toCell, unitId) => {
@@ -73,6 +82,19 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
     ];
   };
 
+  const resolveMovementCost = (fromCell, toCell, options = {}) => {
+    const movementCost = options.movementCost;
+    if (typeof movementCost === 'function') {
+      const resolvedCost = movementCost(normalizeCell(fromCell), normalizeCell(toCell));
+      if (!Number.isFinite(resolvedCost) || resolvedCost <= 0) {
+        return null;
+      }
+      return resolvedCost;
+    }
+
+    return 1;
+  };
+
   const findPath = (startCell, goalCell, options = {}) => {
     const start = normalizeCell(startCell);
     const goal = normalizeCell(goalCell);
@@ -87,12 +109,14 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
     }
 
     const queue = [start];
-    const visited = new Set([createCellKey(start)]);
+    const bestCostByCell = new Map([[createCellKey(start), 0]]);
     const cameFrom = new Map();
 
     while (queue.length > 0) {
+      queue.sort((a, b) => (bestCostByCell.get(createCellKey(a)) ?? Infinity) - (bestCostByCell.get(createCellKey(b)) ?? Infinity));
       const current = queue.shift();
       const currentKey = createCellKey(current);
+      const currentCost = bestCostByCell.get(currentKey) ?? Infinity;
 
       if (current.x === goal.x && current.z === goal.z) {
         const path = [goal];
@@ -109,21 +133,98 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
 
       for (const neighbor of getNeighbors(current)) {
         const neighborKey = createCellKey(neighbor);
-        if (visited.has(neighborKey)) {
+        if (!isCellWalkable(neighbor, { allowOccupiedByUnitId })) {
           continue;
         }
+
+        const stepCost = resolveMovementCost(current, neighbor, options);
+        if (stepCost === null) {
+          continue;
+        }
+
+        const candidateCost = currentCost + stepCost;
+        if (candidateCost >= (bestCostByCell.get(neighborKey) ?? Infinity)) {
+          continue;
+        }
+
+        bestCostByCell.set(neighborKey, candidateCost);
+        cameFrom.set(neighborKey, current);
+
+        if (!queue.some((entry) => createCellKey(entry) === neighborKey)) {
+          queue.push(neighbor);
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const calculatePathCost = (path, options = {}) => {
+    if (!Array.isArray(path) || path.length <= 1) {
+      return 0;
+    }
+
+    let cost = 0;
+    for (let index = 1; index < path.length; index += 1) {
+      const stepCost = resolveMovementCost(path[index - 1], path[index], options);
+      if (stepCost === null) {
+        return Infinity;
+      }
+      cost += stepCost;
+    }
+
+    return cost;
+  };
+
+  const getReachableCells = (startCell, maxCost, options = {}) => {
+    const start = normalizeCell(startCell);
+    const allowOccupiedByUnitId = options.allowOccupiedByUnitId ?? null;
+    const maxAllowedCost = Number.isFinite(maxCost) ? Math.max(0, maxCost) : 0;
+
+    if (!isCellWalkable(start, { allowOccupiedByUnitId })) {
+      return [];
+    }
+
+    const queue = [start];
+    const startKey = createCellKey(start);
+    const bestCostByCell = new Map([[startKey, 0]]);
+
+    while (queue.length > 0) {
+      queue.sort((a, b) => (bestCostByCell.get(createCellKey(a)) ?? Infinity) - (bestCostByCell.get(createCellKey(b)) ?? Infinity));
+      const current = queue.shift();
+      const currentKey = createCellKey(current);
+      const currentCost = bestCostByCell.get(currentKey) ?? Infinity;
+
+      for (const neighbor of getNeighbors(current)) {
+        const neighborKey = createCellKey(neighbor);
 
         if (!isCellWalkable(neighbor, { allowOccupiedByUnitId })) {
           continue;
         }
 
-        visited.add(neighborKey);
-        cameFrom.set(neighborKey, current);
-        queue.push(neighbor);
+        const stepCost = resolveMovementCost(current, neighbor, options);
+        if (stepCost === null) {
+          continue;
+        }
+
+        const nextCost = currentCost + stepCost;
+        if (nextCost > maxAllowedCost || nextCost >= (bestCostByCell.get(neighborKey) ?? Infinity)) {
+          continue;
+        }
+
+        bestCostByCell.set(neighborKey, nextCost);
+        if (!queue.some((entry) => createCellKey(entry) === neighborKey)) {
+          queue.push(neighbor);
+        }
       }
     }
 
-    return null;
+    return Array.from(bestCostByCell.entries())
+      .map(([key, cost]) => {
+        const [x, z] = key.split(',').map((value) => Number.parseInt(value, 10));
+        return { x, z, cost };
+      })
+      .filter((cell) => cell.cost <= maxAllowedCost);
   };
 
   return {
@@ -137,6 +238,9 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
     clearOccupied,
     moveOccupant,
     findPath,
+    calculatePathCost,
+    getReachableCells,
+    getOccupancyRevision: () => occupancyRevision,
     toCellKey: createCellKey
   };
 }

@@ -36,3 +36,23 @@ test('moveOccupant updates occupancy map', () => {
   assert.equal(grid.getOccupiedUnitId({ x: 0, z: 0 }), null);
   assert.equal(grid.getOccupiedUnitId({ x: 0, z: 1 }), 'player_1');
 });
+
+test('getReachableCells respects MP, blocked, and occupied cells', () => {
+  const grid = createCombatGrid({
+    minX: 0,
+    maxX: 3,
+    minZ: 0,
+    maxZ: 3,
+    blockedCells: [{ x: 1, z: 0 }]
+  });
+
+  grid.setOccupied({ x: 1, z: 1 }, 'enemy_1');
+  grid.setOccupied({ x: 0, z: 0 }, 'player_1');
+
+  const reachable = grid.getReachableCells({ x: 0, z: 0 }, 2, { allowOccupiedByUnitId: 'player_1' });
+  const keys = reachable.map((cell) => `${cell.x},${cell.z}`).sort();
+
+  assert.deepEqual(keys, ['0,0', '0,1', '0,2']);
+  assert.ok(!keys.includes('1,0'));
+  assert.ok(!keys.includes('1,1'));
+});
