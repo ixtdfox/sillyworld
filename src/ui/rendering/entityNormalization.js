@@ -3,6 +3,7 @@ import {
   DEFAULT_PLAYER_NORMALIZATION_ID,
   ENTITY_NORMALIZATION_CONFIG
 } from './entityNormalizationConfig.js';
+import { getEntityVisualHeight } from './entityVisualBounds.js';
 
 function toRadians(degrees) {
   return (degrees * Math.PI) / 180;
@@ -149,10 +150,7 @@ export function applyEntityNormalization(runtime, entity, normalizationConfig) {
     throw new Error('Cannot normalize entity without a root node.');
   }
 
-  rootNode.computeWorldMatrix?.(true);
-
-  const bounds = rootNode.getHierarchyBoundingVectors?.();
-  const sourceHeight = bounds ? bounds.max.y - bounds.min.y : NaN;
+  const sourceHeight = getEntityVisualHeight(rootNode);
 
   if (Number.isFinite(sourceHeight) && sourceHeight > 0) {
     const uniformScale = normalizationConfig.targetHeight / sourceHeight;
