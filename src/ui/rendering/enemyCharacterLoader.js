@@ -1,4 +1,9 @@
 import { resolveAsset } from '../../st_bridge/asset.js';
+import {
+  applyEntityNormalization,
+  resolveEnemyNormalizationConfigId,
+  resolveEntityNormalizationConfig
+} from './entityNormalization.js';
 
 const ENEMY_FILE = 'assets/enemy.glb';
 
@@ -14,17 +19,22 @@ function resolveEnemyRoot(result) {
 
 export async function loadEnemyCharacter(runtime, options = {}) {
   const enemyFile = options.enemyFile ?? ENEMY_FILE;
+  const normalizationConfigId = resolveEnemyNormalizationConfigId(options);
 
   console.log('[SillyRPG] Enemy GLB loading start:', enemyFile);
 
   try {
     const result = await runtime.BABYLON.SceneLoader.ImportMeshAsync('', '', resolveAsset(enemyFile), runtime.scene);
     const rootNode = resolveEnemyRoot(result);
+    const normalizationConfig = resolveEntityNormalizationConfig(normalizationConfigId);
+
+    applyEntityNormalization(runtime, { rootNode }, normalizationConfig);
 
     console.log('[SillyRPG] Enemy GLB loading success:', enemyFile);
 
     return {
       rootNode,
+      normalizationConfig,
       meshes: result.meshes,
       skeletons: result.skeletons,
       animationGroups: result.animationGroups

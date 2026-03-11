@@ -17,8 +17,8 @@ const DEFAULT_ENEMY_SPAWN = Object.freeze({ x: 1.5, y: 0, z: -1.5 });
 const DEFAULT_AP_PER_TURN = 2;
 const DEFAULT_MP_PER_TURN = 6;
 const DEFAULT_HP = 20;
-const DEFAULT_BASIC_ATTACK_RANGE = 1;
 const DEFAULT_BASIC_ATTACK_DAMAGE = 4;
+const DEFAULT_FALLBACK_ATTACK_RANGE = 1;
 
 function resolveGroundY({ runtime, x, z, fallbackY = 0 }) {
   const origin = new runtime.BABYLON.Vector3(x, fallbackY + 25, z);
@@ -33,6 +33,8 @@ function placeOnGround(runtime, rootNode, spawn) {
 }
 
 function createCombatUnit(id, team, entity, initiative = 0) {
+  const attackRange = entity?.normalizationConfig?.attackRange;
+
   return {
     id,
     team,
@@ -42,7 +44,7 @@ function createCombatUnit(id, team, entity, initiative = 0) {
     maxHp: DEFAULT_HP,
     hp: DEFAULT_HP,
     isAlive: true,
-    attackRange: DEFAULT_BASIC_ATTACK_RANGE,
+    attackRange: Number.isFinite(attackRange) ? attackRange : DEFAULT_FALLBACK_ATTACK_RANGE,
     attackPower: DEFAULT_BASIC_ATTACK_DAMAGE,
     ap: DEFAULT_AP_PER_TURN,
     mp: DEFAULT_MP_PER_TURN,
@@ -82,8 +84,14 @@ export async function createCombatRuntime(runtime, options = {}) {
     fallbackTarget: options.fallbackCameraTarget ?? { x: 0, y: 0, z: 0 }
   });
 
-  const playerEntity = await loadPlayerCharacter(runtime, { playerFile: options.playerFile });
-  const enemyEntity = await loadEnemyCharacter(runtime, { enemyFile: options.enemyFile });
+  const playerEntity = await loadPlayerCharacter(runtime, {
+    playerFile: options.playerFile,
+    playerNormalizationId: options.playerNormalizationId
+  });
+  const enemyEntity = await loadEnemyCharacter(runtime, {
+    enemyFile: options.enemyFile,
+    enemyNormalizationId: options.enemyNormalizationId
+  });
 
   const gridMapper = createCombatGridMapper({
     cellSize: options.combatGridCellSize ?? 1.5,

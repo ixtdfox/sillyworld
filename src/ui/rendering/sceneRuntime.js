@@ -54,7 +54,7 @@ export async function mountSceneRuntime(canvas, options = {}) {
   let activeGameplayRuntime = null;
   let combatTransitionStarted = false;
   let sceneMode = 'loading';
-  const encounterInteractionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
+  let encounterInteractionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
 
   const emitDebugState = () => {
     if (!options.onDebugStateChange) {
@@ -130,7 +130,9 @@ export async function mountSceneRuntime(canvas, options = {}) {
     const combatRuntime = await createCombatRuntime(runtime, {
       sceneFile: options.combatSceneFile,
       playerFile: options.playerFile,
-      enemyFile: options.enemyFile
+      enemyFile: options.enemyFile,
+      playerNormalizationId: options.playerNormalizationId,
+      enemyNormalizationId: options.enemyNormalizationId
     });
 
     activeGameplayRuntime = combatRuntime;
@@ -151,9 +153,22 @@ export async function mountSceneRuntime(canvas, options = {}) {
       sceneFile: options.sceneFile,
       playerFile: options.playerFile,
       enemyFile: options.enemyFile,
-      enemySpawn: options.enemySpawn
+      enemySpawn: options.enemySpawn,
+      playerNormalizationId: options.playerNormalizationId,
+      enemyNormalizationId: options.enemyNormalizationId
     });
     activeGameplayRuntime = explorationRuntime;
+
+    if (!Number.isFinite(options.interactionDistance)) {
+      const playerInteractionRadius = explorationRuntime.playerEntity?.normalizationConfig?.interactionRadius;
+      const enemyInteractionRadius = explorationRuntime.enemyEntity?.normalizationConfig?.interactionRadius;
+      encounterInteractionDistance = Number.isFinite(playerInteractionRadius)
+        ? playerInteractionRadius
+        : Number.isFinite(enemyInteractionRadius)
+          ? enemyInteractionRadius
+          : ENCOUNTER_INTERACTION_DISTANCE;
+    }
+
     sceneMode = 'exploration';
     emitDebugState();
 
@@ -165,6 +180,7 @@ export async function mountSceneRuntime(canvas, options = {}) {
       detachEncounterInteractionInput: attachEncounterInteractionInput(runtime, {
         playerRoot: explorationRuntime.playerMeshRoot,
         enemyRoot: explorationRuntime.enemyMeshRoot,
+        interactionDistance: encounterInteractionDistance,
         onEncounterStart: (details) => {
           transitionToCombat(details).catch((error) => {
             console.error('[SillyRPG] Failed to transition from exploration to combat.', error);
