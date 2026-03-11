@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  alignEntityToGround,
   getEntityBottomY,
   getEntityVisualHeight,
+  placeEntityOnGround,
   readEntityBoundingBox,
   refreshEntityWorldMatrices
 } from '../src/ui/rendering/entityVisualBounds.js';
@@ -101,4 +103,53 @@ test('returns null/NaN when hierarchy bounds are unavailable', () => {
   assert.equal(readEntityBoundingBox(rootNode), null);
   assert.ok(Number.isNaN(getEntityVisualHeight(rootNode)));
   assert.ok(Number.isNaN(getEntityBottomY(rootNode)));
+});
+
+
+test('placeEntityOnGround repositions bottom Y to ground with optional offset', () => {
+  const rootNode = {
+    position: { y: 2 },
+    computeWorldMatrix() {},
+    getDescendants() {
+      return [];
+    },
+    getChildMeshes() {
+      return [];
+    },
+    getHierarchyBoundingVectors() {
+      return {
+        min: { x: -1, y: 1.5, z: -1 },
+        max: { x: 1, y: 3.5, z: 1 }
+      };
+    }
+  };
+
+  const newPositionY = placeEntityOnGround(rootNode, { groundOffset: 0.25 });
+
+  assert.equal(newPositionY, 0.75);
+  assert.equal(rootNode.position.y, 0.75);
+});
+
+test('alignEntityToGround alias matches placeEntityOnGround behavior', () => {
+  const rootNode = {
+    position: { y: 0 },
+    computeWorldMatrix() {},
+    getDescendants() {
+      return [];
+    },
+    getChildMeshes() {
+      return [];
+    },
+    getHierarchyBoundingVectors() {
+      return {
+        min: { x: -1, y: -0.4, z: -1 },
+        max: { x: 1, y: 1.6, z: 1 }
+      };
+    }
+  };
+
+  const newPositionY = alignEntityToGround(rootNode);
+
+  assert.equal(newPositionY, 0.4);
+  assert.equal(rootNode.position.y, 0.4);
 });

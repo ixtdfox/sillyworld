@@ -3,7 +3,11 @@ import {
   DEFAULT_PLAYER_NORMALIZATION_ID,
   ENTITY_NORMALIZATION_CONFIG
 } from './entityNormalizationConfig.js';
-import { getEntityVisualHeight, refreshEntityWorldMatrices } from './entityVisualBounds.js';
+import {
+  getEntityVisualHeight,
+  placeEntityOnGround,
+  refreshEntityWorldMatrices
+} from './entityVisualBounds.js';
 
 function toRadians(degrees) {
   return (degrees * Math.PI) / 180;
@@ -154,9 +158,10 @@ export function applyEntityNormalization(runtime, entity, normalizationConfig) {
     debugLabel: normalizationConfig.debugLabel
   });
 
-  if (Number.isFinite(normalizationConfig.groundOffset)) {
-    rootNode.position.y += normalizationConfig.groundOffset;
-  }
+  placeEntityOnGround(rootNode, {
+    groundOffset: normalizationConfig.groundOffset,
+    debugLabel: normalizationConfig.debugLabel
+  });
 
   if (normalizationConfig.orientationCorrection) {
     const pitchDegrees = normalizationConfig.orientationCorrection.pitchDegrees;
