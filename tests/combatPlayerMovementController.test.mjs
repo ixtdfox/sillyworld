@@ -297,3 +297,109 @@ test('uses authoritative movement completion when available', () => {
   assert.equal(moveCalls.length, 1);
   detach();
 });
+
+
+test('resolves destination cell from highlighted mesh names', () => {
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedPoint: { x: 99, y: 0, z: 99 },
+      pickedMesh: { name: 'combatMoveHighlight_2_1', parent: null }
+    }
+  });
+
+  const playerUnit = {
+    id: 'player_1',
+    isAlive: true,
+    mp: 6,
+    rootNode: { position: new Vector3(0, 0, 0) },
+    gridCell: { x: 0, z: 0 }
+  };
+
+  let finalMove = null;
+  const detach = attachCombatPlayerMovementController(runtime, {
+    combatState: {
+      status: 'active',
+      phase: 'turn_active',
+      getActiveUnit: () => playerUnit,
+      completeUnitMovement: ({ destinationCell, pathCost }) => {
+        finalMove = { destinationCell, pathCost };
+        playerUnit.gridCell = destinationCell;
+        playerUnit.mp -= pathCost;
+      }
+    },
+    playerUnit,
+    gridMapper: {
+      worldToGridCell: () => ({ x: -9, z: -9 }),
+      gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
+    },
+    grid: {
+      findPath: (_from, to) => [{ x: 0, z: 0 }, { x: to.x, z: to.z }],
+      calculatePathCost: () => 1,
+      moveOccupant: () => {}
+    },
+    resolveGroundY: () => 0
+  });
+
+  runtime.click();
+  runtime.tick();
+  runtime.tick();
+
+  assert.deepEqual(finalMove, {
+    destinationCell: { x: 2, z: 1 },
+    pathCost: 1
+  });
+  assert.deepEqual(playerUnit.gridCell, { x: 2, z: 1 });
+  detach();
+});
+
+test('ignores movement clicks when combat phase is not turn_active', () => {
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedPoint: { x: 2, y: 0, z: 0 },
+      pickedMesh: { name: 'Ground', parent: null }
+    }
+  });
+
+  const playerUnit = {
+    id: 'player_1',
+    isAlive: true,
+    mp: 6,
+    rootNode: { position: new Vector3(0, 0, 0) },
+    gridCell: { x: 0, z: 0 }
+  };
+
+  let attempted = false;
+  const detach = attachCombatPlayerMovementController(runtime, {
+    combatState: {
+      status: 'active',
+      phase: 'resolving',
+      getActiveUnit: () => playerUnit,
+      tryMoveActiveUnit: () => {
+        attempted = true;
+        return { success: true, path: [{ x: 0, z: 0 }, { x: 1, z: 0 }], pathCost: 1 };
+      }
+    },
+    playerUnit,
+    gridMapper: {
+      worldToGridCell: () => ({ x: 1, z: 0 }),
+      gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
+    },
+    grid: {
+      findPath: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }],
+      moveOccupant: () => {
+        attempted = true;
+      }
+    },
+    resolveGroundY: () => 0
+  });
+
+  runtime.click();
+  runtime.tick();
+
+  assert.equal(attempted, false);
+  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  assert.equal(playerUnit.mp, 6);
+  detach();
+});
