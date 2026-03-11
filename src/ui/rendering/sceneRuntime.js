@@ -160,8 +160,8 @@ export async function mountSceneRuntime(canvas, options = {}) {
     activeGameplayRuntime = explorationRuntime;
 
     if (!Number.isFinite(options.interactionDistance)) {
-      const playerInteractionRadius = explorationRuntime.playerEntity?.normalizationConfig?.interactionRadius;
-      const enemyInteractionRadius = explorationRuntime.enemyEntity?.normalizationConfig?.interactionRadius;
+      const playerInteractionRadius = explorationRuntime.playerEntity?.gameplayDimensions?.interactionRadius;
+      const enemyInteractionRadius = explorationRuntime.enemyEntity?.gameplayDimensions?.interactionRadius;
       encounterInteractionDistance = Number.isFinite(playerInteractionRadius)
         ? playerInteractionRadius
         : Number.isFinite(enemyInteractionRadius)

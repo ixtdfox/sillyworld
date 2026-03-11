@@ -33,7 +33,7 @@ function placeOnGround(runtime, rootNode, spawn) {
 }
 
 function createCombatUnit(id, team, entity, initiative = 0) {
-  const attackRange = entity?.normalizationConfig?.attackRange;
+  const attackRange = entity?.gameplayDimensions?.attackRange;
 
   return {
     id,
@@ -49,6 +49,7 @@ function createCombatUnit(id, team, entity, initiative = 0) {
     ap: DEFAULT_AP_PER_TURN,
     mp: DEFAULT_MP_PER_TURN,
     gridCell: null,
+    gameplayDimensions: entity.gameplayDimensions,
     rootNode: entity.rootNode,
     meshes: entity.meshes,
     skeletons: entity.skeletons,
