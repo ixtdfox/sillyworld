@@ -11,6 +11,8 @@ import { createCombatActionResolver } from './combatActionResolver.js';
 import { attachCombatAttackInputController } from './combatAttackInputController.js';
 import { resolveOrCreateSceneCamera } from './babylonRuntime.js';
 import { createCombatDebugHud } from './combatDebugHud.js';
+import { resolveCombatGridConfig } from './combatGridConfig.js';
+import { createCombatGridOverlayRenderer } from './combatGridOverlayRenderer.js';
 
 const COMBAT_SCENE_FILE = 'assets/combat.glb';
 const DEFAULT_PLAYER_SPAWN = Object.freeze({ x: -1.5, y: 0, z: 1.5 });
@@ -97,17 +99,19 @@ export async function createCombatRuntime(runtime, options = {}) {
     enemyArchetypeId: options.enemyArchetypeId
   });
 
+  const combatGridConfig = resolveCombatGridConfig(options);
+
   const gridMapper = createCombatGridMapper({
-    cellSize: options.combatGridCellSize ?? 1.5,
-    originWorldX: options.combatGridOriginX ?? 0,
-    originWorldZ: options.combatGridOriginZ ?? 0
+    cellSize: combatGridConfig.cellSize,
+    originWorldX: combatGridConfig.originWorldX,
+    originWorldZ: combatGridConfig.originWorldZ
   });
   const grid = createCombatGrid({
-    minX: options.combatGridMinX ?? -8,
-    maxX: options.combatGridMaxX ?? 8,
-    minZ: options.combatGridMinZ ?? -8,
-    maxZ: options.combatGridMaxZ ?? 8,
-    blockedCells: options.combatGridBlockedCells ?? []
+    minX: combatGridConfig.minX,
+    maxX: combatGridConfig.maxX,
+    minZ: combatGridConfig.minZ,
+    maxZ: combatGridConfig.maxZ,
+    blockedCells: combatGridConfig.blockedCells
   });
 
   placeOnGround(runtime, playerEntity.rootNode, options.playerSpawn ?? DEFAULT_PLAYER_SPAWN);
@@ -297,6 +301,10 @@ export async function createCombatRuntime(runtime, options = {}) {
   });
 
   const detachCombatDebugHud = createCombatDebugHud(runtime, { combatState });
+  const detachCombatGridOverlay = createCombatGridOverlayRenderer(runtime, {
+    combatState,
+    resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 })
+  });
 
   return {
     combatState,
@@ -308,6 +316,7 @@ export async function createCombatRuntime(runtime, options = {}) {
       detachCombatMovementController?.();
       detachCombatAttackInputController?.();
       detachCombatDebugHud?.();
+      detachCombatGridOverlay?.();
       enemyEntity.rootNode?.dispose(false, true);
       playerEntity.rootNode?.dispose(false, true);
       combatScene.sceneContainer?.dispose(false, true);

@@ -21,6 +21,8 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
   const blocked = toCellMap(blockedCells);
   const occupiedByCell = new Map();
 
+  const bounds = Object.freeze({ minX, maxX, minZ, maxZ });
+
   const isWithinBounds = (cell) => {
     const norm = normalizeCell(cell);
     return norm.x >= minX && norm.x <= maxX && norm.z >= minZ && norm.z <= maxZ;
@@ -125,6 +127,7 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
   };
 
   return {
+    bounds,
     isWithinBounds,
     isBlocked,
     isOccupied,
