@@ -83,7 +83,7 @@ export async function mountSceneRuntime(canvas, options = {}) {
         combat: {
           state: combatState.status,
           phase: combatState.phase,
-          round: combatState.turn?.round ?? null,
+          round: combatState.turn?.roundNumber ?? null,
           activeUnit: activeUnit ? `${activeUnit.id}:${activeUnit.displayName ?? activeUnit.id}` : null,
           turnOwner: activeUnit?.team ?? null,
           actionMode: combatState.inputMode ?? null,
