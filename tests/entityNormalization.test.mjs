@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 
 import {
   applyEntityNormalization,
-  resolveEntityNormalizationConfig,
+  createEntityNormalizationConfigStore,
+  getEntityNormalizationConfig,
+  hasEntityNormalizationConfig,
   resolveEnemyNormalizationConfigId,
+  resolveEntityNormalizationConfig,
   resolvePlayerNormalizationConfigId
 } from '../src/ui/rendering/entityNormalization.js';
 
@@ -18,8 +21,71 @@ test('resolves configured normalization entries', () => {
   assert.equal(typeof enemy.attackRange, 'number');
 });
 
+test('supports has/get runtime config API', () => {
+  assert.equal(hasEntityNormalizationConfig('player'), true);
+  assert.equal(hasEntityNormalizationConfig('enemy_humanoid_raider'), true);
+  assert.equal(hasEntityNormalizationConfig('missing_entity'), false);
+
+  const byAlias = getEntityNormalizationConfig('enemy_humanoid_raider');
+  assert.equal(byAlias.archetypeId, 'enemy_humanoid_raider');
+});
+
 test('throws when normalization config id is missing', () => {
-  assert.throws(() => resolveEntityNormalizationConfig('missing_entity'), /Missing entity normalization config/);
+  assert.throws(() => resolveEntityNormalizationConfig('missing_entity'), /Missing entity normalization config for entity id/);
+});
+
+test('normalizes optional fields during load', () => {
+  const store = createEntityNormalizationConfigStore({
+    test_npc: {
+      targetHeight: 1,
+      collisionRadius: 0.5,
+      collisionHeight: 1.5,
+      attackRange: 0
+    }
+  });
+
+  const config = store.getEntityNormalizationConfig('test_npc');
+  assert.equal(config.interactionRadius, 0);
+  assert.equal(config.groundOffset, 0);
+  assert.equal(config.orientationCorrection, null);
+  assert.equal(config.debugLabel, 'test_npc');
+});
+
+test('validates required numeric field constraints with descriptive errors', () => {
+  assert.throws(
+    () => createEntityNormalizationConfigStore({ bad: { targetHeight: 0, collisionRadius: 1, collisionHeight: 1, attackRange: 1 } }),
+    /field "targetHeight" must be > 0/
+  );
+
+  assert.throws(
+    () => createEntityNormalizationConfigStore({ bad: { targetHeight: 1, collisionRadius: 0, collisionHeight: 1, attackRange: 1 } }),
+    /field "collisionRadius" must be > 0/
+  );
+
+  assert.throws(
+    () => createEntityNormalizationConfigStore({ bad: { targetHeight: 1, collisionRadius: 1, collisionHeight: 0, attackRange: 1 } }),
+    /field "collisionHeight" must be > 0/
+  );
+
+  assert.throws(
+    () => createEntityNormalizationConfigStore({ bad: { targetHeight: 1, collisionRadius: 1, collisionHeight: 1, attackRange: -1 } }),
+    /field "attackRange" must be >= 0/
+  );
+});
+
+test('validates orientationCorrection values', () => {
+  assert.throws(
+    () => createEntityNormalizationConfigStore({
+      bad: {
+        targetHeight: 1,
+        collisionRadius: 1,
+        collisionHeight: 1,
+        attackRange: 0,
+        orientationCorrection: 'wrong'
+      }
+    }),
+    /orientationCorrection" must be an object/
+  );
 });
 
 test('applies scaling, ground offset and orientation correction', () => {
@@ -60,7 +126,9 @@ test('applies scaling, ground offset and orientation correction', () => {
     attackRange: 2,
     groundOffset: 0.25,
     orientationCorrection: {
-      yawDegrees: 90
+      pitchDegrees: 0,
+      yawDegrees: 90,
+      rollDegrees: 0
     }
   });
 
