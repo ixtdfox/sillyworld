@@ -1,7 +1,7 @@
-const DEFAULT_CELL_SIZE = 1.5;
+import { DEFAULT_COMBAT_GRID_CONFIG } from './combatGridConfig.js';
 
 export function createCombatGridMapper(options = {}) {
-  const cellSize = options.cellSize ?? DEFAULT_CELL_SIZE;
+  const cellSize = options.cellSize ?? DEFAULT_COMBAT_GRID_CONFIG.cellSize;
   const originWorldX = options.originWorldX ?? 0;
   const originWorldZ = options.originWorldZ ?? 0;
 
@@ -20,6 +20,8 @@ export function createCombatGridMapper(options = {}) {
 
   return {
     cellSize,
+    originWorldX,
+    originWorldZ,
     worldToGridCell,
     gridCellToWorld
   };
