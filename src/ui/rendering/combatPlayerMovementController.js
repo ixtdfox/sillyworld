@@ -3,6 +3,30 @@ const DEFAULT_STOP_DISTANCE = 0.05;
 
 const GROUND_MESH_NAME = 'Ground';
 
+function calculatePathCost(grid, path, movementCost) {
+  if (typeof grid.calculatePathCost === 'function') {
+    return grid.calculatePathCost(path, { movementCost });
+  }
+
+  if (!Array.isArray(path) || path.length <= 1) {
+    return 0;
+  }
+
+  if (typeof movementCost === 'function') {
+    let totalCost = 0;
+    for (let index = 1; index < path.length; index += 1) {
+      const stepCost = movementCost(path[index - 1], path[index]);
+      if (!Number.isFinite(stepCost) || stepCost <= 0) {
+        return Infinity;
+      }
+      totalCost += stepCost;
+    }
+    return totalCost;
+  }
+
+  return path.length - 1;
+}
+
 function isGroundNode(node) {
   let current = node;
   while (current) {
@@ -25,7 +49,8 @@ export function attachCombatPlayerMovementController(runtime, options) {
     onMovingStateChange = () => {},
     isMovementEnabled = () => true,
     moveSpeed = DEFAULT_MOVE_SPEED,
-    stopDistance = DEFAULT_STOP_DISTANCE
+    stopDistance = DEFAULT_STOP_DISTANCE,
+    movementCost
   } = options;
 
   const getActiveUnit = () => combatState.getActiveUnit?.() ?? null;
@@ -71,14 +96,15 @@ export function attachCombatPlayerMovementController(runtime, options) {
 
     const destinationCell = gridMapper.worldToGridCell(pickResult.pickedPoint);
     const path = grid.findPath(playerUnit.gridCell, destinationCell, {
-      allowOccupiedByUnitId: playerUnit.id
+      allowOccupiedByUnitId: playerUnit.id,
+      movementCost
     });
 
     if (!path || path.length <= 1) {
       return;
     }
 
-    const pathCost = path.length - 1;
+    const pathCost = calculatePathCost(grid, path, movementCost);
     if (pathCost > playerUnit.mp) {
       console.log('[SillyRPG] Combat movement blocked: insufficient MP.', {
         currentMp: playerUnit.mp,

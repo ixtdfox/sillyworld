@@ -13,6 +13,7 @@ import { resolveOrCreateSceneCamera } from './babylonRuntime.js';
 import { createCombatDebugHud } from './combatDebugHud.js';
 import { resolveCombatGridConfig } from './combatGridConfig.js';
 import { createCombatGridOverlayRenderer } from './combatGridOverlayRenderer.js';
+import { createCombatMovementRangeHighlighter } from './combatMovementRangeHighlighter.js';
 
 const COMBAT_SCENE_FILE = 'assets/combat.glb';
 const DEFAULT_PLAYER_SPAWN = Object.freeze({ x: -1.5, y: 0, z: 1.5 });
@@ -22,6 +23,10 @@ const DEFAULT_MP_PER_TURN = 6;
 const DEFAULT_HP = 20;
 const DEFAULT_BASIC_ATTACK_DAMAGE = 4;
 const DEFAULT_FALLBACK_ATTACK_RANGE = 1;
+
+function resolveMovementCostRule(options = {}) {
+  return typeof options.movementCost === 'function' ? options.movementCost : undefined;
+}
 
 function resolveGroundY({ runtime, x, z, fallbackY = 0 }) {
   const origin = new runtime.BABYLON.Vector3(x, fallbackY + 25, z);
@@ -274,6 +279,8 @@ export async function createCombatRuntime(runtime, options = {}) {
 
   combatState.startCombat();
 
+  const movementCost = resolveMovementCostRule(options);
+
   const playerAnimationController = createPlayerAnimationController(playerEntity);
   const detachCombatMovementController = attachCombatPlayerMovementController(runtime, {
     combatState,
@@ -282,7 +289,8 @@ export async function createCombatRuntime(runtime, options = {}) {
     gridMapper,
     isMovementEnabled: () => combatState.inputMode === 'move',
     resolveGroundY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: playerUnit.rootNode.position.y }),
-    onMovingStateChange: (isMoving) => playerAnimationController.setMoving(isMoving)
+    onMovingStateChange: (isMoving) => playerAnimationController.setMoving(isMoving),
+    movementCost
   });
 
   const detachCamera = attachGameplayIsometricCamera(runtime, playerEntity.rootNode, {
@@ -305,6 +313,15 @@ export async function createCombatRuntime(runtime, options = {}) {
     combatState,
     resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 })
   });
+  const detachMovementRangeHighlighter = createCombatMovementRangeHighlighter(runtime, {
+    combatState,
+    playerUnit,
+    grid,
+    gridMapper,
+    isVisible: () => combatState.inputMode === 'move',
+    resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 }),
+    movementCost
+  });
 
   return {
     combatState,
@@ -317,6 +334,7 @@ export async function createCombatRuntime(runtime, options = {}) {
       detachCombatAttackInputController?.();
       detachCombatDebugHud?.();
       detachCombatGridOverlay?.();
+      detachMovementRangeHighlighter?.();
       enemyEntity.rootNode?.dispose(false, true);
       playerEntity.rootNode?.dispose(false, true);
       combatScene.sceneContainer?.dispose(false, true);
