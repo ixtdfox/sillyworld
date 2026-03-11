@@ -1,7 +1,7 @@
 const DEFAULT_MOVE_SPEED = 3;
 const DEFAULT_STOP_DISTANCE = 0.05;
 
-const GROUND_MESH_NAME = 'Ground';
+const HIGHLIGHT_MESH_PREFIX = 'combatMoveHighlight_';
 
 function calculatePathCost(grid, path, movementCost) {
   if (typeof grid.calculatePathCost === 'function') {
@@ -27,16 +27,39 @@ function calculatePathCost(grid, path, movementCost) {
   return path.length - 1;
 }
 
-function isGroundNode(node) {
-  let current = node;
-  while (current) {
-    if (current.name === GROUND_MESH_NAME) {
-      return true;
-    }
-    current = current.parent ?? null;
+function tryParseCellFromMeshName(meshName) {
+  if (typeof meshName !== 'string' || !meshName.startsWith(HIGHLIGHT_MESH_PREFIX)) {
+    return null;
   }
 
-  return false;
+  const [x, z] = meshName.slice(HIGHLIGHT_MESH_PREFIX.length).split('_').map((value) => Number.parseInt(value, 10));
+  if (!Number.isFinite(x) || !Number.isFinite(z)) {
+    return null;
+  }
+
+  return { x, z };
+}
+
+function tryResolveCellFromPick(pickResult, gridMapper) {
+  if (!pickResult?.hit || !pickResult.pickedPoint) {
+    return null;
+  }
+
+  const mesh = pickResult.pickedMesh ?? null;
+  const metadataCell = mesh?.metadata?.combatGridCell ?? mesh?.metadata?.gridCell ?? null;
+  if (metadataCell && Number.isFinite(metadataCell.x) && Number.isFinite(metadataCell.z)) {
+    return {
+      x: Math.trunc(metadataCell.x),
+      z: Math.trunc(metadataCell.z)
+    };
+  }
+
+  const meshNamedCell = tryParseCellFromMeshName(mesh?.name);
+  if (meshNamedCell) {
+    return meshNamedCell;
+  }
+
+  return gridMapper.worldToGridCell(pickResult.pickedPoint);
 }
 
 export function attachCombatPlayerMovementController(runtime, options) {
@@ -50,7 +73,8 @@ export function attachCombatPlayerMovementController(runtime, options) {
     isMovementEnabled = () => true,
     moveSpeed = DEFAULT_MOVE_SPEED,
     stopDistance = DEFAULT_STOP_DISTANCE,
-    movementCost
+    movementCost,
+    debugLog = () => {}
   } = options;
 
   const getActiveUnit = () => combatState.getActiveUnit?.() ?? null;
@@ -81,7 +105,13 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    if (combatState.status !== 'active' || !playerUnit.isAlive || isMoving || getActiveUnit()?.id !== playerUnit.id) {
+    if (
+      combatState.status !== 'active'
+      || (combatState.phase && combatState.phase !== 'turn_active')
+      || !playerUnit.isAlive
+      || isMoving
+      || getActiveUnit()?.id !== playerUnit.id
+    ) {
       return;
     }
 
@@ -93,12 +123,17 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    const pickResult = runtime.scene.pick(runtime.scene.pointerX, runtime.scene.pointerY);
-    if (!pickResult?.hit || !pickResult.pickedPoint || !isGroundNode(pickResult.pickedMesh)) {
+    const pickResult = pointerInfo.pickInfo?.hit
+      ? pointerInfo.pickInfo
+      : runtime.scene.pick(runtime.scene.pointerX, runtime.scene.pointerY);
+    const destinationCell = tryResolveCellFromPick(pickResult, gridMapper);
+    if (!destinationCell) {
+      debugLog('[combat-move] rejected click: no valid destination cell', {
+        pickedMeshName: pickResult?.pickedMesh?.name ?? 'none'
+      });
       return;
     }
 
-    const destinationCell = gridMapper.worldToGridCell(pickResult.pickedPoint);
     const movementAttempt = typeof combatState.tryMoveActiveUnit === 'function'
       ? combatState.tryMoveActiveUnit({
         unitId: playerUnit.id,
@@ -106,6 +141,14 @@ export function attachCombatPlayerMovementController(runtime, options) {
         movementCost
       })
       : null;
+
+    if (movementAttempt && !movementAttempt.success) {
+      debugLog('[combat-move] movement rejected by combat state', {
+        reason: movementAttempt.reason,
+        destinationCell
+      });
+      return;
+    }
 
     const path = movementAttempt?.path ?? grid.findPath(playerUnit.gridCell, destinationCell, {
       allowOccupiedByUnitId: playerUnit.id,
