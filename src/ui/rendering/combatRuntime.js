@@ -15,6 +15,7 @@ import { resolveCombatGridConfig } from './combatGridConfig.js';
 import { createCombatGridOverlayRenderer } from './combatGridOverlayRenderer.js';
 import { createCombatMovementRangeHighlighter } from './combatMovementRangeHighlighter.js';
 import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from './playerActionModeStateMachine.js';
+import { createCombatDebugShell } from './combatDebugShell.js';
 
 const COMBAT_SCENE_FILE = 'assets/combat.glb';
 const DEFAULT_PLAYER_SPAWN = Object.freeze({ x: -1.5, y: 0, z: 1.5 });
@@ -610,19 +611,41 @@ export async function createCombatRuntime(runtime, options = {}) {
     isAttackEnabled: () => combatState.inputMode === PLAYER_ACTION_MODES.ATTACK
   });
 
-  const detachCombatDebugHud = createCombatDebugHud(runtime, { combatState });
-  const detachCombatGridOverlay = createCombatGridOverlayRenderer(runtime, {
-    combatState,
-    resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 })
+  const debugShell = createCombatDebugShell(runtime);
+  debugShell.registerPanel({
+    id: 'combat-hud',
+    label: 'Combat HUD',
+    initialVisible: true,
+    createPanel: () => createCombatDebugHud(runtime, { combatState })
   });
-  const detachMovementRangeHighlighter = createCombatMovementRangeHighlighter(runtime, {
-    combatState,
-    playerUnit,
-    grid,
-    gridMapper,
-    isVisible: () => combatState.inputMode === PLAYER_ACTION_MODES.MOVE,
-    resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 }),
-    movementCost
+  debugShell.registerPanel({
+    id: 'combat-overlay',
+    label: 'Combat Overlay',
+    initialVisible: true,
+    createPanel: () => createCombatMovementRangeHighlighter(runtime, {
+      combatState,
+      playerUnit,
+      grid,
+      gridMapper,
+      isVisible: () => combatState.inputMode === PLAYER_ACTION_MODES.MOVE,
+      resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 }),
+      movementCost
+    })
+  });
+  debugShell.registerPanel({
+    id: 'grid-debug',
+    label: 'Grid Debug',
+    initialVisible: true,
+    createPanel: () => createCombatGridOverlayRenderer(runtime, {
+      combatState,
+      resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 })
+    })
+  });
+  debugShell.registerPanel({
+    id: 'future-panel',
+    label: 'Future Panel',
+    enabled: false,
+    createPanel: () => null
   });
 
   return {
@@ -634,9 +657,7 @@ export async function createCombatRuntime(runtime, options = {}) {
       detachCamera?.();
       detachCombatMovementController?.();
       detachCombatAttackInputController?.();
-      detachCombatDebugHud?.();
-      detachCombatGridOverlay?.();
-      detachMovementRangeHighlighter?.();
+      debugShell?.dispose?.();
       enemyEntity.rootNode?.dispose(false, true);
       playerEntity.rootNode?.dispose(false, true);
       combatScene.sceneContainer?.dispose(false, true);
