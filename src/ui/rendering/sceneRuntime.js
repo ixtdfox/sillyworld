@@ -53,6 +53,7 @@ export async function mountSceneRuntime(canvas, options = {}) {
   const explorationInputScope = createExplorationInputScope();
   let activeGameplayRuntime = null;
   let combatTransitionStarted = false;
+  let combatExitInProgress = false;
   let sceneMode = 'loading';
   let encounterInteractionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
   const debugEnabled = options.debugEnabled === true;
@@ -135,38 +136,7 @@ export async function mountSceneRuntime(canvas, options = {}) {
     activeGameplayRuntime = null;
   };
 
-  const transitionToCombat = async (encounterDetails) => {
-    if (combatTransitionStarted) {
-      return null;
-    }
-
-    combatTransitionStarted = true;
-    sceneMode = 'transitioning';
-    emitDebugState();
-    teardownActiveGameplayRuntime();
-
-    const combatRuntime = await createCombatRuntime(runtime, {
-      sceneFile: options.combatSceneFile,
-      playerFile: options.playerFile,
-      enemyFile: options.enemyFile,
-      playerNormalizationId: options.playerNormalizationId,
-      enemyNormalizationId: options.enemyNormalizationId,
-      enemyArchetypeId: options.enemyArchetypeId
-    });
-
-    activeGameplayRuntime = combatRuntime;
-    sceneMode = 'combat';
-    emitDebugState();
-
-    options.onEncounterStart?.({
-      ...encounterDetails,
-      combatState: combatRuntime.combatState
-    });
-
-    return combatRuntime.combatState;
-  };
-
-  try {
+  const setupExplorationRuntime = async () => {
     const explorationRuntime = await createDistrictExplorationRuntime(runtime, {
       districtId: options.districtId,
       sceneFile: options.sceneFile,
@@ -217,6 +187,64 @@ export async function mountSceneRuntime(canvas, options = {}) {
         }
       )
     });
+  };
+
+  const transitionOutOfCombat = async () => {
+    if (combatExitInProgress) {
+      return;
+    }
+
+    combatExitInProgress = true;
+    sceneMode = 'transitioning';
+    emitDebugState();
+    teardownActiveGameplayRuntime();
+    combatTransitionStarted = false;
+
+    try {
+      await setupExplorationRuntime();
+    } finally {
+      combatExitInProgress = false;
+    }
+  };
+
+  const transitionToCombat = async (encounterDetails) => {
+    if (combatTransitionStarted) {
+      return null;
+    }
+
+    combatTransitionStarted = true;
+    sceneMode = 'transitioning';
+    emitDebugState();
+    teardownActiveGameplayRuntime();
+
+    const combatRuntime = await createCombatRuntime(runtime, {
+      sceneFile: options.combatSceneFile,
+      playerFile: options.playerFile,
+      enemyFile: options.enemyFile,
+      playerNormalizationId: options.playerNormalizationId,
+      enemyNormalizationId: options.enemyNormalizationId,
+      enemyArchetypeId: options.enemyArchetypeId,
+      onCombatEnd: () => {
+        transitionOutOfCombat().catch((error) => {
+          console.error('[SillyRPG] Failed to transition from combat to exploration.', error);
+        });
+      }
+    });
+
+    activeGameplayRuntime = combatRuntime;
+    sceneMode = 'combat';
+    emitDebugState();
+
+    options.onEncounterStart?.({
+      ...encounterDetails,
+      combatState: combatRuntime.combatState
+    });
+
+    return combatRuntime.combatState;
+  };
+
+  try {
+    await setupExplorationRuntime();
   } catch (error) {
     teardownActiveGameplayRuntime();
     runtime.dispose();

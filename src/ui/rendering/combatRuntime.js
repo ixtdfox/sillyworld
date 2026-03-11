@@ -366,6 +366,13 @@ export async function createCombatRuntime(runtime, options = {}) {
   };
 
   const evaluateAndFinalizeCombat = () => {
+    if (combatState.status !== 'active') {
+      return {
+        ended: true,
+        result: combatState.result
+      };
+    }
+
     const outcome = actionResolver.evaluateCombatOutcome(Object.values(combatState.units));
     if (!outcome.ended) {
       return outcome;
@@ -374,10 +381,31 @@ export async function createCombatRuntime(runtime, options = {}) {
     combatState.status = 'ended';
     combatState.result = outcome.result;
     combatState.phase = 'combat_end';
+    actionMode.reset();
+    combatState.inputMode = actionMode.getMode();
+    combatState.selectedTargetId = null;
+    combatState.lastActionResult = {
+      success: true,
+      action: 'combat_end',
+      result: outcome.result
+    };
+
+    options.onCombatEnd?.({
+      result: outcome.result,
+      combatState
+    });
+
     return outcome;
   };
 
   combatState.tryBasicAttack = ({ attackerId, targetId }) => {
+    if (combatState.status !== 'active' || combatState.phase !== 'turn_active') {
+      return {
+        success: false,
+        reason: 'combat_not_active'
+      };
+    }
+
     const attacker = Object.values(combatState.units).find((unit) => unit.id === attackerId) ?? null;
     const target = Object.values(combatState.units).find((unit) => unit.id === targetId) ?? null;
     const activeUnitId = turnManager.getActiveUnit()?.unitId ?? null;
