@@ -139,6 +139,8 @@ export async function createCombatRuntime(runtime, options = {}) {
   combatState.status = 'active';
   combatState.result = null;
   combatState.inputMode = 'move';
+  combatState.selectedTargetId = null;
+  combatState.lastActionResult = null;
 
   combatState.grid = grid;
   combatState.gridMapper = gridMapper;
@@ -365,8 +367,9 @@ export async function createCombatRuntime(runtime, options = {}) {
   const detachCombatAttackInputController = attachCombatAttackInputController(runtime, {
     combatState,
     attackerUnit: playerUnit,
-    targetUnit: enemyUnit,
-    targetRoot: enemyEntity.rootNode,
+    getPotentialTargets: () => Object.values(combatState.units)
+      .filter((unit) => unit.team !== playerUnit.team)
+      .map((unit) => ({ unit, targetRoot: unit.rootNode })),
     isAttackEnabled: () => combatState.inputMode === 'attack'
   });
 

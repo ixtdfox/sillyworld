@@ -1,51 +1,51 @@
-function isDescendantOf(node, possibleAncestor) {
-  let current = node;
-  while (current) {
-    if (current === possibleAncestor) {
-      return true;
-    }
-    current = current.parent ?? null;
+import { attachCombatTargetSelectionFlow } from './combatTargetSelectionFlow.js';
+
+function resolveTargetEntries(options = {}) {
+  if (typeof options.getPotentialTargets === 'function') {
+    return options.getPotentialTargets().map((entry) => ({
+      unit: entry.unit,
+      targetRoot: entry.targetRoot
+    }));
   }
 
-  return false;
+  if (options.targetUnit && options.targetRoot) {
+    return [{
+      unit: options.targetUnit,
+      targetRoot: options.targetRoot
+    }];
+  }
+
+  return [];
 }
 
 export function attachCombatAttackInputController(runtime, options = {}) {
   const {
     combatState,
     attackerUnit,
-    targetUnit,
-    targetRoot,
     isAttackEnabled = () => true
   } = options;
 
-  const pointerObserver = runtime.scene.onPointerObservable.add((pointerInfo) => {
-    if (pointerInfo.type !== runtime.BABYLON.PointerEventTypes.POINTERDOWN) {
-      return;
-    }
+  const detachTargetSelectionFlow = attachCombatTargetSelectionFlow(runtime, {
+    getTargetEntries: () => resolveTargetEntries(options),
+    isEnabled: () => combatState.status === 'active' && isAttackEnabled(),
+    onSelectionChanged: (entry) => {
+      combatState.selectedTargetId = entry?.unit?.id ?? null;
+    },
+    onTargetConfirmed: (entry) => {
+      const targetId = entry?.unit?.id;
+      if (!targetId) {
+        return;
+      }
 
-    if (combatState.status !== 'active' || !targetUnit?.isAlive) {
-      return;
+      const result = combatState.tryBasicAttack({
+        attackerId: attackerUnit.id,
+        targetId
+      });
+      combatState.lastActionResult = result;
     }
-
-    if (!isAttackEnabled()) {
-      return;
-    }
-
-    const pickResult = runtime.scene.pick(runtime.scene.pointerX, runtime.scene.pointerY);
-    if (!pickResult?.hit || !pickResult.pickedMesh) {
-      return;
-    }
-
-    const hitTarget = pickResult.pickedMesh === targetRoot || isDescendantOf(pickResult.pickedMesh, targetRoot);
-    if (!hitTarget) {
-      return;
-    }
-
-    combatState.tryBasicAttack({ attackerId: attackerUnit.id, targetId: targetUnit.id });
   });
 
   return () => {
-    runtime.scene.onPointerObservable.remove(pointerObserver);
+    detachTargetSelectionFlow?.();
   };
 }
