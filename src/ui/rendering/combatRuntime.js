@@ -86,7 +86,12 @@ function createCombatState({ combatScene, playerUnit, enemyUnit, turnManager }) 
       player: playerUnit,
       enemy: enemyUnit
     },
-    turn: turnState
+    turn: turnState,
+    actionAvailability: {
+      canMove: false,
+      canAttack: false,
+      canEndTurn: false
+    }
   };
 }
 
@@ -212,7 +217,19 @@ export async function createCombatRuntime(runtime, options = {}) {
 
   combatState.completeUnitMovement = ({ unitId, destinationCell, pathCost } = {}) => {
     const unit = findUnitById(unitId);
-    if (!unit || !destinationCell || !Number.isFinite(pathCost) || pathCost <= 0) {
+    const activeUnit = combatState.getActiveUnit();
+    if (
+      !unit
+      || !destinationCell
+      || !Number.isFinite(pathCost)
+      || pathCost <= 0
+      || combatState.status !== 'active'
+      || combatState.phase !== 'turn_active'
+      || !unit.isAlive
+      || !activeUnit
+      || activeUnit.id !== unit.id
+      || pathCost > unit.mp
+    ) {
       return { success: false, reason: 'invalid_request' };
     }
 
@@ -220,6 +237,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     grid.moveOccupant(fromCell, destinationCell, unit.id);
     unit.gridCell = destinationCell;
     unit.mp = Math.max(0, unit.mp - pathCost);
+    syncCombatHudState();
 
     return {
       success: true,
@@ -235,6 +253,14 @@ export async function createCombatRuntime(runtime, options = {}) {
     if (!isPlayerTurn && inputMode !== PLAYER_ACTION_MODES.IDLE) {
       actionMode.reset();
       combatState.inputMode = actionMode.getMode();
+      return combatState.inputMode;
+    }
+
+    if (inputMode === PLAYER_ACTION_MODES.MOVE && (!Number.isFinite(playerUnit.mp) || playerUnit.mp <= 0)) {
+      return combatState.inputMode;
+    }
+
+    if (inputMode === PLAYER_ACTION_MODES.ATTACK && (!Number.isFinite(playerUnit.ap) || playerUnit.ap <= 0)) {
       return combatState.inputMode;
     }
 
@@ -271,14 +297,52 @@ export async function createCombatRuntime(runtime, options = {}) {
     }
   };
 
+  const syncCombatHudState = () => {
+    syncTurnState();
+
+    const activeUnit = combatState.getActiveUnit();
+    const canAct = combatState.status === 'active'
+      && combatState.phase === 'turn_active'
+      && activeUnit?.id === playerUnit.id
+      && playerUnit.isAlive;
+
+    combatState.actionAvailability = {
+      canMove: canAct && Number.isFinite(playerUnit.mp) && playerUnit.mp > 0,
+      canAttack: canAct && Number.isFinite(playerUnit.ap) && playerUnit.ap > 0,
+      canEndTurn: canAct
+    };
+  };
+
+  combatState.refreshCombatUiState = syncCombatHudState;
+
+  const advanceToNextLivingUnit = () => {
+    const maxSkips = combatState.turn?.orderedUnits?.length ?? 0;
+    let skipCount = 0;
+
+    while (skipCount < maxSkips) {
+      const activeUnit = combatState.getActiveUnit();
+      if (activeUnit?.isAlive) {
+        return activeUnit;
+      }
+
+      turnManager.endTurn();
+      turnManager.advanceToNextUnit();
+      skipCount += 1;
+    }
+
+    return null;
+  };
+
   const startTurn = () => {
     if (combatState.status !== 'active') {
       return;
     }
 
-    if (!combatState.getActiveUnit()?.isAlive) {
-      turnManager.endTurn();
-      turnManager.advanceToNextUnit();
+    const livingActiveUnit = advanceToNextLivingUnit();
+    if (!livingActiveUnit) {
+      evaluateAndFinalizeCombat();
+      syncCombatHudState();
+      return;
     }
 
     turnManager.startTurn();
@@ -289,7 +353,7 @@ export async function createCombatRuntime(runtime, options = {}) {
         combatState.setInputMode(PLAYER_ACTION_MODES.MOVE);
       }
     }
-    syncTurnState();
+    syncCombatHudState();
   };
 
   const endTurn = () => {
@@ -319,6 +383,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     const activeUnitId = turnManager.getActiveUnit()?.unitId ?? null;
 
     const result = actionResolver.resolveBasicAttack({ attacker, target, activeUnitId });
+    syncCombatHudState();
     if (!result.success) {
       return result;
     }
@@ -328,6 +393,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     }
 
     const outcome = evaluateAndFinalizeCombat();
+    syncCombatHudState();
     return {
       ...result,
       combatResult: outcome.result
@@ -430,6 +496,7 @@ export async function createCombatRuntime(runtime, options = {}) {
         pathCost: selectedMove.pathCost,
         mpRemaining: activeUnit.mp
       };
+      syncCombatHudState();
 
       if (manhattanDistance(activeUnit.gridCell, playerUnit.gridCell) <= activeUnit.attackRange) {
         continue;
@@ -459,7 +526,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     turnManager.startCombat();
     startTurn();
     runEnemyTurnsIfNeeded();
-    syncTurnState();
+    syncCombatHudState();
     return combatState.turn;
   };
 
@@ -470,7 +537,7 @@ export async function createCombatRuntime(runtime, options = {}) {
 
     endTurn();
     runEnemyTurnsIfNeeded();
-    syncTurnState();
+    syncCombatHudState();
     return combatState.turn;
   };
 

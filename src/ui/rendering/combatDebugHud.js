@@ -42,6 +42,9 @@ function createActionButton(runtime, label, onClick) {
   button.addControl(buttonText);
 
   button.onPointerDownObservable.add(() => {
+    if (!button.isEnabled) {
+      return;
+    }
     onClick?.();
   });
 
@@ -129,10 +132,36 @@ export function createCombatDebugHud(runtime, options = {}) {
 
   const setButtonState = () => {
     const mode = combatState.inputMode ?? 'idle';
+    const availability = combatState.actionAvailability ?? {};
     idleButton.button.background = mode === 'idle' ? '#2f6f7ddd' : '#2e4961cc';
     moveButton.button.background = mode === 'move' ? '#2f7d42dd' : '#2e4961cc';
     attackButton.button.background = mode === 'attack' ? '#964040dd' : '#2e4961cc';
     endTurnButton.button.background = '#4f5a91dd';
+
+    idleButton.button.isEnabled = true;
+    moveButton.button.isEnabled = Boolean(availability.canMove);
+    attackButton.button.isEnabled = Boolean(availability.canAttack);
+    endTurnButton.button.isEnabled = Boolean(availability.canEndTurn);
+  };
+
+  const formatActionResult = (result) => {
+    if (!result) {
+      return 'n/a';
+    }
+
+    if (!result.success) {
+      return result.reason ?? 'failed';
+    }
+
+    if (result.action === 'basic_attack') {
+      return `${result.attackerId} hit ${result.targetId} for ${result.damage}`;
+    }
+
+    if (result.action === 'move') {
+      return `${result.unitId} moved (${result.pathCost} MP)`;
+    }
+
+    return result.action ?? 'ok';
   };
 
   const render = () => {
@@ -141,7 +170,7 @@ export function createCombatDebugHud(runtime, options = {}) {
 
     modeValue.text = combatState.mode ?? 'combat';
     stateValue.text = combatState.status ?? 'n/a';
-    roundValue.text = `${combatState.turn?.round ?? 'n/a'}`;
+    roundValue.text = `${combatState.turn?.roundNumber ?? 'n/a'}`;
     activeUnitValue.text = activeUnit ? `${activeUnit.id} (${activeUnit.team})` : 'n/a';
     turnOwnerValue.text = turnOwner;
     playerValue.text = formatUnitResources(combatState.units?.player);
@@ -149,9 +178,7 @@ export function createCombatDebugHud(runtime, options = {}) {
     phaseValue.text = combatState.phase ?? combatState.turn?.phase ?? 'n/a';
     actionModeValue.text = combatState.inputMode ?? 'idle';
     selectedTargetValue.text = combatState.selectedTargetId ?? 'n/a';
-    actionResultValue.text = combatState.lastActionResult?.success
-      ? `${combatState.lastActionResult.action} hit ${combatState.lastActionResult.targetId} for ${combatState.lastActionResult.damage}`
-      : (combatState.lastActionResult?.reason ?? 'n/a');
+    actionResultValue.text = formatActionResult(combatState.lastActionResult);
 
     setButtonState();
   };
