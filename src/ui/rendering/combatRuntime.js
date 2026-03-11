@@ -150,6 +150,68 @@ export async function createCombatRuntime(runtime, options = {}) {
     return combatState.units.player.id === activeTurnUnit.unitId ? combatState.units.player : combatState.units.enemy;
   };
 
+
+  const findUnitById = (unitId) => Object.values(combatState.units).find((unit) => unit.id === unitId) ?? null;
+
+  combatState.tryMoveActiveUnit = ({ unitId, destinationCell, movementCost: movementCostOverride } = {}) => {
+    const unit = findUnitById(unitId);
+    const activeUnit = combatState.getActiveUnit();
+
+    if (
+      combatState.status !== 'active'
+      || combatState.phase !== 'turn_active'
+      || !unit
+      || !unit.isAlive
+      || !activeUnit
+      || activeUnit.id !== unit.id
+      || unit.mp <= 0
+    ) {
+      return { success: false, reason: 'not_allowed' };
+    }
+
+    const resolvedMovementCost = typeof movementCostOverride === 'function' ? movementCostOverride : undefined;
+    const path = grid.findPath(unit.gridCell, destinationCell, {
+      allowOccupiedByUnitId: unit.id,
+      movementCost: resolvedMovementCost
+    });
+
+    if (!path || path.length <= 1) {
+      return { success: false, reason: 'unreachable' };
+    }
+
+    const pathCost = grid.calculatePathCost(path, {
+      movementCost: resolvedMovementCost
+    });
+
+    if (!Number.isFinite(pathCost) || pathCost <= 0 || pathCost > unit.mp) {
+      return { success: false, reason: 'insufficient_mp', pathCost };
+    }
+
+    return {
+      success: true,
+      path,
+      pathCost,
+      destinationCell: path[path.length - 1]
+    };
+  };
+
+  combatState.completeUnitMovement = ({ unitId, destinationCell, pathCost } = {}) => {
+    const unit = findUnitById(unitId);
+    if (!unit || !destinationCell || !Number.isFinite(pathCost) || pathCost <= 0) {
+      return { success: false, reason: 'invalid_request' };
+    }
+
+    const fromCell = unit.gridCell;
+    grid.moveOccupant(fromCell, destinationCell, unit.id);
+    unit.gridCell = destinationCell;
+    unit.mp = Math.max(0, unit.mp - pathCost);
+
+    return {
+      success: true,
+      unit,
+      mpRemaining: unit.mp
+    };
+  };
   combatState.setInputMode = (inputMode) => {
     if (inputMode !== 'move' && inputMode !== 'attack') {
       return combatState.inputMode;
