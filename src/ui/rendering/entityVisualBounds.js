@@ -71,3 +71,32 @@ export function getEntityBottomY(entityOrRootNode) {
   const bounds = readEntityBoundingBox(entityOrRootNode);
   return bounds ? bounds.min.y : NaN;
 }
+
+export function placeEntityOnGround(entityOrRootNode, options = {}) {
+  const rootNode = refreshEntityWorldMatrices(entityOrRootNode);
+  const currentBottomY = getEntityBottomY(rootNode);
+
+  if (!isFiniteNumber(currentBottomY)) {
+    const debugLabel = options.debugLabel ? ` for ${options.debugLabel}` : '';
+    throw new Error(
+      `Cannot place entity on ground${debugLabel}: measured bottom Y must be a finite number (received ${String(currentBottomY)}).`
+    );
+  }
+
+  const groundY = isFiniteNumber(options.groundY) ? options.groundY : 0;
+  const groundOffset = isFiniteNumber(options.groundOffset) ? options.groundOffset : 0;
+  const targetBottomY = groundY + groundOffset;
+  const deltaY = targetBottomY - currentBottomY;
+
+  if (!rootNode.position || typeof rootNode.position !== 'object') {
+    rootNode.position = { y: 0 };
+  }
+
+  const currentPositionY = isFiniteNumber(rootNode.position.y) ? rootNode.position.y : 0;
+  rootNode.position.y = currentPositionY + deltaY;
+
+  refreshEntityWorldMatrices(rootNode);
+  return rootNode.position.y;
+}
+
+export const alignEntityToGround = placeEntityOnGround;
