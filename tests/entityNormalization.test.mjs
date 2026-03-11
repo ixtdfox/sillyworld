@@ -178,7 +178,7 @@ test('applies scaling, ground offset and orientation correction', () => {
     }
   };
 
-  applyEntityNormalization(runtime, { rootNode }, {
+  const normalizationMetrics = applyEntityNormalization(runtime, { rootNode }, {
     targetHeight: 4,
     collisionRadius: 0.5,
     collisionHeight: 4,
@@ -191,6 +191,9 @@ test('applies scaling, ground offset and orientation correction', () => {
     }
   });
 
+  assert.equal(normalizationMetrics.targetHeight, 4);
+  assert.equal(normalizationMetrics.sourceHeight, 2);
+  assert.equal(normalizationMetrics.scaleFactor, 2);
   assert.equal(rootNode.scaling.value, 2);
   assert.equal(rootNode.position.y, 0.25);
   assert.ok(rootNode.rotation);

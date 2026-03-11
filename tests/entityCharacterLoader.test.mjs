@@ -73,6 +73,13 @@ test('loadAndNormalizeEntityCharacter imports, resolves config, scales, and grou
   });
 
   assert.equal(entity.normalizationConfig.entityId, 'player');
+  assert.equal(entity.normalizationMetrics.targetHeight, 1.8);
+  assert.equal(entity.normalizationMetrics.sourceHeight, 2);
+  assert.equal(entity.normalizationMetrics.scaleFactor, 0.9);
+  assert.equal(entity.normalizationDebug.entityId, 'player');
+  assert.equal(entity.normalizationDebug.targetHeight, 1.8);
+  assert.equal(entity.normalizationDebug.currentHeight, 2);
+  assert.equal(entity.normalizationDebug.scaleFactor, 0.9);
   assert.equal(entity.gameplayDimensions.collisionRadius, 0.35);
   assert.equal(entity.gameplayDimensions.collisionHeight, 1.8);
   assert.equal(entity.gameplayDimensions.attackRange, 1.5);

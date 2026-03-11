@@ -55,14 +55,23 @@ export async function mountSceneRuntime(canvas, options = {}) {
   let combatTransitionStarted = false;
   let sceneMode = 'loading';
   let encounterInteractionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
+  const debugEnabled = options.debugEnabled === true;
 
   const emitDebugState = () => {
-    if (!options.onDebugStateChange) {
+    if (!debugEnabled || !options.onDebugStateChange) {
       return;
     }
 
     const explorationRuntime = sceneMode === 'exploration' ? activeGameplayRuntime : null;
     const combatRuntime = sceneMode === 'combat' ? activeGameplayRuntime : null;
+
+
+    const normalizationSnapshot = explorationRuntime
+      ? {
+          player: explorationRuntime.playerEntity?.normalizationDebug ?? null,
+          enemy: explorationRuntime.enemyEntity?.normalizationDebug ?? null
+        }
+      : null;
 
     if (sceneMode === 'combat' && combatRuntime?.combatState) {
       const combatState = combatRuntime.combatState;
@@ -98,18 +107,21 @@ export async function mountSceneRuntime(canvas, options = {}) {
           playerPosition,
           enemyPosition,
           distanceToEnemy,
-          enemyInteractionAllowed: !combatTransitionStarted && distanceToEnemy <= encounterInteractionDistance
+          enemyInteractionAllowed: !combatTransitionStarted && distanceToEnemy <= encounterInteractionDistance,
+          normalization: normalizationSnapshot
         }
       });
       return;
     }
 
-    options.onDebugStateChange({ mode: sceneMode });
+    options.onDebugStateChange({ mode: sceneMode, normalization: normalizationSnapshot });
   };
 
-  const debugObserver = runtime.scene.onBeforeRenderObservable.add(() => {
-    emitDebugState();
-  });
+  const debugObserver = debugEnabled
+    ? runtime.scene.onBeforeRenderObservable.add(() => {
+        emitDebugState();
+      })
+    : null;
 
   const teardownActiveGameplayRuntime = () => {
     explorationInputScope.dispose();
@@ -204,7 +216,9 @@ export async function mountSceneRuntime(canvas, options = {}) {
   }
 
   return () => {
-    runtime.scene.onBeforeRenderObservable.remove(debugObserver);
+    if (debugObserver) {
+      runtime.scene.onBeforeRenderObservable.remove(debugObserver);
+    }
     teardownActiveGameplayRuntime();
     runtime.dispose();
   };

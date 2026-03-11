@@ -45,16 +45,28 @@ export async function loadAndNormalizeEntityCharacter(runtime, options = {}) {
       throw new Error(`Unable to resolve a root node from imported model: ${modelFile}`);
     }
 
-    applyEntityNormalization(runtime, { rootNode }, normalizationConfig);
+    const normalizationMetrics = applyEntityNormalization(runtime, { rootNode }, normalizationConfig);
     const gameplayDimensions = createEntityGameplayDimensions(normalizationConfig);
     applyEntityCollisionFromDimensions(runtime, rootNode, gameplayDimensions);
+
+    const normalizationDebug = {
+      entityId: normalizationConfigId,
+      targetHeight: normalizationMetrics.targetHeight,
+      currentHeight: normalizationMetrics.sourceHeight,
+      scaleFactor: normalizationMetrics.scaleFactor,
+      collisionRadius: gameplayDimensions.collisionRadius,
+      collisionHeight: gameplayDimensions.collisionHeight,
+      attackRange: gameplayDimensions.attackRange
+    };
 
     console.log(`[SillyRPG] ${entityLabel} GLB loading success:`, modelFile);
 
     return {
       rootNode,
       normalizationConfig,
+      normalizationMetrics,
       gameplayDimensions,
+      normalizationDebug,
       meshes: result.meshes,
       skeletons: result.skeletons,
       animationGroups: result.animationGroups
