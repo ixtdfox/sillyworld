@@ -237,6 +237,14 @@ export async function createCombatRuntime(runtime, options = {}) {
     grid.moveOccupant(fromCell, destinationCell, unit.id);
     unit.gridCell = destinationCell;
     unit.mp = Math.max(0, unit.mp - pathCost);
+    combatState.lastActionResult = {
+      success: true,
+      action: 'move',
+      unitId: unit.id,
+      destinationCell: { ...destinationCell },
+      pathCost,
+      mpRemaining: unit.mp
+    };
     syncCombatHudState();
 
     return {
@@ -418,6 +426,9 @@ export async function createCombatRuntime(runtime, options = {}) {
 
     if (result.targetDied && target?.gridCell) {
       combatState.grid.clearOccupied(target.gridCell);
+      if (combatState.selectedTargetId === target.id) {
+        combatState.selectedTargetId = null;
+      }
     }
 
     const outcome = evaluateAndFinalizeCombat();
