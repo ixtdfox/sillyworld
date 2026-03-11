@@ -176,3 +176,124 @@ test('moves unit along path and spends MP', () => {
   assert.deepEqual(playerUnit.gridCell, { x: 2, z: 0 });
   detach();
 });
+
+
+test('ignores unreachable tile selections returned by authoritative movement check', () => {
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedPoint: { x: 5, y: 0, z: 0 },
+      pickedMesh: { name: 'Ground', parent: null }
+    }
+  });
+
+  const playerUnit = {
+    id: 'player_1',
+    isAlive: true,
+    mp: 4,
+    rootNode: { position: new Vector3(0, 0, 0) },
+    gridCell: { x: 0, z: 0 }
+  };
+
+  let completeCalled = false;
+  const detach = attachCombatPlayerMovementController(runtime, {
+    combatState: {
+      status: 'active',
+      getActiveUnit: () => playerUnit,
+      tryMoveActiveUnit: () => ({ success: false, reason: 'unreachable' }),
+      completeUnitMovement: () => {
+        completeCalled = true;
+      }
+    },
+    playerUnit,
+    gridMapper: {
+      worldToGridCell: () => ({ x: 5, z: 0 }),
+      gridCellToWorld: () => ({ x: 5, y: 0, z: 0 })
+    },
+    grid: {
+      findPath: () => [{ x: 0, z: 0 }, { x: 5, z: 0 }],
+      moveOccupant: () => {
+        completeCalled = true;
+      }
+    },
+    resolveGroundY: () => 0
+  });
+
+  runtime.click();
+  runtime.tick();
+
+  assert.equal(playerUnit.mp, 4);
+  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  assert.equal(completeCalled, false);
+  detach();
+});
+
+test('uses authoritative movement completion when available', () => {
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedPoint: { x: 2, y: 0, z: 0 },
+      pickedMesh: { name: 'Ground', parent: null }
+    }
+  });
+
+  const playerUnit = {
+    id: 'player_1',
+    isAlive: true,
+    mp: 3,
+    rootNode: { position: new Vector3(0, 0, 0) },
+    gridCell: { x: 0, z: 0 }
+  };
+
+  const moveCalls = [];
+  const detach = attachCombatPlayerMovementController(runtime, {
+    combatState: {
+      status: 'active',
+      getActiveUnit: () => playerUnit,
+      tryMoveActiveUnit: () => ({
+        success: true,
+        path: [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+        pathCost: 3,
+        destinationCell: { x: 2, z: 0 }
+      }),
+      completeUnitMovement: ({ unitId, destinationCell, pathCost }) => {
+        moveCalls.push({ unitId, destinationCell, pathCost });
+        playerUnit.gridCell = destinationCell;
+        playerUnit.mp = Math.max(0, playerUnit.mp - pathCost);
+      }
+    },
+    playerUnit,
+    gridMapper: {
+      worldToGridCell: () => ({ x: 2, z: 0 }),
+      gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
+    },
+    grid: {
+      findPath: () => {
+        throw new Error('fallback pathfinding should not be called');
+      },
+      moveOccupant: () => {
+        throw new Error('grid updates should be handled by combat state');
+      }
+    },
+    resolveGroundY: () => 0
+  });
+
+  runtime.click();
+  for (let i = 0; i < 6; i += 1) {
+    runtime.tick();
+  }
+
+  assert.equal(moveCalls.length, 1);
+  assert.deepEqual(moveCalls[0], {
+    unitId: 'player_1',
+    destinationCell: { x: 2, z: 0 },
+    pathCost: 3
+  });
+  assert.equal(playerUnit.mp, 0);
+  assert.deepEqual(playerUnit.gridCell, { x: 2, z: 0 });
+
+  runtime.click();
+  runtime.tick();
+  assert.equal(moveCalls.length, 1);
+  detach();
+});

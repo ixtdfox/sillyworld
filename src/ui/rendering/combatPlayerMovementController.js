@@ -89,13 +89,25 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
+    if (!Number.isFinite(playerUnit.mp) || playerUnit.mp <= 0) {
+      return;
+    }
+
     const pickResult = runtime.scene.pick(runtime.scene.pointerX, runtime.scene.pointerY);
     if (!pickResult?.hit || !pickResult.pickedPoint || !isGroundNode(pickResult.pickedMesh)) {
       return;
     }
 
     const destinationCell = gridMapper.worldToGridCell(pickResult.pickedPoint);
-    const path = grid.findPath(playerUnit.gridCell, destinationCell, {
+    const movementAttempt = typeof combatState.tryMoveActiveUnit === 'function'
+      ? combatState.tryMoveActiveUnit({
+        unitId: playerUnit.id,
+        destinationCell,
+        movementCost
+      })
+      : null;
+
+    const path = movementAttempt?.path ?? grid.findPath(playerUnit.gridCell, destinationCell, {
       allowOccupiedByUnitId: playerUnit.id,
       movementCost
     });
@@ -104,12 +116,8 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    const pathCost = calculatePathCost(grid, path, movementCost);
-    if (pathCost > playerUnit.mp) {
-      console.log('[SillyRPG] Combat movement blocked: insufficient MP.', {
-        currentMp: playerUnit.mp,
-        requiredMp: pathCost
-      });
+    const pathCost = movementAttempt?.pathCost ?? calculatePathCost(grid, path, movementCost);
+    if (!Number.isFinite(pathCost) || pathCost <= 0 || pathCost > playerUnit.mp) {
       return;
     }
 
@@ -143,11 +151,19 @@ export function attachCombatPlayerMovementController(runtime, options) {
       activeWaypointIndex += 1;
 
       if (activeWaypointIndex >= activePath.waypoints.length) {
-        const fromCell = playerUnit.gridCell;
-        const toCell = activePath.destinationCell;
-        grid.moveOccupant(fromCell, toCell, playerUnit.id);
-        playerUnit.gridCell = toCell;
-        playerUnit.mp -= pendingPathCost;
+        if (typeof combatState.completeUnitMovement === 'function') {
+          combatState.completeUnitMovement({
+            unitId: playerUnit.id,
+            destinationCell: activePath.destinationCell,
+            pathCost: pendingPathCost
+          });
+        } else {
+          const fromCell = playerUnit.gridCell;
+          const toCell = activePath.destinationCell;
+          grid.moveOccupant(fromCell, toCell, playerUnit.id);
+          playerUnit.gridCell = toCell;
+          playerUnit.mp -= pendingPathCost;
+        }
         clearPath();
       }
 
