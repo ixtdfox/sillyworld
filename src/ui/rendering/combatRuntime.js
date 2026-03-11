@@ -10,6 +10,7 @@ import { attachCombatPlayerMovementController } from './combatPlayerMovementCont
 import { createCombatActionResolver } from './combatActionResolver.js';
 import { attachCombatAttackInputController } from './combatAttackInputController.js';
 import { resolveOrCreateSceneCamera } from './babylonRuntime.js';
+import { createCombatDebugHud } from './combatDebugHud.js';
 
 const COMBAT_SCENE_FILE = 'assets/combat.glb';
 const DEFAULT_PLAYER_SPAWN = Object.freeze({ x: -1.5, y: 0, z: 1.5 });
@@ -32,11 +33,12 @@ function placeOnGround(runtime, rootNode, spawn) {
   rootNode.position.copyFrom(new runtime.BABYLON.Vector3(spawn.x, y, spawn.z));
 }
 
-function createCombatUnit(id, team, entity, initiative = 0) {
+function createCombatUnit(id, team, entity, initiative = 0, displayName = id) {
   const attackRange = entity?.gameplayDimensions?.attackRange;
 
   return {
     id,
+    displayName,
     team,
     initiative,
     maxAp: DEFAULT_AP_PER_TURN,
@@ -111,8 +113,8 @@ export async function createCombatRuntime(runtime, options = {}) {
   placeOnGround(runtime, playerEntity.rootNode, options.playerSpawn ?? DEFAULT_PLAYER_SPAWN);
   placeOnGround(runtime, enemyEntity.rootNode, options.enemySpawn ?? DEFAULT_ENEMY_SPAWN);
 
-  const playerUnit = createCombatUnit('player_1', 'player', playerEntity, options.playerInitiative ?? 100);
-  const enemyUnit = createCombatUnit('enemy_1', 'enemy', enemyEntity, options.enemyInitiative ?? 10);
+  const playerUnit = createCombatUnit('player_1', 'player', playerEntity, options.playerInitiative ?? 100, 'Player');
+  const enemyUnit = createCombatUnit('enemy_1', 'enemy', enemyEntity, options.enemyInitiative ?? 10, 'Enemy');
 
   playerUnit.gridCell = gridMapper.worldToGridCell(playerUnit.rootNode.position);
   enemyUnit.gridCell = gridMapper.worldToGridCell(enemyUnit.rootNode.position);
@@ -127,6 +129,7 @@ export async function createCombatRuntime(runtime, options = {}) {
   const combatState = createCombatState({ combatScene, playerUnit, enemyUnit, turnManager });
   combatState.status = 'active';
   combatState.result = null;
+  combatState.inputMode = 'move';
 
   combatState.grid = grid;
   combatState.gridMapper = gridMapper;
@@ -136,6 +139,15 @@ export async function createCombatRuntime(runtime, options = {}) {
       return null;
     }
     return combatState.units.player.id === activeTurnUnit.unitId ? combatState.units.player : combatState.units.enemy;
+  };
+
+  combatState.setInputMode = (inputMode) => {
+    if (inputMode !== 'move' && inputMode !== 'attack') {
+      return combatState.inputMode;
+    }
+
+    combatState.inputMode = inputMode;
+    return combatState.inputMode;
   };
 
   const resetUnitResourcesForTurn = (unit) => {
@@ -264,6 +276,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     playerUnit,
     grid,
     gridMapper,
+    isMovementEnabled: () => combatState.inputMode === 'move',
     resolveGroundY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: playerUnit.rootNode.position.y }),
     onMovingStateChange: (isMoving) => playerAnimationController.setMoving(isMoving)
   });
@@ -279,8 +292,11 @@ export async function createCombatRuntime(runtime, options = {}) {
     combatState,
     attackerUnit: playerUnit,
     targetUnit: enemyUnit,
-    targetRoot: enemyEntity.rootNode
+    targetRoot: enemyEntity.rootNode,
+    isAttackEnabled: () => combatState.inputMode === 'attack'
   });
+
+  const detachCombatDebugHud = createCombatDebugHud(runtime, { combatState });
 
   return {
     combatState,
@@ -291,6 +307,7 @@ export async function createCombatRuntime(runtime, options = {}) {
       detachCamera?.();
       detachCombatMovementController?.();
       detachCombatAttackInputController?.();
+      detachCombatDebugHud?.();
       enemyEntity.rootNode?.dispose(false, true);
       playerEntity.rootNode?.dispose(false, true);
       combatScene.sceneContainer?.dispose(false, true);

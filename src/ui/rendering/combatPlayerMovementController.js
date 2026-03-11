@@ -23,6 +23,7 @@ export function attachCombatPlayerMovementController(runtime, options) {
     gridMapper,
     resolveGroundY,
     onMovingStateChange = () => {},
+    isMovementEnabled = () => true,
     moveSpeed = DEFAULT_MOVE_SPEED,
     stopDistance = DEFAULT_STOP_DISTANCE
   } = options;
@@ -56,6 +57,10 @@ export function attachCombatPlayerMovementController(runtime, options) {
     }
 
     if (combatState.status !== 'active' || !playerUnit.isAlive || isMoving || getActiveUnit()?.id !== playerUnit.id) {
+      return;
+    }
+
+    if (!isMovementEnabled()) {
       return;
     }
 

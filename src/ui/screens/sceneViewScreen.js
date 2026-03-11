@@ -42,10 +42,12 @@ function buildDebugLines(debugState) {
       `mode: ${mode}`,
       `round: ${combat.round ?? 'n/a'}`,
       `active unit: ${combat.activeUnit ?? 'n/a'}`,
+      `turn owner: ${combat.turnOwner ?? 'n/a'}`,
+      `action mode: ${combat.actionMode ?? 'n/a'}`,
       `active AP: ${combat.activeUnitAp ?? 'n/a'}`,
       `active MP: ${combat.activeUnitMp ?? 'n/a'}`,
-      `player HP: ${combat.playerHp ?? 'n/a'}`,
-      `enemy HP: ${combat.enemyHp ?? 'n/a'}`,
+      `player HP/AP/MP: ${combat.playerHp ?? 'n/a'}/${combat.playerAp ?? 'n/a'}/${combat.playerMp ?? 'n/a'}`,
+      `enemy HP/AP/MP: ${combat.enemyHp ?? 'n/a'}/${combat.enemyAp ?? 'n/a'}/${combat.enemyMp ?? 'n/a'}`,
       `combat phase: ${combat.phase ?? 'n/a'}`,
       `combat state: ${combat.state ?? 'n/a'}`
     ];
