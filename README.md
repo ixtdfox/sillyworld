@@ -60,6 +60,10 @@ MVP placeholders are included locally:
 - If no API hooks are available in your ST build, SillyRPG falls back to notification + debug logs.
 - Open browser console and filter logs by `[SillyRPG]` for diagnostics.
 
+## Developer docs
+
+- Entity normalization onboarding (adding new monsters/entities): `docs/development/entity-normalization.md`
+
 ## World core
 
 Core game state now lives under `src/world/` via `worldStore`:
