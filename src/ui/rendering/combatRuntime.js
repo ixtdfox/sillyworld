@@ -91,7 +91,8 @@ export async function createCombatRuntime(runtime, options = {}) {
   });
   const enemyEntity = await loadEnemyCharacter(runtime, {
     enemyFile: options.enemyFile,
-    enemyNormalizationId: options.enemyNormalizationId
+    enemyNormalizationId: options.enemyNormalizationId,
+    enemyArchetypeId: options.enemyArchetypeId
   });
 
   const gridMapper = createCombatGridMapper({

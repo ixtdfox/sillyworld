@@ -144,7 +144,8 @@ export async function mountSceneRuntime(canvas, options = {}) {
       playerFile: options.playerFile,
       enemyFile: options.enemyFile,
       playerNormalizationId: options.playerNormalizationId,
-      enemyNormalizationId: options.enemyNormalizationId
+      enemyNormalizationId: options.enemyNormalizationId,
+      enemyArchetypeId: options.enemyArchetypeId
     });
 
     activeGameplayRuntime = combatRuntime;
@@ -167,7 +168,8 @@ export async function mountSceneRuntime(canvas, options = {}) {
       enemyFile: options.enemyFile,
       enemySpawn: options.enemySpawn,
       playerNormalizationId: options.playerNormalizationId,
-      enemyNormalizationId: options.enemyNormalizationId
+      enemyNormalizationId: options.enemyNormalizationId,
+      enemyArchetypeId: options.enemyArchetypeId
     });
     activeGameplayRuntime = explorationRuntime;
 
