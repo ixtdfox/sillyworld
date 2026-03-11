@@ -1,5 +1,9 @@
 import { resolveAsset } from '../../st_bridge/asset.js';
 import { applyEntityNormalization, resolveEntityNormalizationConfig } from './entityNormalization.js';
+import {
+  applyEntityCollisionFromDimensions,
+  createEntityGameplayDimensions
+} from './entityGameplayDimensions.js';
 
 export function resolveImportedRootNode(result) {
   const firstTransformNode = result.transformNodes.find((node) => !node.parent);
@@ -42,12 +46,15 @@ export async function loadAndNormalizeEntityCharacter(runtime, options = {}) {
     }
 
     applyEntityNormalization(runtime, { rootNode }, normalizationConfig);
+    const gameplayDimensions = createEntityGameplayDimensions(normalizationConfig);
+    applyEntityCollisionFromDimensions(runtime, rootNode, gameplayDimensions);
 
     console.log(`[SillyRPG] ${entityLabel} GLB loading success:`, modelFile);
 
     return {
       rootNode,
       normalizationConfig,
+      gameplayDimensions,
       meshes: result.meshes,
       skeletons: result.skeletons,
       animationGroups: result.animationGroups
