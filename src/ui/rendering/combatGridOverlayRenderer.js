@@ -12,30 +12,44 @@ function createGridSignature(bounds, mapper) {
 
 function buildGridLines(runtime, mapper, bounds, resolveY) {
   const lines = [];
-  const minXWorld = (mapper.originWorldX ?? 0) + bounds.minX * mapper.cellSize;
-  const maxXWorld = (mapper.originWorldX ?? 0) + (bounds.maxX + 1) * mapper.cellSize;
-  const minZWorld = (mapper.originWorldZ ?? 0) + bounds.minZ * mapper.cellSize;
-  const maxZWorld = (mapper.originWorldZ ?? 0) + (bounds.maxZ + 1) * mapper.cellSize;
+  const minCorner = mapper.gridCellToWorld({ x: bounds.minX, z: bounds.minZ }, {
+    anchor: 'corner',
+    resolveY: ({ x, z }) => resolveY({ x, z })
+  });
+  const maxCorner = mapper.gridCellToWorld({ x: bounds.maxX + 1, z: bounds.maxZ + 1 }, {
+    anchor: 'corner',
+    resolveY: ({ x, z }) => resolveY({ x, z })
+  });
 
   for (let x = bounds.minX; x <= bounds.maxX + 1; x += 1) {
-    const xWorld = (mapper.originWorldX ?? 0) + x * mapper.cellSize;
-    const startY = resolveY({ x: xWorld, z: minZWorld });
-    const endY = resolveY({ x: xWorld, z: maxZWorld });
+    const start = mapper.gridCellToWorld({ x, z: bounds.minZ }, {
+      anchor: 'corner',
+      resolveY: ({ x: wx, z: wz }) => resolveY({ x: wx, z: wz })
+    });
+    const end = mapper.gridCellToWorld({ x, z: bounds.maxZ + 1 }, {
+      anchor: 'corner',
+      resolveY: ({ x: wx, z: wz }) => resolveY({ x: wx, z: wz })
+    });
 
     lines.push([
-      new runtime.BABYLON.Vector3(xWorld, startY + 0.03, minZWorld),
-      new runtime.BABYLON.Vector3(xWorld, endY + 0.03, maxZWorld)
+      new runtime.BABYLON.Vector3(start.x, start.y + 0.03, minCorner.z),
+      new runtime.BABYLON.Vector3(end.x, end.y + 0.03, maxCorner.z)
     ]);
   }
 
   for (let z = bounds.minZ; z <= bounds.maxZ + 1; z += 1) {
-    const zWorld = (mapper.originWorldZ ?? 0) + z * mapper.cellSize;
-    const startY = resolveY({ x: minXWorld, z: zWorld });
-    const endY = resolveY({ x: maxXWorld, z: zWorld });
+    const start = mapper.gridCellToWorld({ x: bounds.minX, z }, {
+      anchor: 'corner',
+      resolveY: ({ x: wx, z: wz }) => resolveY({ x: wx, z: wz })
+    });
+    const end = mapper.gridCellToWorld({ x: bounds.maxX + 1, z }, {
+      anchor: 'corner',
+      resolveY: ({ x: wx, z: wz }) => resolveY({ x: wx, z: wz })
+    });
 
     lines.push([
-      new runtime.BABYLON.Vector3(minXWorld, startY + 0.03, zWorld),
-      new runtime.BABYLON.Vector3(maxXWorld, endY + 0.03, zWorld)
+      new runtime.BABYLON.Vector3(minCorner.x, start.y + 0.03, start.z),
+      new runtime.BABYLON.Vector3(maxCorner.x, end.y + 0.03, end.z)
     ]);
   }
 
