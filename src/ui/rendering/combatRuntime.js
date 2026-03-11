@@ -25,6 +25,14 @@ const DEFAULT_HP = 20;
 const DEFAULT_BASIC_ATTACK_DAMAGE = 4;
 const DEFAULT_FALLBACK_ATTACK_RANGE = 1;
 
+function manhattanDistance(cellA, cellB) {
+  if (!cellA || !cellB) {
+    return Infinity;
+  }
+
+  return Math.abs(cellA.x - cellB.x) + Math.abs(cellA.z - cellB.z);
+}
+
 function resolveMovementCostRule(options = {}) {
   return typeof options.movementCost === 'function' ? options.movementCost : undefined;
 }
@@ -136,6 +144,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     basicAttackApCost: options.basicAttackApCost ?? 1,
     basicAttackDamage: options.basicAttackDamage ?? DEFAULT_BASIC_ATTACK_DAMAGE
   });
+  const movementCost = resolveMovementCostRule(options);
   const combatState = createCombatState({ combatScene, playerUnit, enemyUnit, turnManager });
   combatState.status = 'active';
   combatState.result = null;
@@ -331,10 +340,105 @@ export async function createCombatRuntime(runtime, options = {}) {
       return;
     }
 
-    combatState.tryBasicAttack({
-      attackerId: activeUnit.id,
-      targetId: playerUnit.id
-    });
+    while (combatState.status === 'active' && activeUnit.ap > 0) {
+      const attackAttempt = combatState.tryBasicAttack({
+        attackerId: activeUnit.id,
+        targetId: playerUnit.id
+      });
+      combatState.lastActionResult = attackAttempt;
+
+      if (attackAttempt.success) {
+        continue;
+      }
+
+      if (attackAttempt.reason !== 'target_out_of_range') {
+        break;
+      }
+
+      if (!Number.isFinite(activeUnit.mp) || activeUnit.mp <= 0) {
+        break;
+      }
+
+      const reachableCells = grid.getReachableCells(activeUnit.gridCell, activeUnit.mp, {
+        allowOccupiedByUnitId: activeUnit.id,
+        movementCost
+      });
+
+      const candidateCells = reachableCells
+        .map((cell) => ({ x: cell.x, z: cell.z }))
+        .filter((cell) => !(cell.x === activeUnit.gridCell.x && cell.z === activeUnit.gridCell.z));
+
+      let selectedMove = null;
+
+      for (const candidateCell of candidateCells) {
+        const path = grid.findPath(activeUnit.gridCell, candidateCell, {
+          allowOccupiedByUnitId: activeUnit.id,
+          movementCost
+        });
+        if (!path || path.length <= 1) {
+          continue;
+        }
+
+        const pathCost = grid.calculatePathCost(path, { movementCost });
+        if (!Number.isFinite(pathCost) || pathCost <= 0 || pathCost > activeUnit.mp) {
+          continue;
+        }
+
+        const distanceToPlayer = manhattanDistance(candidateCell, playerUnit.gridCell);
+        const currentDistance = selectedMove ? manhattanDistance(selectedMove.destinationCell, playerUnit.gridCell) : Infinity;
+
+        if (
+          !selectedMove
+          || distanceToPlayer < currentDistance
+          || (distanceToPlayer === currentDistance && pathCost < selectedMove.pathCost)
+        ) {
+          selectedMove = {
+            destinationCell: candidateCell,
+            pathCost
+          };
+        }
+      }
+
+      if (!selectedMove) {
+        break;
+      }
+
+      const movementResult = combatState.completeUnitMovement({
+        unitId: activeUnit.id,
+        destinationCell: selectedMove.destinationCell,
+        pathCost: selectedMove.pathCost
+      });
+
+      if (!movementResult.success) {
+        break;
+      }
+
+      const destinationWorld = gridMapper.gridCellToWorld(selectedMove.destinationCell, {
+        resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: activeUnit.rootNode.position.y })
+      });
+      activeUnit.rootNode.position.copyFrom(new runtime.BABYLON.Vector3(
+        destinationWorld.x,
+        destinationWorld.y,
+        destinationWorld.z
+      ));
+
+      combatState.lastActionResult = {
+        success: true,
+        action: 'move',
+        unitId: activeUnit.id,
+        destinationCell: { ...selectedMove.destinationCell },
+        pathCost: selectedMove.pathCost,
+        mpRemaining: activeUnit.mp
+      };
+
+      if (manhattanDistance(activeUnit.gridCell, playerUnit.gridCell) <= activeUnit.attackRange) {
+        continue;
+      }
+
+      if (activeUnit.mp <= 0) {
+        break;
+      }
+    }
   };
 
   const runEnemyTurnsIfNeeded = () => {
@@ -371,8 +475,6 @@ export async function createCombatRuntime(runtime, options = {}) {
   };
 
   combatState.startCombat();
-
-  const movementCost = resolveMovementCostRule(options);
 
   const playerAnimationController = createPlayerAnimationController(playerEntity);
   const detachCombatMovementController = attachCombatPlayerMovementController(runtime, {
