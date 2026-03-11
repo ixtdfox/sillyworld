@@ -34,12 +34,14 @@ export async function createDistrictExplorationRuntime(runtime, options = {}) {
   });
 
   const playerEntity = await loadPlayerCharacter(runtime, {
-    playerFile: options.playerFile
+    playerFile: options.playerFile,
+    playerNormalizationId: options.playerNormalizationId
   });
   spawnPlayerCharacter(runtime, playerEntity);
 
   const enemyEntity = await loadEnemyCharacter(runtime, {
-    enemyFile: options.enemyFile
+    enemyFile: options.enemyFile,
+    enemyNormalizationId: options.enemyNormalizationId
   });
   placeEnemyOnGround(runtime, enemyEntity, options.enemySpawn);
 
