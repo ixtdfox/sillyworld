@@ -15,7 +15,8 @@ export function attachCombatAttackInputController(runtime, options = {}) {
     combatState,
     attackerUnit,
     targetUnit,
-    targetRoot
+    targetRoot,
+    isAttackEnabled = () => true
   } = options;
 
   const pointerObserver = runtime.scene.onPointerObservable.add((pointerInfo) => {
@@ -24,6 +25,10 @@ export function attachCombatAttackInputController(runtime, options = {}) {
     }
 
     if (combatState.status !== 'active' || !targetUnit?.isAlive) {
+      return;
+    }
+
+    if (!isAttackEnabled()) {
       return;
     }
 

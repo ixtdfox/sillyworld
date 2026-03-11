@@ -83,11 +83,17 @@ export async function mountSceneRuntime(canvas, options = {}) {
           state: combatState.status,
           phase: combatState.phase,
           round: combatState.turn?.round ?? null,
-          activeUnit: activeUnit ? `${activeUnit.team}:${activeUnit.id}` : null,
+          activeUnit: activeUnit ? `${activeUnit.id}:${activeUnit.displayName ?? activeUnit.id}` : null,
+          turnOwner: activeUnit?.team ?? null,
+          actionMode: combatState.inputMode ?? null,
           activeUnitAp: activeUnit?.ap ?? null,
           activeUnitMp: activeUnit?.mp ?? null,
           playerHp: combatState.units?.player?.hp ?? null,
-          enemyHp: combatState.units?.enemy?.hp ?? null
+          playerAp: combatState.units?.player?.ap ?? null,
+          playerMp: combatState.units?.player?.mp ?? null,
+          enemyHp: combatState.units?.enemy?.hp ?? null,
+          enemyAp: combatState.units?.enemy?.ap ?? null,
+          enemyMp: combatState.units?.enemy?.mp ?? null
         }
       });
       return;
