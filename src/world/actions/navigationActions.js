@@ -1,24 +1,19 @@
-import { advanceTimeBySteps, getTimeCostForAction } from './timeActions.js';
-import { getLocationAvailability } from '../selectors/locationAvailabilitySelectors.js';
-
-const NAVIGABLE_LEVELS = new Set(['district', 'building', 'room']);
-
-function asPoiId(nodeId = '') {
-  return `poi:${nodeId.split(':')[1] || nodeId}`;
+import { advanceTimeBySteps, getTimeCostForAction } from "./timeActions.js";
+import { getLocationAvailability } from "../selectors/locationAvailabilitySelectors.js";
+const NAVIGABLE_LEVELS = /* @__PURE__ */ new Set(["district", "building", "room"]);
+function asPoiId(nodeId = "") {
+  return `poi:${nodeId.split(":")[1] || nodeId}`;
 }
-
-export function movePlayerToNode(state, targetNodeId, options = {}) {
+function movePlayerToNode(state, targetNodeId, options = {}) {
   const targetNode = state.maps?.nodesById?.[targetNodeId] || null;
   if (!targetNode || !NAVIGABLE_LEVELS.has(targetNode.level)) {
     return { ok: false, state };
   }
-
-  if (targetNode.level === 'district' || targetNode.level === 'building') {
+  if (targetNode.level === "district" || targetNode.level === "building") {
     const availability = getLocationAvailability(state, {
-      districtId: targetNode.level === 'district' ? targetNode.id : targetNode.parentId,
-      poiId: targetNode.level === 'building' ? asPoiId(targetNode.id) : null
+      districtId: targetNode.level === "district" ? targetNode.id : targetNode.parentId,
+      poiId: targetNode.level === "building" ? asPoiId(targetNode.id) : null
     });
-
     if (!availability.available) {
       return {
         ok: false,
@@ -28,17 +23,11 @@ export function movePlayerToNode(state, targetNodeId, options = {}) {
       };
     }
   }
-
-  const previousPhase = state.world?.timePhase;
-  const previousPendingTransitions = Array.isArray(state.world?.phaseTransitions?.pending)
-    ? state.world.phaseTransitions.pending.length
-    : 0;
-  const actionType = options.actionType || 'navigation';
-  const defaultCost = getTimeCostForAction(actionType, getTimeCostForAction('navigation', 1));
-  const timeCostSteps = Number.isFinite(options.timeCostSteps)
-    ? Math.max(0, Math.floor(options.timeCostSteps))
-    : defaultCost;
-
+  const previousPhase = state.world.timePhase;
+  const previousPendingTransitions = Array.isArray(state.world.phaseTransitions?.pending) ? state.world.phaseTransitions.pending.length : 0;
+  const actionType = options.actionType || "navigation";
+  const defaultCost = getTimeCostForAction(actionType, getTimeCostForAction("navigation", 1));
+  const timeCostSteps = Number.isFinite(options.timeCostSteps) ? Math.max(0, Math.floor(options.timeCostSteps || 0)) : defaultCost;
   const movedState = {
     ...state,
     player: {
@@ -47,12 +36,8 @@ export function movePlayerToNode(state, targetNodeId, options = {}) {
     },
     updatedAt: Date.now()
   };
-
   const nextState = advanceTimeBySteps(movedState, timeCostSteps);
-  const transitions = Array.isArray(nextState.world?.phaseTransitions?.pending)
-    ? nextState.world.phaseTransitions.pending.slice(previousPendingTransitions)
-    : [];
-
+  const transitions = Array.isArray(nextState.world.phaseTransitions?.pending) ? nextState.world.phaseTransitions.pending.slice(previousPendingTransitions) : [];
   return {
     ok: true,
     state: nextState,
@@ -61,3 +46,6 @@ export function movePlayerToNode(state, targetNodeId, options = {}) {
     transitions
   };
 }
+export {
+  movePlayerToNode
+};

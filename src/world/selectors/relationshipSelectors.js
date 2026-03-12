@@ -1,7 +1,7 @@
-export const DEFAULT_RELATIONSHIP = Object.freeze({
+const DEFAULT_RELATIONSHIP = Object.freeze({
   level: 0,
   tags: [],
-  stance: 'neutral',
+  stance: "neutral",
   axes: {
     trust: 0,
     fear: 0,
@@ -14,11 +14,14 @@ export const DEFAULT_RELATIONSHIP = Object.freeze({
   history: [],
   lastInteractionAt: null
 });
-
-export function getRelationship(state, characterId) {
+function getRelationship(state, characterId) {
   return state.player.relationships[characterId] || DEFAULT_RELATIONSHIP;
 }
-
-export function getCharacterById(state, characterId) {
+function getCharacterById(state, characterId) {
   return state.characters.byId[characterId] || null;
 }
+export {
+  DEFAULT_RELATIONSHIP,
+  getCharacterById,
+  getRelationship
+};

@@ -1,13 +1,15 @@
-import { normalizeTimePhase } from '../actions/timeActions.js';
-
-export function getTimePhase(state) {
+import { normalizeTimePhase } from "../actions/timeActions.js";
+function getTimePhase(state) {
   return normalizeTimePhase(state.world?.timePhase, normalizeTimePhase(state.world?.timeOfDay));
 }
-
-export function getTimeOfDay(state) {
+function getTimeOfDay(state) {
   return state.world.timeOfDay;
 }
-
-export function getWorldClock(state) {
+function getWorldClock(state) {
   return state.world.clock;
 }
+export {
+  getTimeOfDay,
+  getTimePhase,
+  getWorldClock
+};

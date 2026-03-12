@@ -1,5 +1,12 @@
-import { canTakeItem } from "../selectors/inventorySelectors.js";
-function addItemToPlayer(state, instanceId) {
+import type { EquipmentSlot, GameState } from '../contracts.js';
+import { canTakeItem } from '../selectors/inventorySelectors.js';
+
+interface InventoryActionResult {
+  state: GameState;
+  ok: boolean;
+}
+
+export function addItemToPlayer(state: GameState, instanceId: string): InventoryActionResult {
   if (!canTakeItem(state, instanceId)) return { state, ok: false };
   return {
     ok: true,
@@ -16,11 +23,13 @@ function addItemToPlayer(state, instanceId) {
     }
   };
 }
-function removeItemFromPlayer(state, instanceId) {
+
+export function removeItemFromPlayer(state: GameState, instanceId: string): GameState {
   const nextInventory = state.player.inventory.items.filter((id) => id !== instanceId);
   const nextEquipped = Object.fromEntries(
     Object.entries(state.player.equipped).filter(([, value]) => value !== instanceId)
-  );
+  ) as GameState['player']['equipped'];
+
   return {
     ...state,
     player: {
@@ -31,7 +40,8 @@ function removeItemFromPlayer(state, instanceId) {
     updatedAt: Date.now()
   };
 }
-function moveItemToSlot(state, instanceId, slotId) {
+
+export function moveItemToSlot(state: GameState, instanceId: string, slotId: EquipmentSlot | string): InventoryActionResult {
   if (!state.player.inventory.items.includes(instanceId)) return { state, ok: false };
   return {
     ok: true,
@@ -48,7 +58,8 @@ function moveItemToSlot(state, instanceId, slotId) {
     }
   };
 }
-function unequipSlot(state, slotId) {
+
+export function unequipSlot(state: GameState, slotId: EquipmentSlot | string): GameState {
   const nextEquipped = { ...state.player.equipped };
   delete nextEquipped[slotId];
   return {
@@ -60,9 +71,3 @@ function unequipSlot(state, slotId) {
     updatedAt: Date.now()
   };
 }
-export {
-  addItemToPlayer,
-  moveItemToSlot,
-  removeItemFromPlayer,
-  unequipSlot
-};

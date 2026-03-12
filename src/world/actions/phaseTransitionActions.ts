@@ -1,8 +1,20 @@
-const DEFAULT_TRANSITION_TYPE = "time.phase.changed";
-function toTransitionId({ dayNumber, clockStep, fromPhase, toPhase }) {
+import type { GameState, PhaseTransitionRecord, TimePhase, WorldState } from '../contracts.js';
+
+const DEFAULT_TRANSITION_TYPE = 'time.phase.changed';
+
+interface CreatePhaseTransitionInput {
+  fromPhase: TimePhase;
+  toPhase: TimePhase;
+  dayNumber: number;
+  clockStep: number;
+  trigger?: string;
+}
+
+function toTransitionId({ dayNumber, clockStep, fromPhase, toPhase }: CreatePhaseTransitionInput): string {
   return `${DEFAULT_TRANSITION_TYPE}:${dayNumber}:${clockStep}:${fromPhase}->${toPhase}`;
 }
-function createPhaseTransition({ fromPhase, toPhase, dayNumber, clockStep, trigger = "time-advance" }) {
+
+export function createPhaseTransition({ fromPhase, toPhase, dayNumber, clockStep, trigger = 'time-advance' }: CreatePhaseTransitionInput): PhaseTransitionRecord {
   return {
     id: toTransitionId({ dayNumber, clockStep, fromPhase, toPhase }),
     type: DEFAULT_TRANSITION_TYPE,
@@ -14,17 +26,21 @@ function createPhaseTransition({ fromPhase, toPhase, dayNumber, clockStep, trigg
     createdAt: Date.now()
   };
 }
-function normalizeTransitionQueue(world) {
+
+function normalizeTransitionQueue(world: WorldState): { pending: PhaseTransitionRecord[]; history: PhaseTransitionRecord[] } {
   const pending = Array.isArray(world.phaseTransitions?.pending) ? world.phaseTransitions.pending : [];
   const history = Array.isArray(world.phaseTransitions?.history) ? world.phaseTransitions.history : [];
+
   return {
     pending,
     history
   };
 }
-function appendPhaseTransitions(state, transitions = []) {
+
+export function appendPhaseTransitions(state: GameState, transitions: PhaseTransitionRecord[] = []): GameState {
   if (!Array.isArray(transitions) || transitions.length === 0) return state;
   const queue = normalizeTransitionQueue(state.world);
+
   return {
     ...state,
     world: {
@@ -37,7 +53,8 @@ function appendPhaseTransitions(state, transitions = []) {
     updatedAt: Date.now()
   };
 }
-function consumeNextPhaseTransition(state) {
+
+export function consumeNextPhaseTransition(state: GameState): { state: GameState; transition: PhaseTransitionRecord | null } {
   const queue = normalizeTransitionQueue(state.world);
   const next = queue.pending[0];
   if (!next) {
@@ -46,6 +63,7 @@ function consumeNextPhaseTransition(state) {
       transition: null
     };
   }
+
   return {
     transition: next,
     state: {
@@ -61,13 +79,8 @@ function consumeNextPhaseTransition(state) {
     }
   };
 }
-function getPendingPhaseTransitions(state) {
+
+export function getPendingPhaseTransitions(state: GameState): PhaseTransitionRecord[] {
   const queue = normalizeTransitionQueue(state.world);
   return queue.pending;
 }
-export {
-  appendPhaseTransitions,
-  consumeNextPhaseTransition,
-  createPhaseTransition,
-  getPendingPhaseTransitions
-};
