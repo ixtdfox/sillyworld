@@ -1,8 +1,8 @@
 // @ts-nocheck
+import { pickCombatCellAtPointer } from './combatCellPointer.ts';
+
 const DEFAULT_MOVE_SPEED = 3;
 const DEFAULT_STOP_DISTANCE = 0.05;
-
-const HIGHLIGHT_MESH_PREFIX = 'combatMoveHighlight_';
 
 function calculatePathCost(grid, path, movementCost) {
   if (typeof grid.calculatePathCost === 'function') {
@@ -28,41 +28,6 @@ function calculatePathCost(grid, path, movementCost) {
   return path.length - 1;
 }
 
-function tryParseCellFromMeshName(meshName) {
-  if (typeof meshName !== 'string' || !meshName.startsWith(HIGHLIGHT_MESH_PREFIX)) {
-    return null;
-  }
-
-  const [x, z] = meshName.slice(HIGHLIGHT_MESH_PREFIX.length).split('_').map((value) => Number.parseInt(value, 10));
-  if (!Number.isFinite(x) || !Number.isFinite(z)) {
-    return null;
-  }
-
-  return { x, z };
-}
-
-function tryResolveCellFromPick(pickResult, gridMapper) {
-  if (!pickResult?.hit || !pickResult.pickedPoint) {
-    return null;
-  }
-
-  const mesh = pickResult.pickedMesh ?? null;
-  const metadataCell = mesh?.metadata?.combatGridCell ?? mesh?.metadata?.gridCell ?? null;
-  if (metadataCell && Number.isFinite(metadataCell.x) && Number.isFinite(metadataCell.z)) {
-    return {
-      x: Math.trunc(metadataCell.x),
-      z: Math.trunc(metadataCell.z)
-    };
-  }
-
-  const meshNamedCell = tryParseCellFromMeshName(mesh?.name);
-  if (meshNamedCell) {
-    return meshNamedCell;
-  }
-
-  return gridMapper.worldToGridCell(pickResult.pickedPoint);
-}
-
 export function attachCombatPlayerMovementController(runtime, options) {
   const {
     combatState,
@@ -85,6 +50,7 @@ export function attachCombatPlayerMovementController(runtime, options) {
   let pendingPathCost = 0;
   let isMoving = false;
   let movementInputResetVersion = combatState.pendingMovementInputResetVersion ?? 0;
+  combatState.playerMovementInProgress = false;
 
   const setMoving = (nextMovingState) => {
     if (isMoving === nextMovingState) {
@@ -92,6 +58,10 @@ export function attachCombatPlayerMovementController(runtime, options) {
     }
 
     isMoving = nextMovingState;
+    combatState.playerMovementInProgress = isMoving;
+    if (!isMoving) {
+      combatState.hoveredMovementDestination = null;
+    }
     onMovingStateChange(isMoving);
   };
 
@@ -151,24 +121,20 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    const pickResult = pointerInfo.pickInfo?.hit
-      ? pointerInfo.pickInfo
-      : runtime.scene.pick(runtime.scene.pointerX, runtime.scene.pointerY);
+    const { pickResult, cell: destinationCell } = pickCombatCellAtPointer(runtime, gridMapper, pointerInfo.pickInfo ?? null);
 
     if (!pickResult?.hit || !pickResult.pickedPoint) {
       return;
     }
 
-    if (pickResult.pickedMesh?.metadata?.isCombatHudControl) {
-      debugLog('[combat-move] rejected click: gui mesh pick');
-      return;
-    }
-
-    const destinationCell = tryResolveCellFromPick(pickResult, gridMapper);
     if (!destinationCell) {
-      debugLog('[combat-move] rejected click: no valid destination cell', {
-        pickedMeshName: pickResult?.pickedMesh?.name ?? 'none'
-      });
+      if (pickResult?.pickedMesh?.metadata?.isCombatHudControl) {
+        debugLog('[combat-move] rejected click: gui mesh pick');
+      } else {
+        debugLog('[combat-move] rejected click: no valid destination cell', {
+          pickedMeshName: pickResult?.pickedMesh?.name ?? 'none'
+        });
+      }
       return;
     }
 

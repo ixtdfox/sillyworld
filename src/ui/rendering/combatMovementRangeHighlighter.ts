@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { createCombatBattlefieldVisualization } from './combatBattlefieldVisualization.ts';
+import { pickCombatCellAtPointer } from './combatCellPointer.ts';
 
 function createCellSignature(cells) {
   return cells
@@ -15,12 +16,16 @@ function disposeHighlights(highlightsByCell) {
   highlightsByCell.clear();
 }
 
-function ensureOverlayAssets(runtime, state, color, alpha) {
-  if (state.material && state.texture) {
+function ensureOverlayAssets(runtime, state, color, alpha, options = {}) {
+  const key = `${color}|${alpha}|${options.namePrefix ?? 'default'}`;
+  if (state.material && state.texture && state.key === key) {
     return state;
   }
 
-  const texture = new runtime.BABYLON.DynamicTexture('combatMoveOverlayTexture', {
+  state.material?.dispose(false, true);
+  state.texture?.dispose();
+
+  const texture = new runtime.BABYLON.DynamicTexture(`${options.namePrefix ?? 'combatMove'}OverlayTexture`, {
     width: 256,
     height: 256
   }, runtime.scene, false);
@@ -48,10 +53,10 @@ function ensureOverlayAssets(runtime, state, color, alpha) {
   context.strokeRect(border, border, 256 - border * 2, 256 - border * 2);
   texture.update(false);
 
-  const material = new runtime.BABYLON.StandardMaterial('combatMoveHighlightMaterial', runtime.scene);
+  const material = new runtime.BABYLON.StandardMaterial(`${options.namePrefix ?? 'combatMove'}HighlightMaterial`, runtime.scene);
   material.diffuseColor = runtime.BABYLON.Color3.Black();
   material.specularColor = runtime.BABYLON.Color3.Black();
-  material.emissiveColor = fillColor.scale(0.9);
+  material.emissiveColor = fillColor.scale(options.emissiveMultiplier ?? 0.9);
   material.alpha = alpha;
   material.opacityTexture = texture;
   material.emissiveTexture = texture;
@@ -59,26 +64,27 @@ function ensureOverlayAssets(runtime, state, color, alpha) {
   material.backFaceCulling = false;
   material.disableLighting = true;
 
+  state.key = key;
   state.texture = texture;
   state.material = material;
   return state;
 }
 
-function createHighlightMesh(runtime, battlefieldView, cell, overlayState) {
+function createHighlightMesh(runtime, battlefieldView, cell, overlayState, meshConfig = {}) {
   const mapper = battlefieldView.getGridMapper();
   const cellSize = mapper.cellSize;
   const world = battlefieldView.gridCellToWorld(cell);
 
-  const mesh = runtime.BABYLON.MeshBuilder.CreateGround(`combatMoveHighlight_${cell.x}_${cell.z}`, {
-    width: cellSize * 0.94,
-    height: cellSize * 0.94,
+  const mesh = runtime.BABYLON.MeshBuilder.CreateGround(meshConfig.name ?? `combatMoveHighlight_${cell.x}_${cell.z}`, {
+    width: cellSize * (meshConfig.scale ?? 0.94),
+    height: cellSize * (meshConfig.scale ?? 0.94),
     subdivisions: 1
   }, runtime.scene);
 
   mesh.position.x = world.x;
   mesh.position.z = world.z;
 
-  battlefieldView.attachToBattlefieldLayer(mesh, 0.04);
+  battlefieldView.attachToBattlefieldLayer(mesh, meshConfig.yOffset ?? 0.04);
   mesh.material = overlayState.material;
 
   return mesh;
@@ -93,7 +99,11 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
     isVisible = () => true,
     color = '#45b8ff',
     alpha = 0.3,
-    movementCost
+    movementCost,
+    hoverReachableColor = '#8ef9ff',
+    hoverReachableAlpha = 0.65,
+    hoverInvalidColor = '#ff667d',
+    hoverInvalidAlpha = 0.4
   } = options;
 
   const battlefieldView = createCombatBattlefieldVisualization(runtime, {
@@ -103,14 +113,33 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
 
   const highlightsByCell = new Map();
   const overlayState = {
+    key: '',
     material: null,
     texture: null
   };
+  const hoverReachableOverlayState = {
+    key: '',
+    material: null,
+    texture: null
+  };
+  const hoverInvalidOverlayState = {
+    key: '',
+    material: null,
+    texture: null
+  };
+  let hoverMesh = null;
   let cacheSignature = '';
+
+  const clearHover = () => {
+    hoverMesh?.dispose(false, true);
+    hoverMesh = null;
+    combatState.hoveredMovementDestination = null;
+  };
 
   const clear = () => {
     cacheSignature = '';
     disposeHighlights(highlightsByCell);
+    clearHover();
   };
 
   const syncOverlayPulse = () => {
@@ -122,6 +151,47 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
     overlayState.material.alpha = Math.min(0.82, Math.max(0.2, alpha * pulse));
   };
 
+  const syncHoverPreview = (reachableCellKeySet) => {
+    const { cell: hoveredCell } = pickCombatCellAtPointer(runtime, combatState.gridMapper);
+
+    if (!hoveredCell || !grid.isWithinBounds?.(hoveredCell) || combatState.playerMovementInProgress) {
+      clearHover();
+      return;
+    }
+
+    const hoverCellKey = grid.toCellKey(hoveredCell);
+    const isReachable = reachableCellKeySet.has(hoverCellKey);
+
+    combatState.hoveredMovementDestination = {
+      cell: { x: hoveredCell.x, z: hoveredCell.z },
+      isReachable
+    };
+
+    const desiredMaterial = isReachable
+      ? ensureOverlayAssets(runtime, hoverReachableOverlayState, hoverReachableColor, hoverReachableAlpha, {
+        emissiveMultiplier: 1.15,
+        namePrefix: 'combatMoveHoverReachable'
+      }).material
+      : ensureOverlayAssets(runtime, hoverInvalidOverlayState, hoverInvalidColor, hoverInvalidAlpha, {
+        emissiveMultiplier: 0.95,
+        namePrefix: 'combatMoveHoverInvalid'
+      }).material;
+
+    if (!hoverMesh) {
+      hoverMesh = createHighlightMesh(runtime, battlefieldView, hoveredCell, { material: desiredMaterial }, {
+        name: 'combatMoveHoverPreview',
+        yOffset: 0.07,
+        scale: 0.78
+      });
+    } else {
+      const world = battlefieldView.gridCellToWorld(hoveredCell);
+      hoverMesh.position.x = world.x;
+      hoverMesh.position.z = world.z;
+    }
+
+    hoverMesh.material = desiredMaterial;
+  };
+
   const render = () => {
     const activeUnit = combatState.getActiveUnit?.() ?? null;
     const shouldShow = (
@@ -131,6 +201,7 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       && layer.shouldRender()
       && isVisible()
       && playerUnit.isAlive
+      && !combatState.playerMovementInProgress
     );
 
     if (!shouldShow) {
@@ -143,6 +214,8 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       movementCost
     }).filter((cell) => !(cell.x === playerUnit.gridCell.x && cell.z === playerUnit.gridCell.z));
 
+    const reachableCellKeySet = new Set(reachableCells.map((cell) => grid.toCellKey(cell)));
+
     const nextSignature = [
       playerUnit.gridCell.x,
       playerUnit.gridCell.z,
@@ -151,22 +224,20 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       createCellSignature(reachableCells)
     ].join('|');
 
-    if (nextSignature === cacheSignature) {
-      syncOverlayPulse();
-      return;
-    }
+    if (nextSignature !== cacheSignature) {
+      cacheSignature = nextSignature;
+      disposeHighlights(highlightsByCell);
+      ensureOverlayAssets(runtime, overlayState, color, alpha, { namePrefix: 'combatMoveRange' });
 
-    cacheSignature = nextSignature;
-    disposeHighlights(highlightsByCell);
-    ensureOverlayAssets(runtime, overlayState, color, alpha);
-
-    for (const cell of reachableCells) {
-      const key = grid.toCellKey(cell);
-      const mesh = createHighlightMesh(runtime, battlefieldView, cell, overlayState);
-      highlightsByCell.set(key, mesh);
+      for (const cell of reachableCells) {
+        const key = grid.toCellKey(cell);
+        const mesh = createHighlightMesh(runtime, battlefieldView, cell, overlayState);
+        highlightsByCell.set(key, mesh);
+      }
     }
 
     syncOverlayPulse();
+    syncHoverPreview(reachableCellKeySet);
   };
 
   const layer = battlefieldView.createLayerController(render, clear);
@@ -180,6 +251,10 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       layer.clear();
       overlayState.material?.dispose(false, true);
       overlayState.texture?.dispose();
+      hoverReachableOverlayState.material?.dispose(false, true);
+      hoverReachableOverlayState.texture?.dispose();
+      hoverInvalidOverlayState.material?.dispose(false, true);
+      hoverInvalidOverlayState.texture?.dispose();
     }
   };
 }
