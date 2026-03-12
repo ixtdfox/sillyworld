@@ -1,16 +1,24 @@
-import { getRelationship } from "../selectors/relationshipSelectors.js";
-function clamp(value, min, max) {
+import type { GameState } from '../contracts.js';
+import { getRelationship } from '../selectors/relationshipSelectors.js';
+
+function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
-function setRelationship(state, characterId, delta) {
+
+export function setRelationship(
+  state: GameState,
+  characterId: string,
+  delta: number
+): { nextState: GameState; level: number } {
   const existing = getRelationship(state, characterId);
   const timestamp = Date.now();
   const relationship = {
     ...existing,
     level: clamp(existing.level + delta, -100, 100),
-    history: [...existing.history || [], `delta:${delta}`].slice(-12),
+    history: [...(existing.history || []), `delta:${delta}`].slice(-12),
     lastInteractionAt: timestamp
   };
+
   return {
     nextState: {
       ...state,
@@ -26,6 +34,3 @@ function setRelationship(state, characterId, delta) {
     level: relationship.level
   };
 }
-export {
-  setRelationship
-};
