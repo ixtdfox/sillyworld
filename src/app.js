@@ -7,7 +7,7 @@ import { renderSceneViewScreen } from './ui/screens/sceneViewScreen.js';
 import { MAP_LEVEL, SAVE_KEY, worldStore } from './world/index.js';
 import { createAppController } from './core/app/createAppController.js';
 import { createBrowserPersistence } from './platform/browser/localPersistence.js';
-import { loadSeedFromSillyTavern } from './platform/sillytavern/seedLoader.js';
+import { loadSeed } from './platform/browser/seedLoader.js';
 
 let activeScreenUnmount = null;
 let appOptions = {
@@ -19,7 +19,7 @@ let appOptions = {
 const appController = createAppController({
   worldStore,
   mapLevel: MAP_LEVEL,
-  loadSeed: () => loadSeedFromSillyTavern('src/world/seed_world.json'),
+  loadSeed: () => loadSeed(),
   persistence: createBrowserPersistence({ saveKey: SAVE_KEY }),
   onStateChange: () => render()
 });
