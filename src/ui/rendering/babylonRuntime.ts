@@ -1,7 +1,7 @@
 // @ts-nocheck
-const BABYLON_SCRIPT_SRC = '/vendor/babylon/babylon.min.js';
-const BABYLON_GUI_SCRIPT_SRC = '/vendor/babylon/babylon.gui.min.js';
-const BABYLON_LOADERS_SCRIPT_SRC = '/vendor/babylon/babylonjs.loaders.min.js';
+const BABYLON_SCRIPT_SRC = 'https://cdn.babylonjs.com/babylon.js';
+const BABYLON_GUI_SCRIPT_SRC = 'https://cdn.babylonjs.com/gui/babylon.gui.min.js';
+const BABYLON_LOADERS_SCRIPT_SRC = 'https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js';
 
 interface PositionLike { x: number; y: number; z: number; }
 interface BabylonCameraLike { name?: string; isDisposed?: () => boolean; setTarget?: (target: unknown) => void; minZ?: number; maxZ?: number; }
@@ -54,7 +54,7 @@ function loadScript(src: string): Promise<void> {
 export function ensureBabylonRuntime(): Promise<BabylonNamespaceLike> {
   if (window.BABYLON?.GUI) return Promise.resolve(window.BABYLON);
   if (!babylonLoadPromise) {
-    console.info('[SillyRPG] Loading Babylon runtime from local bundled assets.', {
+    console.info('[SillyRPG] Loading Babylon runtime scripts.', {
       core: BABYLON_SCRIPT_SRC,
       gui: BABYLON_GUI_SCRIPT_SRC,
       loaders: BABYLON_LOADERS_SCRIPT_SRC
