@@ -1,6 +1,6 @@
-const BABYLON_SCRIPT_SRC = 'https://cdn.babylonjs.com/babylon.ts';
-const BABYLON_GUI_SCRIPT_SRC = 'https://cdn.babylonjs.com/gui/babylon.gui.min.ts';
-const BABYLON_LOADERS_SCRIPT_SRC = 'https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.ts';
+const BABYLON_SCRIPT_SRC = 'https://cdn.babylonjs.com/babylon.js';
+const BABYLON_GUI_SCRIPT_SRC = 'https://cdn.babylonjs.com/gui/babylon.gui.min.js';
+const BABYLON_LOADERS_SCRIPT_SRC = 'https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js';
 
 interface PositionLike {
   x: number;
