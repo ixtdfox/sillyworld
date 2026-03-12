@@ -37,3 +37,27 @@ Status highlights:
 3. Introduce `checkJs: true` selectively by folder over time (or per-file via `// @ts-check`) once hot spots are stabilized.
 4. Gradually tighten compiler checks (e.g., turn on stricter options per milestone).
 5. Add a CI `typecheck` step (`tsc --noEmit`) when enough of the codebase has useful type coverage.
+
+## Rendering/runtime migration status (latest)
+
+The scene rendering/runtime boundary has now been migrated to TypeScript with explicit shared contracts:
+
+- `src/ui/rendering/runtimeContracts.ts`
+- `src/ui/rendering/sceneRuntime.ts`
+- `src/ui/rendering/encounterInteractionInput.ts`
+- `src/ui/rendering/districtExplorationRuntime.ts`
+- `src/ui/rendering/babylonRuntime.ts`
+- `src/ui/screens/sceneViewScreen.ts`
+
+### Migration risks
+
+- Babylon.js remains a global runtime loaded from CDN, so several Babylon-facing APIs are currently represented with minimal structural interfaces rather than full engine typings.
+- Combat internals are still implemented in JavaScript; `sceneRuntime` intentionally types only the stable combat-state surface used by the scene screen/debug overlay.
+- Some scene/entity loader return shapes are still inferred via narrow local interfaces, which is safe at the boundary but can hide drift if loader internals change without updating contracts.
+
+### Remaining work
+
+1. Migrate `src/ui/rendering/combatRuntime.js` and related combat helper modules to TypeScript so combat state/action types are first-class across the runtime.
+2. Add a Babylon ambient type package or local Babylon d.ts surface to replace temporary structural engine typings.
+3. Extend explicit contracts for world/entity loader outputs (character roots, scene containers, gameplay dimensions) to remove boundary casts.
+4. Gradually enable stricter compiler options for rendering/runtime folders once combat and loader contracts are fully typed.
