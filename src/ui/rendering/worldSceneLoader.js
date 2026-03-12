@@ -1,6 +1,6 @@
 import { ASSET_PATHS } from '../../core/assets/assetCatalog.js';
 
-const SCENE_FILE = ASSET_PATHS.scene.districtExploration;
+const SCENE_FILE = ASSET_PATHS.scenes.districtExploration;
 const GROUND_MESH_NAME = 'Ground';
 
 function resolveSceneRoots(result) {
