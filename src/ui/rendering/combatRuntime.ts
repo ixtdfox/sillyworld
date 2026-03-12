@@ -742,14 +742,13 @@ export async function createCombatRuntime(runtime, options = {}) {
     createPanel: () => createCombatDebugHud(runtime, { combatState })
   });
   debugShell.registerPanel({
-    id: 'combat-overlay',
-    label: 'Combat Overlay',
+    id: 'tactical-overlay',
+    label: 'Tactical Overlay',
     initialVisible: true,
     createPanel: () => createCombatMovementRangeHighlighter(runtime, {
       combatState,
       playerUnit,
       grid,
-      gridMapper,
       isVisible: () => combatState.inputMode === PLAYER_ACTION_MODES.MOVE,
       resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 }),
       movementCost
@@ -757,7 +756,7 @@ export async function createCombatRuntime(runtime, options = {}) {
   });
   debugShell.registerPanel({
     id: 'grid-debug',
-    label: 'Grid Debug',
+    label: 'Raw Debug Grid',
     initialVisible: true,
     createPanel: () => createCombatGridOverlayRenderer(runtime, {
       combatState,

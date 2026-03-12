@@ -1,56 +1,28 @@
 // @ts-nocheck
-function createGridSignature(bounds, mapper) {
-  return [
-    bounds.minX,
-    bounds.maxX,
-    bounds.minZ,
-    bounds.maxZ,
-    mapper.cellSize,
-    mapper.originWorldX ?? 0,
-    mapper.originWorldZ ?? 0
-  ].join('|');
-}
+import { createCombatBattlefieldVisualization } from './combatBattlefieldVisualization.ts';
 
-function buildGridLines(runtime, mapper, bounds, resolveY) {
+function buildGridLines(runtime, battlefieldView, bounds) {
   const lines = [];
-  const minCorner = mapper.gridCellToWorld({ x: bounds.minX, z: bounds.minZ }, {
-    anchor: 'corner',
-    resolveY: ({ x, z }) => resolveY({ x, z })
-  });
-  const maxCorner = mapper.gridCellToWorld({ x: bounds.maxX + 1, z: bounds.maxZ + 1 }, {
-    anchor: 'corner',
-    resolveY: ({ x, z }) => resolveY({ x, z })
-  });
+  const minCorner = battlefieldView.gridCellToWorld({ x: bounds.minX, z: bounds.minZ }, { anchor: 'corner' });
+  const maxCorner = battlefieldView.gridCellToWorld({ x: bounds.maxX + 1, z: bounds.maxZ + 1 }, { anchor: 'corner' });
 
   for (let x = bounds.minX; x <= bounds.maxX + 1; x += 1) {
-    const start = mapper.gridCellToWorld({ x, z: bounds.minZ }, {
-      anchor: 'corner',
-      resolveY: ({ x: wx, z: wz }) => resolveY({ x: wx, z: wz })
-    });
-    const end = mapper.gridCellToWorld({ x, z: bounds.maxZ + 1 }, {
-      anchor: 'corner',
-      resolveY: ({ x: wx, z: wz }) => resolveY({ x: wx, z: wz })
-    });
+    const start = battlefieldView.gridCellToWorld({ x, z: bounds.minZ }, { anchor: 'corner' });
+    const end = battlefieldView.gridCellToWorld({ x, z: bounds.maxZ + 1 }, { anchor: 'corner' });
 
     lines.push([
-      new runtime.BABYLON.Vector3(start.x, start.y + 0.03, minCorner.z),
-      new runtime.BABYLON.Vector3(end.x, end.y + 0.03, maxCorner.z)
+      new runtime.BABYLON.Vector3(start.x, start.y, minCorner.z),
+      new runtime.BABYLON.Vector3(end.x, end.y, maxCorner.z)
     ]);
   }
 
   for (let z = bounds.minZ; z <= bounds.maxZ + 1; z += 1) {
-    const start = mapper.gridCellToWorld({ x: bounds.minX, z }, {
-      anchor: 'corner',
-      resolveY: ({ x: wx, z: wz }) => resolveY({ x: wx, z: wz })
-    });
-    const end = mapper.gridCellToWorld({ x: bounds.maxX + 1, z }, {
-      anchor: 'corner',
-      resolveY: ({ x: wx, z: wz }) => resolveY({ x: wx, z: wz })
-    });
+    const start = battlefieldView.gridCellToWorld({ x: bounds.minX, z }, { anchor: 'corner' });
+    const end = battlefieldView.gridCellToWorld({ x: bounds.maxX + 1, z }, { anchor: 'corner' });
 
     lines.push([
-      new runtime.BABYLON.Vector3(minCorner.x, start.y + 0.03, start.z),
-      new runtime.BABYLON.Vector3(maxCorner.x, end.y + 0.03, end.z)
+      new runtime.BABYLON.Vector3(minCorner.x, start.y, start.z),
+      new runtime.BABYLON.Vector3(maxCorner.x, end.y, end.z)
     ]);
   }
 
@@ -65,32 +37,43 @@ export function createCombatGridOverlayRenderer(runtime, options = {}) {
     resolveY = () => 0
   } = options;
 
+  const battlefieldView = createCombatBattlefieldVisualization(runtime, {
+    combatState,
+    resolveY
+  });
+
   let gridMesh = null;
   let signature = '';
-  let layerVisible = true;
 
-  const rebuildOverlay = () => {
-    if (!layerVisible) {
-      gridMesh?.setEnabled(false);
+  const clear = () => {
+    signature = '';
+    gridMesh?.dispose(false, true);
+    gridMesh = null;
+  };
+
+  const render = () => {
+    if (!layer.shouldRender()) {
+      if (gridMesh) {
+        gridMesh.setEnabled(false);
+      }
       return;
     }
 
-    const mapper = combatState.gridMapper;
-    const bounds = combatState.grid?.bounds;
-
-    if (!mapper || !bounds) {
+    const bounds = battlefieldView.getGridBounds();
+    if (!bounds) {
       return;
     }
 
-    const nextSignature = createGridSignature(bounds, mapper);
+    const nextSignature = battlefieldView.createGridSignature();
     if (nextSignature === signature) {
+      gridMesh?.setEnabled(true);
       return;
     }
 
     signature = nextSignature;
     gridMesh?.dispose(false, true);
 
-    const lines = buildGridLines(runtime, mapper, bounds, resolveY);
+    const lines = buildGridLines(runtime, battlefieldView, bounds);
     gridMesh = runtime.BABYLON.MeshBuilder.CreateLineSystem('combatGridOverlay', {
       lines,
       updatable: true
@@ -98,11 +81,7 @@ export function createCombatGridOverlayRenderer(runtime, options = {}) {
 
     gridMesh.color = runtime.BABYLON.Color3.FromHexString(color);
     gridMesh.alpha = lineAlpha;
-    gridMesh.isPickable = false;
-    gridMesh.checkCollisions = false;
-    gridMesh.alwaysSelectAsActiveMesh = true;
-    gridMesh.renderingGroupId = 1;
-    gridMesh.parent = combatState.combatScene?.sceneContainer ?? null;
+    battlefieldView.attachToBattlefieldLayer(gridMesh, 0.03);
 
     if (gridMesh.material) {
       gridMesh.material.alpha = lineAlpha;
@@ -110,23 +89,17 @@ export function createCombatGridOverlayRenderer(runtime, options = {}) {
     }
 
     gridMesh.setEnabled(true);
-
   };
 
-  const beforeRenderObserver = runtime.scene.onBeforeRenderObservable.add(rebuildOverlay);
-  rebuildOverlay();
+  const layer = battlefieldView.createLayerController(render, clear);
+  const beforeRenderObserver = runtime.scene.onBeforeRenderObservable.add(layer.render);
+  layer.render();
 
   return {
-    setVisible: (visible) => {
-      layerVisible = visible !== false;
-      if (gridMesh) {
-        gridMesh.setEnabled(layerVisible);
-      }
-    },
+    setVisible: layer.setVisible,
     dispose: () => {
       runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
-      gridMesh?.dispose(false, true);
-      gridMesh = null;
+      layer.clear();
     }
   };
 }
