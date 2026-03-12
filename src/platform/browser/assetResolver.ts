@@ -10,17 +10,17 @@ export interface BrowserUrlProvider {
   getWindowLocationHref(): string | null;
 }
 
-class GlobalBrowserUrlProvider implements BrowserUrlProvider {
+const globalBrowserUrlProvider: BrowserUrlProvider = {
   getDocumentBaseUri(): string | null {
     if (typeof document === 'undefined' || typeof document.baseURI !== 'string') return null;
     return document.baseURI.length > 0 ? document.baseURI : null;
-  }
+  },
 
   getWindowLocationHref(): string | null {
     if (typeof window === 'undefined' || typeof window.location?.href !== 'string') return null;
     return window.location.href.length > 0 ? window.location.href : null;
   }
-}
+};
 
 export interface AssetResolverConfig {
   defaultAssetBaseUrl?: string;
@@ -32,8 +32,8 @@ export class AssetResolver implements AssetPathResolver {
   private readonly urlProvider: BrowserUrlProvider;
 
   constructor(config: AssetResolverConfig = {}) {
-    this.defaultAssetBaseUrl = config.defaultAssetBaseUrl ?? 'http://localhost/';
-    this.urlProvider = config.urlProvider ?? new GlobalBrowserUrlProvider();
+    this.defaultAssetBaseUrl = this.resolveDefaultAssetBaseUrl(config.defaultAssetBaseUrl);
+    this.urlProvider = config.urlProvider ?? globalBrowserUrlProvider;
   }
 
   resolveAssetPath(relPath: string): string {
@@ -53,6 +53,14 @@ export class AssetResolver implements AssetPathResolver {
 
     // Explicit fallback keeps URL resolution deterministic in non-DOM environments.
     return this.defaultAssetBaseUrl;
+  }
+
+  private resolveDefaultAssetBaseUrl(defaultAssetBaseUrl?: string): string {
+    const resolvedBaseUrl = defaultAssetBaseUrl ?? 'http://localhost/';
+    if (resolvedBaseUrl.trim().length === 0) {
+      throw new Error('Asset resolver defaultAssetBaseUrl must be a non-empty string.');
+    }
+    return resolvedBaseUrl;
   }
 }
 

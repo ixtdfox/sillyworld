@@ -12,17 +12,17 @@ export interface SeedUrlResolver {
   resolve(seedPath: string): string;
 }
 
-class BrowserSeedFetchApi implements SeedFetchApi {
+const defaultSeedFetchApi: SeedFetchApi = {
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     return fetch(input, init);
   }
-}
+};
 
-class ModuleSeedUrlResolver implements SeedUrlResolver {
+const defaultSeedUrlResolver: SeedUrlResolver = {
   resolve(seedPath: string): string {
     return new URL(seedPath, import.meta.url).toString();
   }
-}
+};
 
 export interface SeedLoaderConfig {
   fetchApi?: SeedFetchApi;
@@ -36,9 +36,9 @@ export class BrowserSeedLoader implements SeedLoader {
   private readonly defaultSeedPath: string;
 
   constructor(config: SeedLoaderConfig = {}) {
-    this.fetchApi = config.fetchApi ?? new BrowserSeedFetchApi();
-    this.urlResolver = config.urlResolver ?? new ModuleSeedUrlResolver();
-    this.defaultSeedPath = config.defaultSeedPath ?? '../../world/seed_world.json';
+    this.fetchApi = config.fetchApi ?? defaultSeedFetchApi;
+    this.urlResolver = config.urlResolver ?? defaultSeedUrlResolver;
+    this.defaultSeedPath = this.resolveDefaultSeedPath(config.defaultSeedPath);
   }
 
   async loadSeed(seedPath = this.defaultSeedPath): Promise<WorldSeed> {
@@ -57,6 +57,14 @@ export class BrowserSeedLoader implements SeedLoader {
     const seed: WorldSeed = await response.json();
     console.info('[SillyRPG] World seed loaded.', { url: resolvedUrl });
     return seed;
+  }
+
+  private resolveDefaultSeedPath(defaultSeedPath?: string): string {
+    const resolvedPath = defaultSeedPath ?? '../../world/seed_world.json';
+    if (resolvedPath.trim().length === 0) {
+      throw new Error('Seed loader defaultSeedPath must be a non-empty string.');
+    }
+    return resolvedPath;
   }
 }
 

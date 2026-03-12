@@ -45,10 +45,10 @@ function createInMemoryStorage(): PersistenceStorage {
 }
 
 export class BrowserPersistenceService implements PersistenceContract {
-  readonly storage: PersistenceStorage;
-  readonly keys: PersistenceKeys;
-  readonly storageMode: BrowserStorageMode;
-  readonly storageFallbackReason: BrowserStorageFallbackReason;
+  readonly #storage: PersistenceStorage;
+  readonly #keys: PersistenceKeys;
+  readonly #storageMode: BrowserStorageMode;
+  readonly #storageFallbackReason: BrowserStorageFallbackReason;
 
   constructor(config: BrowserPersistenceConfig = {}) {
     const keys = config.keys ?? PERSISTENCE_KEYS;
@@ -62,15 +62,31 @@ export class BrowserPersistenceService implements PersistenceContract {
         }
       : this.resolveBrowserStorage(storageProvider);
 
-    this.storage = resolution.storage;
-    this.keys = keys;
-    this.storageMode = resolution.mode;
-    this.storageFallbackReason = resolution.fallbackReason;
+    this.#storage = resolution.storage;
+    this.#keys = keys;
+    this.#storageMode = resolution.mode;
+    this.#storageFallbackReason = resolution.fallbackReason;
+  }
+
+  get storage(): PersistenceStorage {
+    return this.#storage;
+  }
+
+  get keys(): PersistenceKeys {
+    return this.#keys;
+  }
+
+  get storageMode(): BrowserStorageMode {
+    return this.#storageMode;
+  }
+
+  get storageFallbackReason(): BrowserStorageFallbackReason {
+    return this.#storageFallbackReason;
   }
 
   hasSaveData(): boolean {
     try {
-      return Boolean(this.storage.getItem(this.keys.worldSave));
+      return Boolean(this.#storage.getItem(this.#keys.worldSave));
     } catch {
       return false;
     }
