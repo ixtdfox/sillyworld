@@ -42,6 +42,19 @@ export interface PhoneCityMapScreenProps {
   onRegionOpen?: (regionId: RegionId) => void;
 }
 
+interface BabylonGuiLike {
+  AdvancedDynamicTexture: {
+    CreateFullscreenUI: (name: string, foreground: boolean, scene: unknown) => {
+      idealWidth: number;
+      idealHeight: number;
+      renderAtIdealSize: boolean;
+      useSmallestIdeal: boolean;
+      addControl: (control: unknown) => void;
+      dispose: () => void;
+    };
+  };
+}
+
 function createPhoneScaler(phoneWidth: number, phoneHeight: number): PhoneScaler {
   const scaleX = phoneWidth / PHONE_SIZE.width;
   const scaleY = phoneHeight / PHONE_SIZE.height;
@@ -250,7 +263,10 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }: { GUI: 
 async function mountPhoneScene(canvas: HTMLCanvasElement, { onRegionOpen }: MountPhoneSceneOptions): Promise<() => void> {
   await ensureBabylonRuntime();
   const runtime = createBabylonUiRuntime(canvas);
-  const GUI = runtime.BABYLON.GUI;
+  const GUI = runtime.BABYLON.GUI as BabylonGuiLike | undefined;
+  if (!GUI) {
+    throw new Error('Babylon GUI runtime is unavailable.');
+  }
   const textureUrl = resolveCatalogAssetPath('textures.phoneUiAtlas');
   const mapTextureUrl = resolveCatalogAssetPath('textures.cityMap');
 
