@@ -1,4 +1,4 @@
-import { configureMount, hideRoot, mountContent, showRoot } from './ui/mount.js';
+import { hideRoot, mountContent, showRoot } from './ui/mount.js';
 import { renderTopBar } from './ui/components/topBar.js';
 import { renderMainMenu, renderSettingsStub } from './ui/screens/mainMenu.js';
 import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionInterstitial.js';
@@ -12,8 +12,7 @@ import { loadSeed } from './platform/browser/seedLoader.js';
 let activeScreenUnmount = null;
 let appOptions = {
   title: 'SillyRPG',
-  onExit: null,
-  isStandalone: false
+  onExit: null
 };
 
 const appController = createAppController({
@@ -112,7 +111,7 @@ function render() {
       onBack: back,
       onExit: exit,
       canGoBack,
-      hideExit: appOptions.isStandalone
+      hideExit: true
     }),
     Object.assign(document.createElement('div'), { className: 'sillyrpg-content' })
   );
@@ -138,14 +137,7 @@ export function startApp(options = {}) {
   appOptions = {
     title: options.title || 'SillyRPG',
     onExit: typeof options.onExit === 'function' ? options.onExit : null,
-    isStandalone: Boolean(options.isStandalone)
   };
-
-  configureMount({
-    rootId: options.rootId,
-    rootHostSelectors: options.rootHostSelectors,
-    manageExternalUi: options.manageExternalUi
-  });
 
   showRoot();
   appController.initialize().catch(() => {});

@@ -2,11 +2,7 @@ import { startApp } from './app.js';
 
 function bootstrapStandalone() {
   startApp({
-    title: 'SillyRPG',
-    rootId: 'sillyrpg-standalone-root',
-    rootHostSelectors: ['#app'],
-    manageExternalUi: false,
-    isStandalone: true
+    title: 'SillyRPG'
   });
 }
 
