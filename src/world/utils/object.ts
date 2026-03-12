@@ -1,12 +1,15 @@
-export function indexBy(items = [], key) {
-  const out = {};
+export function indexBy<T extends Record<string, unknown>, K extends keyof T & string>(items: T[] = [], key: K): Record<string, T> {
+  const out: Record<string, T> = {};
   for (const item of items) {
-    if (item && item[key] != null) out[item[key]] = item;
+    const indexValue = item?.[key];
+    if (typeof indexValue === 'string' || typeof indexValue === 'number') {
+      out[String(indexValue)] = item;
+    }
   }
   return out;
 }
 
-export function deepClone(value) {
+export function deepClone<T>(value: T): T {
   if (typeof structuredClone === 'function') return structuredClone(value);
   return JSON.parse(JSON.stringify(value));
 }

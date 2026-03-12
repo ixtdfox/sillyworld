@@ -82,7 +82,7 @@ class ApplicationSession {
     if (nav.screen === 'map') {
       const store = this.#controller.getStore();
       if (store) {
-        const [transition] = store.getPendingPhaseTransitions() as Array<PhaseTransitionRecord | undefined>;
+        const [transition]: Array<PhaseTransitionRecord | undefined> = store.getPendingPhaseTransitions();
         if (transition) {
           this.#screenManager.clear(content);
           content.replaceChildren(renderPhaseTransitionInterstitial({ transition, onContinue: () => this.#controller.consumePendingPhaseTransition() }));

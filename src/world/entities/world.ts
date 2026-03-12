@@ -1,5 +1,6 @@
 import { TIME_OF_DAY, TIME_PHASE } from '../constants/types.ts';
 import { normalizeTimePhase } from '../actions/timeActions.ts';
+import type { GameStateSeed, TimePhase, WorldState } from '../contracts.ts';
 
 const PHASE_TO_TIME_OF_DAY = Object.freeze({
   [TIME_PHASE.Morning]: TIME_OF_DAY.Morning,
@@ -8,11 +9,11 @@ const PHASE_TO_TIME_OF_DAY = Object.freeze({
   [TIME_PHASE.Night]: TIME_OF_DAY.Night
 });
 
-function toLegacyTimeOfDay(phase) {
+function toLegacyTimeOfDay(phase: TimePhase) {
   return PHASE_TO_TIME_OF_DAY[phase] || TIME_OF_DAY.Morning;
 }
 
-export function createDefaultWorld(seed = {}) {
+export function createDefaultWorld(seed: GameStateSeed['world'] = {}): WorldState {
   const timePhase = normalizeTimePhase(seed.timePhase, normalizeTimePhase(seed.timeOfDay));
   const phaseTransitions = seed.phaseTransitions || {};
 

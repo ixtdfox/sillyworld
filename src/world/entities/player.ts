@@ -1,4 +1,8 @@
-function normalizeRelationshipEntry(relationship = {}) {
+import type { GameStateSeed, PlayerState, RelationshipState } from '../contracts.ts';
+
+type RelationshipEntrySeed = Partial<RelationshipState>;
+
+function normalizeRelationshipEntry(relationship: RelationshipEntrySeed = {}): RelationshipState {
   return {
     level: Number.isFinite(relationship.level) ? relationship.level : 0,
     tags: Array.isArray(relationship.tags) ? relationship.tags : [],
@@ -17,7 +21,7 @@ function normalizeRelationshipEntry(relationship = {}) {
   };
 }
 
-function normalizeRelationships(relationships = {}) {
+function normalizeRelationships(relationships: PlayerState['relationships'] = {}): PlayerState['relationships'] {
   return Object.fromEntries(
     Object.entries(relationships).map(([characterId, relationship]) => [
       characterId,
@@ -26,7 +30,7 @@ function normalizeRelationships(relationships = {}) {
   );
 }
 
-export function createDefaultPlayer(seed = {}) {
+export function createDefaultPlayer(seed: GameStateSeed['player'] = {}): PlayerState {
   return {
     id: seed.id || 'player',
     name: seed.name || 'Player',
