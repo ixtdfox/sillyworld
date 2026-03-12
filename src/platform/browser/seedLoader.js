@@ -1,7 +1,8 @@
-/** @typedef {import('../../shared/types').SeedLoader} SeedLoader */
+/** @typedef {import('../../shared/types.js').SeedLoader} SeedLoader */
+/** @typedef {import('../../shared/types.js').WorldSeed} WorldSeed */
 
 /** @type {SeedLoader} */
-export async function loadSeed(seedPath = '../../world/seed_world.json') {
+export const loadSeed = async (seedPath = '../../world/seed_world.json') => {
   const url = new URL(seedPath, import.meta.url).toString();
   console.info('[SillyRPG] Loading world seed.', { url });
   const response = await fetch(url);
@@ -10,7 +11,8 @@ export async function loadSeed(seedPath = '../../world/seed_world.json') {
     throw new Error(`Failed to load seed data: ${response.status} ${response.statusText}`);
   }
 
+  /** @type {WorldSeed} */
   const seed = await response.json();
   console.info('[SillyRPG] World seed loaded.');
   return seed;
-}
+};

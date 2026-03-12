@@ -8,14 +8,27 @@ import { MAP_LEVEL, worldStore } from './world/index.js';
 import { createAppController } from './core/app/createAppController.js';
 import { createStandalonePersistence } from './platform/browser/localPersistence.js';
 import { loadSeed } from './platform/browser/seedLoader.js';
+import type { AppController, RegionId } from './shared/types.js';
 
-/** @typedef {import('./shared/types').RegionId} RegionId */
-/** @typedef {import('./shared/types').ScreenId} ScreenId */
+type RenderLifecycleHook = () => void;
+
+interface MountableScreenNode extends HTMLElement {
+  __sillyOnMount?: RenderLifecycleHook;
+  __sillyOnUnmount?: RenderLifecycleHook;
+}
+
+type ActiveScreenUnmount = RenderLifecycleHook | null;
 
 const APP_TITLE = 'SillyRPG';
-let activeScreenUnmount = null;
+let activeScreenUnmount: ActiveScreenUnmount = null;
 
-const appController = createAppController({
+function asMountableScreenNode(node: HTMLElement): MountableScreenNode {
+  // Screen renderers are plain JS modules that may attach optional lifecycle hooks at runtime.
+  // Keep the cast narrow at the startup boundary instead of propagating `unknown`/`any`.
+  return node as MountableScreenNode;
+}
+
+const appController: AppController = createAppController({
   worldStore,
   mapLevel: MAP_LEVEL,
   loadSeed: () => loadSeed(),
@@ -23,11 +36,11 @@ const appController = createAppController({
   onStateChange: () => render()
 });
 
-function back() {
+function back(): void {
   appController.back();
 }
 
-function exit() {
+function exit(): void {
   if (activeScreenUnmount) {
     activeScreenUnmount();
     activeScreenUnmount = null;
@@ -36,19 +49,18 @@ function exit() {
   hideRoot();
 }
 
-function renderMapScreen() {
-  return renderPhoneCityMapScreen({
-    /** @param {RegionId} regionId */
-    onRegionOpen: (regionId) => appController.sceneTransitionController.onMapPinClick(regionId)
-  });
+function renderMapScreen(): MountableScreenNode {
+  return asMountableScreenNode(renderPhoneCityMapScreen({
+    onRegionOpen: (regionId: RegionId) => appController.sceneTransitionController.onMapPinClick(regionId)
+  }));
 }
 
-function renderScreenBody() {
+function renderScreenBody(): MountableScreenNode {
   const nav = appController.navigationStore.getState();
-  if (nav.screen === 'settings') return renderSettingsStub({ onBack: back });
+  if (nav.screen === 'settings') return asMountableScreenNode(renderSettingsStub({ onBack: back }));
 
   if (nav.screen === 'scene') {
-    return renderSceneViewScreen({
+    return asMountableScreenNode(renderSceneViewScreen({
       districtId: nav.contextId,
       onEncounterStart: ({ distanceToEnemy, interactionDistance }) => {
         console.log('[SillyRPG] Transitioning exploration mode into combat mode.', {
@@ -57,7 +69,7 @@ function renderScreenBody() {
           interactionDistance
         });
       }
-    });
+    }));
   }
 
   if (nav.screen === 'map') {
@@ -65,32 +77,32 @@ function renderScreenBody() {
     if (store) {
       const transition = store.getPendingPhaseTransitions()[0];
       if (transition) {
-        return renderPhaseTransitionInterstitial({
+        return asMountableScreenNode(renderPhaseTransitionInterstitial({
           transition,
           onContinue: () => {
             appController.consumePendingPhaseTransition();
           }
-        });
+        }));
       }
 
       return renderMapScreen();
     }
   }
 
-  return renderMainMenu({
+  return asMountableScreenNode(renderMainMenu({
     onNewGame: () => appController.startNewGame(),
     onContinue: () => appController.loadAndResumeGame(),
     onLoadGame: () => appController.loadAndResumeGame(),
     onSettings: () => {
-      appController.navigationStore.setScreen(/** @type {ScreenId} */ ('settings'));
+      appController.navigationStore.setScreen('settings');
       render();
     },
     onExit: exit,
     hasSave: appController.hasSaveData()
-  });
+  }));
 }
 
-function render() {
+function render(): void {
   const nav = appController.navigationStore.getState();
   const store = appController.getStore();
   const canGoBack = nav.screen === 'settings' || nav.navStack.length > 0;
@@ -99,6 +111,10 @@ function render() {
 
   const box = document.createElement('div');
   box.className = 'sillyrpg-panel';
+
+  const content = document.createElement('div');
+  content.className = 'sillyrpg-content';
+
   box.append(
     renderTopBar({
       title: APP_TITLE,
@@ -109,15 +125,16 @@ function render() {
       canGoBack,
       hideExit: true
     }),
-    Object.assign(document.createElement('div'), { className: 'sillyrpg-content' })
+    content
   );
+
   const screenNode = renderScreenBody();
   if (activeScreenUnmount) {
     activeScreenUnmount();
     activeScreenUnmount = null;
   }
 
-  box.lastChild.appendChild(screenNode);
+  content.appendChild(screenNode);
   if (typeof screenNode.__sillyOnUnmount === 'function') {
     activeScreenUnmount = screenNode.__sillyOnUnmount;
   }
@@ -129,13 +146,15 @@ function render() {
   }
 }
 
-export function startApp() {
+export async function startApp(): Promise<void> {
   console.info('[SillyRPG] Mounting application root.');
   showRoot();
-  return appController.initialize().then(() => {
+
+  try {
+    await appController.initialize();
     console.info('[SillyRPG] Startup complete.');
-  }).catch((error) => {
+  } catch (error) {
     console.error('[SillyRPG] Startup failed during initialization.', error);
     throw error;
-  });
+  }
 }
