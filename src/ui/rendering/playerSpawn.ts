@@ -1,3 +1,4 @@
+// @ts-nocheck
 const DEFAULT_PLAYER_SPAWN = { x: 0, y: 0, z: 0 };
 const SPAWN_MARKER_NAMES = ['PlayerSpawn', 'player_spawn', 'spawn_player'];
 

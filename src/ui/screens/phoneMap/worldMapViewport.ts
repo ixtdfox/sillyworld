@@ -270,7 +270,7 @@ export function createWorldMapViewport({
   mapImage.onPointerUpObservable.add((_pointerCoords: PointerInfo) => {
     endDrag();
   });
-  mapImage.onPointerOutObservable.add((_pointerCoords: PointerInfo) => {
+  mapImage.onPointerOutObservable?.add((_pointerCoords: PointerInfo) => {
     endDrag();
   });
 

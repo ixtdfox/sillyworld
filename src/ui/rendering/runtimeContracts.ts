@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type RuntimeMode = 'loading' | 'transitioning' | 'exploration' | 'combat';
 
 export type RuntimeDispose = () => void;

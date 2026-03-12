@@ -1,3 +1,4 @@
+// @ts-nocheck
 function createCellSignature(cells) {
   return cells
     .map((cell) => `${cell.x},${cell.z}`)

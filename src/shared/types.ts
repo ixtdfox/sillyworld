@@ -74,7 +74,7 @@ export type SeedLoader = (seedPath?: string) => Promise<WorldSeed>;
 
 export interface WorldStore extends DomainWorldStore {
   getTimePhase(): TimePhaseId | TimePhase;
-  getWorldClock(): WorldClockState | null;
+  getWorldClock(): WorldClockState;
   getPendingPhaseTransitions(): PhaseTransitionRecord[];
   consumeNextPhaseTransition(): PhaseTransitionRecord | null;
   getState(): GameState;

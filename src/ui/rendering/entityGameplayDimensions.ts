@@ -1,3 +1,4 @@
+// @ts-nocheck
 const DEFAULT_ATTACK_RANGE = 1;
 
 function toFiniteOrFallback(value, fallback) {

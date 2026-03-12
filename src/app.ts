@@ -70,12 +70,13 @@ class ApplicationSession {
     }
 
     if (nav.screen === 'scene') {
-      this.#screenManager.mount(content, new SceneViewScreen({
-        districtId: nav.contextId,
-        onEncounterStart: ({ distanceToEnemy, interactionDistance }) => {
+      const sceneProps = {
+        ...(nav.contextId ? { districtId: nav.contextId } : {}),
+        onEncounterStart: ({ distanceToEnemy, interactionDistance }: { distanceToEnemy: number; interactionDistance: number }) => {
           console.log('[SillyRPG] Transitioning exploration mode into combat mode.', { districtId: nav.contextId, distanceToEnemy, interactionDistance });
         }
-      }));
+      };
+      this.#screenManager.mount(content, new SceneViewScreen(sceneProps));
       return;
     }
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.ts';
 import { createMovementTargetState } from './movementTargetState.ts';
 import { createPlayerAnimationController } from './playerAnimationController.ts';

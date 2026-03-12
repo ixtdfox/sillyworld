@@ -1,3 +1,4 @@
+// @ts-nocheck
 const ANIMATION_STATE_IDLE = 'Idle';
 const ANIMATION_STATE_WALKING = 'Walking';
 

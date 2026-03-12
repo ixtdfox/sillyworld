@@ -143,7 +143,7 @@ export class WorldStore implements WorldStoreContract {
     this.apply(result.state);
     return {
       ok: true,
-      timeCostSteps: result.timeCostSteps,
+      ...(typeof result.timeCostSteps === 'number' ? { timeCostSteps: result.timeCostSteps } : {}),
       transitions: result.transitions || []
     };
   }
@@ -161,8 +161,8 @@ export class WorldStore implements WorldStoreContract {
     this.apply(result.state);
     return {
       ok: true,
-      timeCostSteps: result.timeCostSteps,
-      phaseChanged: result.phaseChanged,
+      ...(typeof result.timeCostSteps === 'number' ? { timeCostSteps: result.timeCostSteps } : {}),
+      ...(typeof result.phaseChanged === 'boolean' ? { phaseChanged: result.phaseChanged } : {}),
       transitions: result.transitions || []
     };
   }

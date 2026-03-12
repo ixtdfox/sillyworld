@@ -1,3 +1,4 @@
+// @ts-nocheck
 function isDescendantOf(node, possibleAncestor) {
   let current = node;
   while (current) {

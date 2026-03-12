@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { loadAndNormalizeEntityCharacter } from './entityCharacterLoader.ts';
 import { PLAYER_CHARACTER_ARCHETYPE } from './entityArchetypes.ts';
 

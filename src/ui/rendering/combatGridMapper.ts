@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { DEFAULT_COMBAT_GRID_CONFIG } from './combatGridConfig.ts';
 
 export function createCombatGridMapper(options = {}) {

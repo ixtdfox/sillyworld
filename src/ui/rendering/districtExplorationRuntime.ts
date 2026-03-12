@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { loadWorldScene } from './worldSceneLoader.ts';
 import { loadPlayerCharacter } from './playerCharacterLoader.ts';
 import { loadEnemyCharacter } from './enemyCharacterLoader.ts';

@@ -30,10 +30,11 @@ export function movePlayerToNode(state: GameState, targetNodeId: string, options
   }
 
   if (targetNode.level === 'district' || targetNode.level === 'building') {
-    const availability = getLocationAvailability(state, {
-      districtId: targetNode.level === 'district' ? targetNode.id : targetNode.parentId,
-      poiId: targetNode.level === 'building' ? asPoiId(targetNode.id) : null
-    });
+    const availabilityArgs = {
+      ...(targetNode.level === 'district' ? { districtId: targetNode.id } : {}),
+      ...(targetNode.level === 'building' ? { districtId: targetNode.parentId ?? null, poiId: asPoiId(targetNode.id) } : {})
+    };
+    const availability = getLocationAvailability(state, availabilityArgs);
 
     if (!availability.available) {
       return {

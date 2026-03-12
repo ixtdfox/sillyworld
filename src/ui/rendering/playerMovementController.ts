@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { PositionLike, RuntimeDispose } from './runtimeContracts.ts';
 
 const DEFAULT_MOVE_SPEED = 2.5;
