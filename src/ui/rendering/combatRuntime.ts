@@ -224,6 +224,8 @@ export async function createCombatRuntime(runtime, options = {}) {
   combatState.pendingMovementInputResetVersion = 0;
   combatState.uiPointerGuardActive = false;
   combatState.uiPointerGuardReason = null;
+  combatState.playerMovementInProgress = false;
+  combatState.hoveredMovementDestination = null;
 
 
   combatState.resetPendingMovementInput = (reason = 'unspecified') => {
