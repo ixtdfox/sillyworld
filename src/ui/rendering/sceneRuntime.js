@@ -145,7 +145,8 @@ export async function mountSceneRuntime(canvas, options = {}) {
       enemySpawn: options.enemySpawn,
       playerNormalizationId: options.playerNormalizationId,
       enemyNormalizationId: options.enemyNormalizationId,
-      enemyArchetypeId: options.enemyArchetypeId
+      enemyArchetypeId: options.enemyArchetypeId,
+      resolveAssetPath: options.resolveAssetPath
     });
     activeGameplayRuntime = explorationRuntime;
 
@@ -224,6 +225,7 @@ export async function mountSceneRuntime(canvas, options = {}) {
       playerNormalizationId: options.playerNormalizationId,
       enemyNormalizationId: options.enemyNormalizationId,
       enemyArchetypeId: options.enemyArchetypeId,
+      resolveAssetPath: options.resolveAssetPath,
       onCombatEnd: () => {
         transitionOutOfCombat().catch((error) => {
           console.error('[SillyRPG] Failed to transition from combat to exploration.', error);

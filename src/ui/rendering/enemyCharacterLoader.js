@@ -13,6 +13,7 @@ export async function loadEnemyCharacter(runtime, options = {}) {
   return loadAndNormalizeEntityCharacter(runtime, {
     entityLabel: enemyArchetype.entityLabel,
     modelFile: enemyFile,
-    normalizationConfigId
+    normalizationConfigId,
+    resolveAssetPath: options.resolveAssetPath
   });
 }

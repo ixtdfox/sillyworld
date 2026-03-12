@@ -99,7 +99,8 @@ function createCombatState({ combatScene, playerUnit, enemyUnit, turnManager }) 
 export async function createCombatRuntime(runtime, options = {}) {
   const combatScene = await loadWorldScene(runtime, {
     sceneFile: options.sceneFile ?? COMBAT_SCENE_FILE,
-    containerName: options.sceneContainerName ?? 'combatSceneRoot'
+    containerName: options.sceneContainerName ?? 'combatSceneRoot',
+    resolveAssetPath: options.resolveAssetPath
   });
 
   resolveOrCreateSceneCamera(runtime, {
@@ -111,12 +112,14 @@ export async function createCombatRuntime(runtime, options = {}) {
 
   const playerEntity = await loadPlayerCharacter(runtime, {
     playerFile: options.playerFile,
-    playerNormalizationId: options.playerNormalizationId
+    playerNormalizationId: options.playerNormalizationId,
+    resolveAssetPath: options.resolveAssetPath
   });
   const enemyEntity = await loadEnemyCharacter(runtime, {
     enemyFile: options.enemyFile,
     enemyNormalizationId: options.enemyNormalizationId,
-    enemyArchetypeId: options.enemyArchetypeId
+    enemyArchetypeId: options.enemyArchetypeId,
+    resolveAssetPath: options.resolveAssetPath
   });
 
   const combatGridConfig = resolveCombatGridConfig(options);
