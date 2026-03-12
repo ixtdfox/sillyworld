@@ -181,10 +181,10 @@ export function createWorldStore(seed = {}) {
     serialize() {
       return serializeGameState(state);
     },
-    save(storage = localStorage) {
+    save(storage) {
       return saveGameState(storage, state);
     },
-    load(storage = localStorage) {
+    load(storage) {
       const loaded = loadGameState(storage, seed);
       if (!loaded) return false;
       apply(loaded);
