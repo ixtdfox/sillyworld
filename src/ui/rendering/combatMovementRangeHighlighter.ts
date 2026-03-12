@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { createCombatBattlefieldVisualization } from './combatBattlefieldVisualization.ts';
+
 function createCellSignature(cells) {
   return cells
     .map((cell) => `${cell.x},${cell.z}`)
@@ -13,11 +15,10 @@ function disposeHighlights(highlightsByCell) {
   highlightsByCell.clear();
 }
 
-function createHighlightMesh(runtime, combatState, gridMapper, resolveY, cell, color, alpha) {
-  const cellSize = gridMapper.cellSize;
-  const world = gridMapper.gridCellToWorld(cell, {
-    resolveY: ({ x, z }) => resolveY({ x, z })
-  });
+function createHighlightMesh(runtime, battlefieldView, cell, color, alpha) {
+  const mapper = battlefieldView.getGridMapper();
+  const cellSize = mapper.cellSize;
+  const world = battlefieldView.gridCellToWorld(cell);
 
   const mesh = runtime.BABYLON.MeshBuilder.CreateGround(`combatMoveHighlight_${cell.x}_${cell.z}`, {
     width: cellSize * 0.92,
@@ -27,12 +28,8 @@ function createHighlightMesh(runtime, combatState, gridMapper, resolveY, cell, c
 
   mesh.position.x = world.x;
   mesh.position.z = world.z;
-  mesh.position.y = world.y + 0.04;
-  mesh.isPickable = false;
-  mesh.checkCollisions = false;
-  mesh.alwaysSelectAsActiveMesh = true;
-  mesh.renderingGroupId = 1;
-  mesh.parent = combatState.combatScene?.sceneContainer ?? null;
+
+  battlefieldView.attachToBattlefieldLayer(mesh, 0.04);
 
   const material = new runtime.BABYLON.StandardMaterial(`combatMoveHighlightMat_${cell.x}_${cell.z}`, runtime.scene);
   material.diffuseColor = runtime.BABYLON.Color3.FromHexString(color);
@@ -51,7 +48,6 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
     combatState,
     playerUnit,
     grid,
-    gridMapper,
     resolveY = () => 0,
     isVisible = () => true,
     color = '#45b8ff',
@@ -59,9 +55,13 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
     movementCost
   } = options;
 
+  const battlefieldView = createCombatBattlefieldVisualization(runtime, {
+    combatState,
+    resolveY
+  });
+
   const highlightsByCell = new Map();
   let cacheSignature = '';
-  let layerVisible = true;
 
   const clear = () => {
     cacheSignature = '';
@@ -74,7 +74,7 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       combatState.status === 'active'
       && combatState.phase === 'turn_active'
       && activeUnit?.id === playerUnit.id
-      && layerVisible
+      && layer.shouldRender()
       && isVisible()
       && playerUnit.isAlive
     );
@@ -106,26 +106,20 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
 
     for (const cell of reachableCells) {
       const key = grid.toCellKey(cell);
-      const mesh = createHighlightMesh(runtime, combatState, gridMapper, resolveY, cell, color, alpha);
+      const mesh = createHighlightMesh(runtime, battlefieldView, cell, color, alpha);
       highlightsByCell.set(key, mesh);
     }
   };
 
-  const beforeRenderObserver = runtime.scene.onBeforeRenderObservable.add(render);
-  render();
+  const layer = battlefieldView.createLayerController(render, clear);
+  const beforeRenderObserver = runtime.scene.onBeforeRenderObservable.add(layer.render);
+  layer.render();
 
-  const controller = {
-    setVisible: (visible) => {
-      layerVisible = visible !== false;
-      if (!layerVisible) {
-        clear();
-      }
-    },
+  return {
+    setVisible: layer.setVisible,
     dispose: () => {
       runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
-      clear();
+      layer.clear();
     }
   };
-
-  return controller;
 }
