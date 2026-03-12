@@ -60,7 +60,8 @@ function createSection(runtime, titleText) {
   return { section, content };
 }
 
-function createActionButton(runtime, label, onClick) {
+function createActionButton(runtime, label, onClick, options = {}) {
+  const { onPointerInteraction = () => {} } = options;
   const button = new runtime.BABYLON.GUI.Rectangle();
   button.width = '100%';
   button.height = '32px';
@@ -68,6 +69,7 @@ function createActionButton(runtime, label, onClick) {
   button.cornerRadius = 4;
   button.color = '#e7f7ff';
   button.background = '#2e4961cc';
+  button.isPointerBlocker = true;
 
   const buttonText = new runtime.BABYLON.GUI.TextBlock();
   buttonText.text = label;
@@ -75,12 +77,18 @@ function createActionButton(runtime, label, onClick) {
   buttonText.fontSize = 13;
   button.addControl(buttonText);
 
+  const handlePointerInteraction = () => {
+    onPointerInteraction?.();
+  };
+
   button.onPointerDownObservable.add(() => {
+    handlePointerInteraction();
     if (!button.isEnabled) {
       return;
     }
     onClick?.();
   });
+  button.onPointerUpObservable.add(handlePointerInteraction);
 
   return { button, buttonText };
 }
@@ -115,6 +123,7 @@ export function createCombatDebugHud(runtime, options = {}) {
   rootPanel.paddingLeft = '10px';
   rootPanel.paddingRight = '10px';
   rootPanel.paddingBottom = '10px';
+  rootPanel.isPointerBlocker = true;
   texture.addControl(rootPanel);
 
   const layout = new runtime.BABYLON.GUI.Grid();
@@ -155,10 +164,22 @@ export function createCombatDebugHud(runtime, options = {}) {
   actionGrid.addColumnDefinition(0.5);
   actionSection.content.addControl(actionGrid);
 
-  const idleButton = createActionButton(runtime, 'Idle mode', () => combatState.setInputMode?.('idle'));
-  const moveButton = createActionButton(runtime, 'Move mode', () => combatState.setInputMode?.('move'));
-  const attackButton = createActionButton(runtime, 'Attack mode', () => combatState.setInputMode?.('attack'));
-  const endTurnButton = createActionButton(runtime, 'End Turn', () => combatState.endActiveTurn?.());
+  const onHudPointerInteraction = () => {
+    combatState.notifyUiInteraction?.('combat_hud_button');
+  };
+
+  const idleButton = createActionButton(runtime, 'Idle mode', () => combatState.setInputMode?.('idle'), {
+    onPointerInteraction: onHudPointerInteraction
+  });
+  const moveButton = createActionButton(runtime, 'Move mode', () => combatState.setInputMode?.('move'), {
+    onPointerInteraction: onHudPointerInteraction
+  });
+  const attackButton = createActionButton(runtime, 'Attack mode', () => combatState.setInputMode?.('attack'), {
+    onPointerInteraction: onHudPointerInteraction
+  });
+  const endTurnButton = createActionButton(runtime, 'End Turn', () => combatState.endActiveTurn?.(), {
+    onPointerInteraction: onHudPointerInteraction
+  });
   actionGrid.addControl(idleButton.button, 0, 0);
   actionGrid.addControl(moveButton.button, 0, 1);
   actionGrid.addControl(attackButton.button, 1, 0);
