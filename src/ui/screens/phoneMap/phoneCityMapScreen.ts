@@ -1,4 +1,4 @@
-import { resolveCatalogAssetPath } from '../../../platform/browser/assetResolver.js';
+import { resolveCatalogAssetPath } from '../../../platform/browser/assetResolver.ts';
 import type { RegionId } from '../../../shared/types.js';
 import { asScreenNode, type ScreenNode } from '../../screenContract.js';
 import { createInteractiveAtlasButton, createAtlasImage } from '../../components/interactiveAtlasButton.js';
