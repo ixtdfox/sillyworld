@@ -1,6 +1,7 @@
 import { migrateGameState } from './worldMigrations.js';
+import { PERSISTENCE_KEYS } from '../platform/browser/localPersistence.js';
 
-export const SAVE_KEY = 'sillyrpg.save.v4';
+export const SAVE_KEY = PERSISTENCE_KEYS.worldSave;
 
 export function serializeGameState(state) {
   try {

@@ -4,9 +4,9 @@ import { renderMainMenu, renderSettingsStub } from './ui/screens/mainMenu.js';
 import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionInterstitial.js';
 import { renderPhoneCityMapScreen } from './ui/screens/phoneMap/phoneCityMapScreen.js';
 import { renderSceneViewScreen } from './ui/screens/sceneViewScreen.js';
-import { MAP_LEVEL, SAVE_KEY, worldStore } from './world/index.js';
+import { MAP_LEVEL, worldStore } from './world/index.js';
 import { createAppController } from './core/app/createAppController.js';
-import { createBrowserPersistence } from './platform/browser/localPersistence.js';
+import { createStandalonePersistence } from './platform/browser/localPersistence.js';
 import { loadSeed } from './platform/browser/seedLoader.js';
 
 let activeScreenUnmount = null;
@@ -20,7 +20,7 @@ const appController = createAppController({
   worldStore,
   mapLevel: MAP_LEVEL,
   loadSeed: () => loadSeed(),
-  persistence: createBrowserPersistence({ saveKey: SAVE_KEY }),
+  persistence: createStandalonePersistence(),
   onStateChange: () => render()
 });
 
