@@ -64,7 +64,8 @@ function createRuntime({ pickResult }) {
     BABYLON: {
       Vector3,
       PointerEventTypes: {
-        POINTERDOWN: 1
+        POINTERDOWN: 1,
+        POINTERUP: 2
       }
     },
     engine: {
@@ -78,7 +79,8 @@ function createRuntime({ pickResult }) {
       onBeforeRenderObservable: beforeRender
     },
     tick: () => beforeRender.emit(),
-    click: () => pointer.emit({ type: 1 })
+    click: (payload = {}) => pointer.emit({ type: 1, ...payload }),
+    pointerUp: (payload = {}) => pointer.emit({ type: 2, ...payload })
   };
 }
 
@@ -399,6 +401,118 @@ test('ignores movement clicks when combat phase is not turn_active', () => {
   runtime.tick();
 
   assert.equal(attempted, false);
+  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  assert.equal(playerUnit.mp, 6);
+  detach();
+});
+
+
+test('does not queue movement when UI interaction guard is active', () => {
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedPoint: { x: 2, y: 0, z: 0 },
+      pickedMesh: { name: 'Ground', parent: null }
+    }
+  });
+
+  const playerUnit = {
+    id: 'player_1',
+    isAlive: true,
+    mp: 6,
+    rootNode: { position: new Vector3(0, 0, 0) },
+    gridCell: { x: 0, z: 0 }
+  };
+
+  let attempted = false;
+  const combatState = {
+    status: 'active',
+    phase: 'turn_active',
+    uiPointerGuardReason: 'combat_hud_button',
+    getActiveUnit: () => playerUnit,
+    consumeUiPointerGuard: () => true,
+    tryMoveActiveUnit: () => {
+      attempted = true;
+      return { success: true, path: [{ x: 0, z: 0 }, { x: 1, z: 0 }], pathCost: 1, destinationCell: { x: 1, z: 0 } };
+    }
+  };
+
+  const detach = attachCombatPlayerMovementController(runtime, {
+    combatState,
+    playerUnit,
+    gridMapper: {
+      worldToGridCell: () => ({ x: 1, z: 0 }),
+      gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
+    },
+    grid: {
+      findPath: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }],
+      moveOccupant: () => {}
+    },
+    resolveGroundY: () => 0
+  });
+
+  runtime.click();
+  runtime.tick();
+
+  assert.equal(attempted, false);
+  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  assert.equal(playerUnit.mp, 6);
+  detach();
+});
+
+test('clears queued movement when movement reset version changes', () => {
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedPoint: { x: 2, y: 0, z: 0 },
+      pickedMesh: { name: 'Ground', parent: null }
+    }
+  });
+
+  const playerUnit = {
+    id: 'player_1',
+    isAlive: true,
+    mp: 6,
+    rootNode: { position: new Vector3(0, 0, 0) },
+    gridCell: { x: 0, z: 0 }
+  };
+
+  const combatState = {
+    status: 'active',
+    phase: 'turn_active',
+    pendingMovementInputResetVersion: 0,
+    getActiveUnit: () => playerUnit,
+    tryMoveActiveUnit: () => ({
+      success: true,
+      path: [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+      pathCost: 2,
+      destinationCell: { x: 2, z: 0 }
+    }),
+    completeUnitMovement: () => {
+      playerUnit.gridCell = { x: 2, z: 0 };
+      playerUnit.mp = 4;
+    }
+  };
+
+  const detach = attachCombatPlayerMovementController(runtime, {
+    combatState,
+    playerUnit,
+    gridMapper: {
+      worldToGridCell: () => ({ x: 2, z: 0 }),
+      gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
+    },
+    grid: {
+      findPath: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+      moveOccupant: () => {}
+    },
+    resolveGroundY: () => 0
+  });
+
+  runtime.click();
+  combatState.pendingMovementInputResetVersion = 1;
+  runtime.tick();
+  runtime.tick();
+
   assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
   assert.equal(playerUnit.mp, 6);
   detach();

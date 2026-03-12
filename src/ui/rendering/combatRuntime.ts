@@ -169,6 +169,37 @@ export async function createCombatRuntime(runtime, options = {}) {
   combatState.inputMode = actionMode.getMode();
   combatState.selectedTargetId = null;
   combatState.lastActionResult = null;
+  combatState.pendingMovementInputResetVersion = 0;
+  combatState.uiPointerGuardActive = false;
+  combatState.uiPointerGuardReason = null;
+
+
+  combatState.resetPendingMovementInput = (reason = 'unspecified') => {
+    combatState.pendingMovementInputResetVersion += 1;
+    combatState.lastMovementInputResetReason = reason;
+    return combatState.pendingMovementInputResetVersion;
+  };
+
+  combatState.notifyUiInteraction = (reason = 'ui_interaction') => {
+    combatState.uiPointerGuardActive = true;
+    combatState.uiPointerGuardReason = reason;
+    combatState.resetPendingMovementInput(`ui:${reason}`);
+  };
+
+  combatState.consumeUiPointerGuard = () => {
+    if (!combatState.uiPointerGuardActive) {
+      return false;
+    }
+
+    combatState.uiPointerGuardActive = false;
+    combatState.uiPointerGuardReason = null;
+    return true;
+  };
+
+  combatState.clearUiPointerGuard = () => {
+    combatState.uiPointerGuardActive = false;
+    combatState.uiPointerGuardReason = null;
+  };
 
   combatState.grid = grid;
   combatState.gridMapper = gridMapper;
@@ -183,12 +214,13 @@ export async function createCombatRuntime(runtime, options = {}) {
 
   const findUnitById = (unitId) => Object.values(combatState.units).find((unit) => unit.id === unitId) ?? null;
 
-  combatState.tryMoveActiveUnit = ({ unitId, destinationCell, movementCost: movementCostOverride } = {}) => {
+  combatState.tryMoveActiveUnit = ({ unitId, destinationCell, movementCost: movementCostOverride, source = 'unknown' } = {}) => {
     const unit = findUnitById(unitId);
     const activeUnit = combatState.getActiveUnit();
 
     if (
-      combatState.status !== 'active'
+      source !== 'world_pointer'
+      || combatState.status !== 'active'
       || combatState.phase !== 'turn_active'
       || !unit
       || !unit.isAlive
@@ -225,11 +257,12 @@ export async function createCombatRuntime(runtime, options = {}) {
     };
   };
 
-  combatState.completeUnitMovement = ({ unitId, destinationCell, pathCost } = {}) => {
+  combatState.completeUnitMovement = ({ unitId, destinationCell, pathCost, source = 'unknown' } = {}) => {
     const unit = findUnitById(unitId);
     const activeUnit = combatState.getActiveUnit();
     if (
-      !unit
+      source !== 'world_pointer' && source !== 'enemy_ai'
+      || !unit
       || !destinationCell
       || !Number.isFinite(pathCost)
       || pathCost <= 0
@@ -255,6 +288,7 @@ export async function createCombatRuntime(runtime, options = {}) {
       pathCost,
       mpRemaining: unit.mp
     };
+    combatState.resetPendingMovementInput('movement_complete');
     syncCombatHudState();
 
     return {
@@ -264,6 +298,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     };
   };
   combatState.setInputMode = (inputMode) => {
+    const previousMode = combatState.inputMode;
     const isPlayerTurn = combatState.status === 'active'
       && combatState.phase === 'turn_active'
       && combatState.getActiveUnit()?.id === playerUnit.id;
@@ -289,6 +324,10 @@ export async function createCombatRuntime(runtime, options = {}) {
 
     combatState.inputMode = result.mode;
 
+    if (previousMode !== combatState.inputMode) {
+      combatState.resetPendingMovementInput(`mode_change:${previousMode}->${combatState.inputMode}`);
+    }
+
     if (combatState.inputMode !== PLAYER_ACTION_MODES.ATTACK) {
       combatState.selectedTargetId = null;
     }
@@ -312,6 +351,8 @@ export async function createCombatRuntime(runtime, options = {}) {
       actionMode.reset();
       combatState.inputMode = actionMode.getMode();
       combatState.selectedTargetId = null;
+      combatState.resetPendingMovementInput('turn_state_sync_non_player');
+      combatState.clearUiPointerGuard();
     }
   };
 
@@ -368,7 +409,12 @@ export async function createCombatRuntime(runtime, options = {}) {
     if (activeUnit) {
       resetUnitResourcesForTurn(activeUnit);
       if (activeUnit.id === playerUnit.id) {
+        combatState.resetPendingMovementInput('player_turn_start');
+        combatState.clearUiPointerGuard();
         combatState.setInputMode(PLAYER_ACTION_MODES.MOVE);
+      } else {
+        combatState.resetPendingMovementInput('enemy_turn_start');
+        combatState.clearUiPointerGuard();
       }
     }
     syncCombatHudState();
@@ -378,6 +424,8 @@ export async function createCombatRuntime(runtime, options = {}) {
     if (combatState.status !== 'active') {
       return;
     }
+    combatState.resetPendingMovementInput('turn_end');
+    combatState.clearUiPointerGuard();
     turnManager.endTurn();
     turnManager.advanceToNextUnit();
     startTurn();
@@ -402,6 +450,8 @@ export async function createCombatRuntime(runtime, options = {}) {
     actionMode.reset();
     combatState.inputMode = actionMode.getMode();
     combatState.selectedTargetId = null;
+    combatState.resetPendingMovementInput('combat_end');
+    combatState.clearUiPointerGuard();
     combatState.lastActionResult = {
       success: true,
       action: 'combat_end',
@@ -441,6 +491,7 @@ export async function createCombatRuntime(runtime, options = {}) {
       }
     }
 
+    combatState.resetPendingMovementInput('attack_resolved');
     const outcome = evaluateAndFinalizeCombat();
     syncCombatHudState();
     return {
@@ -455,6 +506,9 @@ export async function createCombatRuntime(runtime, options = {}) {
       return;
     }
 
+    combatState.resetPendingMovementInput('enemy_action_begin');
+    combatState.clearUiPointerGuard();
+
     while (combatState.status === 'active' && activeUnit.ap > 0) {
       const attackAttempt = combatState.tryBasicAttack({
         attackerId: activeUnit.id,
@@ -463,6 +517,7 @@ export async function createCombatRuntime(runtime, options = {}) {
       combatState.lastActionResult = attackAttempt;
 
       if (attackAttempt.success) {
+        combatState.resetPendingMovementInput('enemy_attack_resolved');
         continue;
       }
 
@@ -521,7 +576,8 @@ export async function createCombatRuntime(runtime, options = {}) {
       const movementResult = combatState.completeUnitMovement({
         unitId: activeUnit.id,
         destinationCell: selectedMove.destinationCell,
-        pathCost: selectedMove.pathCost
+        pathCost: selectedMove.pathCost,
+        source: 'enemy_ai'
       });
 
       if (!movementResult.success) {
@@ -555,6 +611,9 @@ export async function createCombatRuntime(runtime, options = {}) {
         break;
       }
     }
+
+    combatState.resetPendingMovementInput('enemy_action_complete');
+    combatState.clearUiPointerGuard();
   };
 
   const runEnemyTurnsIfNeeded = () => {
