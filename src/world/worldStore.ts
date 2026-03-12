@@ -132,7 +132,7 @@ export class WorldStore implements WorldStoreContract {
   }
 
   performRestAction(actionId: string): RestActionResponse {
-    const result = performRestAction(this.state, actionId) as RestRawResult;
+    const result: RestRawResult = performRestAction(this.state, actionId);
     if (!result.ok) {
       return {
         ok: false,
@@ -149,7 +149,7 @@ export class WorldStore implements WorldStoreContract {
   }
 
   movePlayerToNode(nodeId: string, options: Record<string, unknown> = {}): MovePlayerResponse {
-    const result = movePlayerToNode(this.state, nodeId, options) as MovePlayerRawResult;
+    const result: MovePlayerRawResult = movePlayerToNode(this.state, nodeId, options);
     if (!result.ok) {
       return {
         ok: false,
@@ -168,18 +168,18 @@ export class WorldStore implements WorldStoreContract {
   }
 
   consumeNextPhaseTransition(): PhaseTransitionRecord | null {
-    const result = consumeNextPhaseTransition(this.state) as { state: GameState; transition: PhaseTransitionRecord | null };
+    const result: { state: GameState; transition: PhaseTransitionRecord | null } = consumeNextPhaseTransition(this.state);
     if (!result.transition) return null;
     this.apply(result.state);
     return result.transition;
   }
 
   getPendingPhaseTransitions(): PhaseTransitionRecord[] {
-    return getPendingPhaseTransitions(this.state) as PhaseTransitionRecord[];
+    return getPendingPhaseTransitions(this.state);
   }
 
   addItemToPlayer(instanceId: string): boolean {
-    const result = addItemToPlayer(this.state, instanceId) as { ok: boolean; state: GameState };
+    const result: { ok: boolean; state: GameState } = addItemToPlayer(this.state, instanceId);
     if (!result.ok) return false;
     this.apply(result.state);
     return true;
@@ -191,7 +191,7 @@ export class WorldStore implements WorldStoreContract {
   }
 
   moveItemToSlot(instanceId: string, slotId: string): boolean {
-    const result = moveItemToSlot(this.state, instanceId, slotId) as { ok: boolean; state: GameState };
+    const result: { ok: boolean; state: GameState } = moveItemToSlot(this.state, instanceId, slotId);
     if (!result.ok) return false;
     this.apply(result.state);
     return true;
@@ -202,7 +202,7 @@ export class WorldStore implements WorldStoreContract {
   }
 
   setRelationship(characterId: string, delta: number): number {
-    const result = setRelationship(this.state, characterId, delta) as { nextState: GameState; level: number };
+    const result: { nextState: GameState; level: number } = setRelationship(this.state, characterId, delta);
     this.apply(result.nextState);
     return result.level;
   }

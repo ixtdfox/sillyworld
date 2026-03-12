@@ -1,14 +1,23 @@
+import type {
+  DistrictState,
+  FactionState,
+  GameState,
+  LocationMetaState,
+  MapsState,
+  PointOfInterestState,
+  SettingState
+} from '../contracts.ts';
 import { indexBy } from '../utils/object.ts';
 
 const DEFAULT_DANGER_LEVEL = 'moderate';
 const DEFAULT_QUARANTINE_STATUS = 'clear';
 const DEFAULT_AVAILABILITY_MODE = 'always';
 
-function asArray(value) {
+function asArray<T>(value: T[] | unknown): T[] {
   return Array.isArray(value) ? value : [];
 }
 
-function normalizeLocationMeta(meta = {}) {
+function normalizeLocationMeta(meta: Partial<LocationMetaState> = {}): LocationMetaState {
   const allowedPhases = asArray(meta.availability?.allowedPhases || meta.allowedPhases);
   const preferredPhases = asArray(meta.availability?.preferredPhases || meta.preferredPhases);
 
@@ -32,39 +41,39 @@ function normalizeLocationMeta(meta = {}) {
   };
 }
 
-function normalizeDistrict(district) {
+function normalizeDistrict(district: Partial<DistrictState>): DistrictState {
   return {
-    id: district.id,
-    nodeId: district.nodeId || district.id,
-    name: district.name || district.id,
+    id: district.id || '',
+    nodeId: district.nodeId || district.id || '',
+    name: district.name || district.id || '',
     zoneType: district.zoneType || 'urban',
     controllingFactionId: district.controllingFactionId || null,
     meta: normalizeLocationMeta(district.meta)
   };
 }
 
-function normalizePointOfInterest(poi) {
+function normalizePointOfInterest(poi: Partial<PointOfInterestState>): PointOfInterestState {
   return {
-    id: poi.id,
-    nodeId: poi.nodeId,
+    id: poi.id || '',
+    nodeId: poi.nodeId || '',
     districtId: poi.districtId || null,
-    name: poi.name || poi.id,
+    name: poi.name || poi.id || '',
     poiType: poi.poiType || 'landmark',
     factionIds: asArray(poi.factionIds),
     meta: normalizeLocationMeta(poi.meta)
   };
 }
 
-function normalizeFaction(faction) {
+function normalizeFaction(faction: Partial<FactionState>): FactionState {
   return {
-    id: faction.id,
-    name: faction.name || faction.id,
+    id: faction.id || '',
+    name: faction.name || faction.id || '',
     kind: faction.kind || 'civic',
     influence: faction.influence || 'local'
   };
 }
 
-function inferSettingFromMaps(maps = {}) {
+function inferSettingFromMaps(maps: Partial<MapsState> = {}): SettingState {
   const nodes = Object.values(maps.nodesById || {});
 
   const districts = nodes
@@ -73,8 +82,8 @@ function inferSettingFromMaps(maps = {}) {
       id: node.id,
       nodeId: node.id,
       name: node.name,
-      zoneType: node.meta?.zoneType || 'urban',
-      meta: node.meta?.locationMeta || {}
+      zoneType: typeof node.meta?.zoneType === 'string' ? node.meta.zoneType : 'urban',
+      meta: (node.meta?.locationMeta as Partial<LocationMetaState>) || {}
     }));
 
   const pointsOfInterest = nodes
@@ -85,7 +94,7 @@ function inferSettingFromMaps(maps = {}) {
       districtId: node.parentId || null,
       name: node.name,
       poiType: node.type || 'landmark',
-      meta: node.meta?.locationMeta || {}
+      meta: (node.meta?.locationMeta as Partial<LocationMetaState>) || {}
     }));
 
   return {
@@ -95,12 +104,18 @@ function inferSettingFromMaps(maps = {}) {
   };
 }
 
-export function createDefaultSetting(seed = {}, maps = {}) {
+interface SettingSeed extends Partial<SettingState> {
+  districts?: Partial<DistrictState>[];
+  pointsOfInterest?: Partial<PointOfInterestState>[];
+  factions?: Partial<FactionState>[];
+}
+
+export function createDefaultSetting(seed: SettingSeed = {}, maps: GameState['maps'] = {}): SettingState {
   const inferred = inferSettingFromMaps(maps);
 
-  const districts = asArray(seed.districts).map(normalizeDistrict);
-  const pointsOfInterest = asArray(seed.pointsOfInterest).map(normalizePointOfInterest);
-  const factions = asArray(seed.factions).map(normalizeFaction);
+  const districts = asArray<Partial<DistrictState>>(seed.districts).map(normalizeDistrict);
+  const pointsOfInterest = asArray<Partial<PointOfInterestState>>(seed.pointsOfInterest).map(normalizePointOfInterest);
+  const factions = asArray<Partial<FactionState>>(seed.factions).map(normalizeFaction);
 
   return {
     districtsById: {

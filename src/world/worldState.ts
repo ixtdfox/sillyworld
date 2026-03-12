@@ -1,5 +1,5 @@
 import { SCHEMA_VERSION } from './constants/types.ts';
-import type { GameState, GameStateSeed } from './contracts.ts';
+import type { CharacterState, GameState, GameStateSeed } from './contracts.ts';
 import { createDefaultWorld } from './entities/world.ts';
 import { createDefaultPlayer } from './entities/player.ts';
 import { createDefaultItems } from './entities/items.ts';
@@ -14,7 +14,7 @@ export function createGameState(seed: GameStateSeed = {}): GameState {
     schemaVersion: SCHEMA_VERSION,
     world: createDefaultWorld(seed.world),
     player: createDefaultPlayer(seed.player),
-    characters: createDefaultCharacters(seed.characters as unknown as never[]),
+    characters: createDefaultCharacters(seed.characters as CharacterState[] | undefined),
     items: createDefaultItems(seed.items),
     maps,
     setting: createDefaultSetting(seed.setting, maps),
