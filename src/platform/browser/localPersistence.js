@@ -1,13 +1,13 @@
-/** @typedef {import('../../shared/types').PersistenceContract} PersistenceContract */
-/** @typedef {import('../../shared/types').PersistenceKeys} PersistenceKeys */
-/** @typedef {import('../../shared/types').PersistenceStorage} PersistenceStorage */
+/** @typedef {import('../../shared/types.js').PersistenceContract} PersistenceContract */
+/** @typedef {import('../../shared/types.js').PersistenceKeys} PersistenceKeys */
+/** @typedef {import('../../shared/types.js').PersistenceStorage} PersistenceStorage */
 
 /** @returns {PersistenceStorage} */
 function createInMemoryStorage() {
   const map = new Map();
   return {
     getItem(key) {
-      return map.has(key) ? map.get(key) : null;
+      return map.get(key) ?? null;
     },
     setItem(key, value) {
       map.set(key, String(value));
@@ -18,6 +18,7 @@ function createInMemoryStorage() {
   };
 }
 
+/** @returns {PersistenceStorage} */
 function resolveBrowserStorage() {
   const candidate = globalThis.localStorage;
   if (!candidate) return createInMemoryStorage();
@@ -37,7 +38,8 @@ export const PERSISTENCE_KEYS = Object.freeze({
   worldSave: 'sillyrpg.save.v4'
 });
 
-/** @param {{ keys?: PersistenceKeys, storage?: PersistenceStorage }} [options]
+/**
+ * @param {{ keys?: PersistenceKeys, storage?: PersistenceStorage }} [options]
  * @returns {PersistenceContract}
  */
 export function createStandalonePersistence({
