@@ -1,11 +1,9 @@
-import type { EQUIPMENT_SLOT, MAP_LEVEL, SCHEMA_VERSION, TIME_OF_DAY, TIME_PHASE } from './constants/types.js';
+export type SchemaVersion = 4;
 
-export type SchemaVersion = typeof SCHEMA_VERSION;
-
-export type TimePhase = (typeof TIME_PHASE)[keyof typeof TIME_PHASE];
-export type TimeOfDay = (typeof TIME_OF_DAY)[keyof typeof TIME_OF_DAY];
-export type MapLevel = (typeof MAP_LEVEL)[keyof typeof MAP_LEVEL];
-export type EquipmentSlot = (typeof EQUIPMENT_SLOT)[keyof typeof EQUIPMENT_SLOT];
+export type TimePhase = import('./constants/types.js').TimePhase;
+export type TimeOfDay = import('./constants/types.js').TimeOfDay;
+export type MapLevel = import('./constants/types.js').MapLevel;
+export type EquipmentSlot = import('./constants/types.js').EquipmentSlot;
 
 export interface WorldClockState {
   dayNumber: number;
@@ -149,6 +147,31 @@ export interface LocationAvailabilityState {
   restrictedProfile: string;
 }
 
+export interface LocationAvailabilityResult {
+  available: boolean;
+  preferred: boolean;
+  mode: string;
+  reason: string;
+  allowedPhases: TimePhase[];
+  preferredPhases: TimePhase[];
+}
+
+export interface CombinedLocationAvailability {
+  timePhase: TimePhase;
+  available: boolean;
+  preferred: boolean;
+  reason: string;
+  district: LocationAvailabilityResult | null;
+  pointOfInterest: LocationAvailabilityResult | null;
+}
+
+export interface NpcAvailabilityResult {
+  available: boolean;
+  reason: string;
+  requiredLocationId: string | null;
+  timePhase: TimePhase;
+}
+
 export interface LocationMetaState {
   dangerLevel: string;
   accessRestrictions: string[];
@@ -201,20 +224,81 @@ export interface GameState {
 }
 
 export type GameStateSeed = Partial<GameState> & Record<string, unknown>;
+export interface SavePayload extends GameState {}
 
-export type SavePayload = GameState;
+export interface PersistenceStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
+export interface RestActionResult {
+  ok: false;
+  reason: string;
+}
+
+export interface RestActionSuccess {
+  ok: true;
+  timeCostSteps?: number;
+  transitions: PhaseTransitionRecord[];
+}
+
+export type RestActionResponse = RestActionResult | RestActionSuccess;
+
+export interface MovePlayerFailure {
+  ok: false;
+  blockedByAvailability: boolean;
+  reason: string;
+}
+
+export interface MovePlayerSuccess {
+  ok: true;
+  timeCostSteps?: number;
+  phaseChanged?: boolean;
+  transitions: PhaseTransitionRecord[];
+}
+
+export type MovePlayerResponse = MovePlayerFailure | MovePlayerSuccess;
+
+export type WorldStoreListener = (state: GameState) => void;
 
 export interface WorldStoreContract {
   getState(): GameState;
-  subscribe(cb: (state: GameState) => void): () => boolean;
+  subscribe(cb: WorldStoreListener): () => boolean;
   reset(nextSeed?: GameStateSeed): void;
   hydrate(json: string): boolean;
   serialize(): string | null;
   save(storage: PersistenceStorage): boolean;
   load(storage: PersistenceStorage): boolean;
-}
-
-export interface PersistenceStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
+  setTimeOfDay(nextTimeOfDay: TimeOfDay | string): void;
+  setTimePhase(nextTimePhase: TimePhase | string): void;
+  advanceTime(): void;
+  getAvailableRestActions(): unknown[];
+  performRestAction(actionId: string): RestActionResponse;
+  movePlayerToNode(nodeId: string, options?: Record<string, unknown>): MovePlayerResponse;
+  consumeNextPhaseTransition(): PhaseTransitionRecord | null;
+  getPendingPhaseTransitions(): PhaseTransitionRecord[];
+  addItemToPlayer(instanceId: string): boolean;
+  removeItemFromPlayer(instanceId: string): boolean;
+  moveItemToSlot(instanceId: string, slotId: string): boolean;
+  unequipSlot(slotId: string): void;
+  setRelationship(characterId: string, delta: number): number;
+  getRelationship(characterId: string): RelationshipState | null;
+  getTimePhase(): TimePhase;
+  getTimeOfDay(): TimeOfDay;
+  getWorldClock(): WorldClockState;
+  getMapConfig(level: string): unknown;
+  getNodeById(nodeId: string): MapNodeState | null;
+  getNodesForLevel(level: string, contextId?: string | null): MapNodeState[];
+  getInventoryWeight(): number;
+  getDistricts(): DistrictState[];
+  getDistrictById(districtId: string): DistrictState | null;
+  getPointOfInterestById(poiId: string): PointOfInterestState | null;
+  getPointsOfInterestForDistrict(districtId: string): PointOfInterestState[];
+  getFactionById(factionId: string): FactionState | null;
+  getFactionsForPointOfInterest(poiId: string): FactionState[];
+  getLocationMeta(args: { districtId?: string | null; poiId?: string | null }): LocationMetaState | null;
+  getLocationAvailability(args: { districtId?: string | null; poiId?: string | null }): CombinedLocationAvailability;
+  getNpcAvailability(args: { npcNodeId?: string | null; npcNode?: MapNodeState | null; locationNodeId?: string | null }): NpcAvailabilityResult;
+  getNpcsForLocation(locationNodeId: string, options?: { onlyAvailable?: boolean }): MapNodeState[];
+  canTakeItem(instanceId: string): boolean;
 }
