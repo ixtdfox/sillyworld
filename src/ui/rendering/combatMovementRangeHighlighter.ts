@@ -16,6 +16,14 @@ function disposeHighlights(highlightsByCell) {
   highlightsByCell.clear();
 }
 
+function createPathSignature(pathCells) {
+  if (!Array.isArray(pathCells) || pathCells.length <= 1) {
+    return '';
+  }
+
+  return pathCells.map((cell) => `${cell.x},${cell.z}`).join('>');
+}
+
 function ensureOverlayAssets(runtime, state, color, alpha, options = {}) {
   const key = `${color}|${alpha}|${options.namePrefix ?? 'default'}`;
   if (state.material && state.texture && state.key === key) {
@@ -127,13 +135,79 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
     material: null,
     texture: null
   };
+  const pathOverlayState = {
+    key: '',
+    material: null,
+    texture: null
+  };
   let hoverMesh = null;
+  let pathPreviewSignature = '';
+  const pathPreviewMeshes = [];
   let cacheSignature = '';
+
+  const clearPathPreview = () => {
+    pathPreviewSignature = '';
+    combatState.hoveredMovementPath = null;
+    while (pathPreviewMeshes.length) {
+      pathPreviewMeshes.pop()?.dispose(false, true);
+    }
+  };
+
+  const syncPathPreview = (pathCells) => {
+    const nextSignature = createPathSignature(pathCells);
+    if (!nextSignature) {
+      clearPathPreview();
+      return;
+    }
+
+    combatState.hoveredMovementPath = pathCells.map((cell) => ({ x: cell.x, z: cell.z }));
+    if (nextSignature === pathPreviewSignature) {
+      return;
+    }
+
+    pathPreviewSignature = nextSignature;
+    while (pathPreviewMeshes.length) {
+      pathPreviewMeshes.pop()?.dispose(false, true);
+    }
+
+    const mapper = battlefieldView.getGridMapper();
+    const pathMaterial = ensureOverlayAssets(runtime, pathOverlayState, '#ffe066', 0.7, {
+      emissiveMultiplier: 1.25,
+      namePrefix: 'combatMovePathPreview'
+    }).material;
+
+    for (let index = 0; index < pathCells.length - 1; index += 1) {
+      const fromWorld = battlefieldView.gridCellToWorld(pathCells[index]);
+      const toWorld = battlefieldView.gridCellToWorld(pathCells[index + 1]);
+      if (!fromWorld || !toWorld) {
+        continue;
+      }
+
+      const dx = toWorld.x - fromWorld.x;
+      const dz = toWorld.z - fromWorld.z;
+      const segmentLength = Math.hypot(dx, dz);
+
+      const segment = runtime.BABYLON.MeshBuilder.CreateGround(`combatMovePathSegment_${index}`, {
+        width: mapper.cellSize * 0.22,
+        height: Math.max(mapper.cellSize * 0.22, segmentLength * 0.9),
+        subdivisions: 1
+      }, runtime.scene);
+
+      segment.position.x = fromWorld.x + dx * 0.5;
+      segment.position.z = fromWorld.z + dz * 0.5;
+      segment.rotation = segment.rotation ?? { x: 0, y: 0, z: 0 };
+      segment.rotation.y = Math.atan2(dx, dz);
+      segment.material = pathMaterial;
+      battlefieldView.attachToBattlefieldLayer(segment, 0.09);
+      pathPreviewMeshes.push(segment);
+    }
+  };
 
   const clearHover = () => {
     hoverMesh?.dispose(false, true);
     hoverMesh = null;
     combatState.hoveredMovementDestination = null;
+    clearPathPreview();
   };
 
   const clear = () => {
@@ -166,6 +240,16 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       cell: { x: hoveredCell.x, z: hoveredCell.z },
       isReachable
     };
+
+    if (isReachable) {
+      const path = grid.findPath(playerUnit.gridCell, hoveredCell, {
+        allowOccupiedByUnitId: playerUnit.id,
+        movementCost
+      });
+      syncPathPreview(path);
+    } else {
+      clearPathPreview();
+    }
 
     const desiredMaterial = isReachable
       ? ensureOverlayAssets(runtime, hoverReachableOverlayState, hoverReachableColor, hoverReachableAlpha, {
@@ -255,6 +339,8 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       hoverReachableOverlayState.texture?.dispose();
       hoverInvalidOverlayState.material?.dispose(false, true);
       hoverInvalidOverlayState.texture?.dispose();
+      pathOverlayState.material?.dispose(false, true);
+      pathOverlayState.texture?.dispose();
     }
   };
 }
