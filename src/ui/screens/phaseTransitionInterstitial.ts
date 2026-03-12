@@ -1,9 +1,16 @@
-function prettifyPhase(phase = '') {
+import type { PhaseTransitionRecord } from '../../world/contracts.js';
+
+export interface PhaseTransitionInterstitialProps {
+  transition: PhaseTransitionRecord;
+  onContinue: () => void;
+}
+
+function prettifyPhase(phase = ''): string {
   if (!phase) return '';
   return phase[0].toUpperCase() + phase.slice(1);
 }
 
-export function renderPhaseTransitionInterstitial({ transition, onContinue }) {
+export function renderPhaseTransitionInterstitial({ transition, onContinue }: PhaseTransitionInterstitialProps): HTMLDivElement {
   const wrap = document.createElement('div');
   wrap.className = 'sillyrpg-screen sillyrpg-phase-interstitial';
 
@@ -28,4 +35,3 @@ export function renderPhaseTransitionInterstitial({ transition, onContinue }) {
   wrap.append(banner, title, copy, continueButton);
   return wrap;
 }
-

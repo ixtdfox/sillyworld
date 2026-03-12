@@ -1,23 +1,67 @@
+import type { RegionId } from '../../../shared/types.js';
+
 const MAP_NATIVE_SIZE = Object.freeze({ width: 1536, height: 1024 });
 const PIN_SIZE = 24;
 const DRAG_THRESHOLD_PX = 5;
 const CLICK_SUPPRESSION_MS = 120;
 
-function clamp(value, min, max) {
+type NumberRef = { value: number };
+type BooleanRef = { value: boolean };
+
+interface PointerPosition {
+  x: number;
+  y: number;
+}
+
+interface PointerInfo {
+  x?: number;
+  y?: number;
+  event?: {
+    clientX?: number;
+    clientY?: number;
+  };
+}
+
+export interface WorldMapRegion {
+  regionId: RegionId;
+  label: string;
+  x: number;
+  y: number;
+}
+
+export interface WorldMapViewportProps {
+  GUI: any;
+  mapTextureUrl: string;
+  viewportWidth: number;
+  viewportHeight: number;
+  regions: readonly WorldMapRegion[];
+  onRegionOpen: (regionId: RegionId) => void;
+}
+
+function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function getCenteredOffset(viewportSize, contentSize) {
+function getCenteredOffset(viewportSize: number, contentSize: number): number {
   return Math.round((viewportSize - contentSize) / 2);
 }
 
-function getClampBounds(viewportSize, contentSize) {
+function getClampBounds(viewportSize: number, contentSize: number): { min: number; max: number } {
   if (contentSize <= viewportSize) {
     const centered = getCenteredOffset(viewportSize, contentSize);
     return { min: centered, max: centered };
   }
 
   return { min: viewportSize - contentSize, max: 0 };
+}
+
+interface RegionPinProps {
+  GUI: any;
+  region: WorldMapRegion;
+  onRegionOpen: (regionId: RegionId, regionLabel: string) => void;
+  suppressPinClickUntilRef: NumberRef;
+  isDraggingRef: BooleanRef;
+  onSuppressionEnd: (now?: number) => void;
 }
 
 function createRegionPin({
@@ -27,7 +71,7 @@ function createRegionPin({
   suppressPinClickUntilRef,
   isDraggingRef,
   onSuppressionEnd
-}) {
+}: RegionPinProps): any {
   const pin = new GUI.Ellipse(`map-pin-${region.regionId}`);
   pin.width = `${PIN_SIZE}px`;
   pin.height = `${PIN_SIZE}px`;
@@ -63,9 +107,7 @@ function createRegionPin({
       return;
     }
 
-    if (typeof onSuppressionEnd === 'function') {
-      onSuppressionEnd(now);
-    }
+    onSuppressionEnd(now);
 
     console.log(`pin click allowed for regionId=${region.regionId}`);
     console.log(`pin click: ${region.regionId}`);
@@ -75,13 +117,13 @@ function createRegionPin({
   return pin;
 }
 
-function getPointerPosition(pointerInfo) {
+function getPointerPosition(pointerInfo?: PointerInfo): PointerPosition | null {
   if (!pointerInfo) return null;
   if (typeof pointerInfo.x === 'number' && typeof pointerInfo.y === 'number') {
     return { x: pointerInfo.x, y: pointerInfo.y };
   }
 
-  if (pointerInfo.event && typeof pointerInfo.event.clientX === 'number' && typeof pointerInfo.event.clientY === 'number') {
+  if (typeof pointerInfo.event?.clientX === 'number' && typeof pointerInfo.event?.clientY === 'number') {
     return { x: pointerInfo.event.clientX, y: pointerInfo.event.clientY };
   }
 
@@ -95,7 +137,7 @@ export function createWorldMapViewport({
   viewportHeight,
   regions,
   onRegionOpen
-}) {
+}: WorldMapViewportProps): any {
   const viewport = new GUI.Rectangle('phone-map-viewport');
   viewport.width = `${viewportWidth}px`;
   viewport.height = `${viewportHeight}px`;
@@ -124,18 +166,18 @@ export function createWorldMapViewport({
   mapImage.stretch = GUI.Image.STRETCH_FILL;
   mapLayer.addControl(mapImage);
 
-  const suppressPinClickUntilRef = { value: 0 };
-  const suppressionLoggedRef = { value: false };
-  const isDraggingRef = { value: false };
+  const suppressPinClickUntilRef: NumberRef = { value: 0 };
+  const suppressionLoggedRef: BooleanRef = { value: false };
+  const isDraggingRef: BooleanRef = { value: false };
 
-  const maybeLogSuppressionEnd = (now = Date.now()) => {
+  const maybeLogSuppressionEnd = (now = Date.now()): void => {
     if (!suppressionLoggedRef.value) return;
     if (now < suppressPinClickUntilRef.value) return;
     suppressionLoggedRef.value = false;
     console.log(`pin click suppression end at=${now}`);
   };
 
-  const openRegion = (regionId, regionLabel) => {
+  const openRegion = (regionId: RegionId, regionLabel: string): void => {
     const now = Date.now();
     if (now < suppressPinClickUntilRef.value) {
       console.log(`pin click suppressed for regionId=${regionId}`);
@@ -163,7 +205,7 @@ export function createWorldMapViewport({
   let offsetX = clamp(getCenteredOffset(viewportWidth, MAP_NATIVE_SIZE.width), xBounds.min, xBounds.max);
   let offsetY = clamp(getCenteredOffset(viewportHeight, MAP_NATIVE_SIZE.height), yBounds.min, yBounds.max);
 
-  const applyMapOffset = () => {
+  const applyMapOffset = (): void => {
     mapLayer.leftInPixels = Math.round(offsetX);
     mapLayer.topInPixels = Math.round(offsetY);
   };
@@ -178,7 +220,7 @@ export function createWorldMapViewport({
     didDrag: false
   };
 
-  mapImage.onPointerDownObservable.add((pointerCoords) => {
+  mapImage.onPointerDownObservable.add((pointerCoords: PointerInfo) => {
     const pointer = getPointerPosition(pointerCoords);
     if (!pointer) return;
     dragState.isDragging = true;
@@ -190,7 +232,7 @@ export function createWorldMapViewport({
     dragState.didDrag = false;
   });
 
-  mapImage.onPointerMoveObservable.add((pointerCoords) => {
+  mapImage.onPointerMoveObservable.add((pointerCoords: PointerInfo) => {
     const pointer = getPointerPosition(pointerCoords);
     if (!dragState.isDragging) return;
     if (!pointer) return;
@@ -208,7 +250,7 @@ export function createWorldMapViewport({
     applyMapOffset();
   });
 
-  const endDrag = (pointerCoords) => {
+  const endDrag = (): void => {
     if (!dragState.isDragging) return;
     if (dragState.didDrag) {
       suppressPinClickUntilRef.value = Date.now() + CLICK_SUPPRESSION_MS;
@@ -225,11 +267,11 @@ export function createWorldMapViewport({
     applyMapOffset();
   };
 
-  mapImage.onPointerUpObservable.add((pointerCoords) => {
-    endDrag(pointerCoords);
+  mapImage.onPointerUpObservable.add((_pointerCoords: PointerInfo) => {
+    endDrag();
   });
-  mapImage.onPointerOutObservable.add((pointerCoords) => {
-    endDrag(pointerCoords);
+  mapImage.onPointerOutObservable.add((_pointerCoords: PointerInfo) => {
+    endDrag();
   });
 
   viewport.addControl(mapLayer);

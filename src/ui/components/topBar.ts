@@ -1,4 +1,24 @@
-export function renderTopBar({ title, breadcrumb, phaseInfo, onBack, onExit, canGoBack, hideExit = false }) {
+import type { PhasePresentation } from '../../shared/types.js';
+
+export interface TopBarProps {
+  title: string;
+  breadcrumb: string;
+  phaseInfo: PhasePresentation | null;
+  onBack: () => void;
+  onExit: () => void;
+  canGoBack: boolean;
+  hideExit?: boolean;
+}
+
+export function renderTopBar({
+  title,
+  breadcrumb,
+  phaseInfo,
+  onBack,
+  onExit,
+  canGoBack,
+  hideExit = false
+}: TopBarProps): HTMLDivElement {
   const top = document.createElement('div');
   top.className = 'sillyrpg-topbar';
 

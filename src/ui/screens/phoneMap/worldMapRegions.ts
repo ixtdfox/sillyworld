@@ -1,4 +1,6 @@
-export const WORLD_MAP_REGIONS = Object.freeze([
+import type { WorldMapRegion } from './worldMapViewport.js';
+
+export const WORLD_MAP_REGIONS: readonly WorldMapRegion[] = Object.freeze([
   { regionId: 'northport', label: 'Northport', x: 348, y: 294 },
   { regionId: 'larkspur', label: 'Larkspur', x: 672, y: 462 },
   { regionId: 'emberfall', label: 'Emberfall', x: 930, y: 612 },

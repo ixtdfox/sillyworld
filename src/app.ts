@@ -11,6 +11,7 @@ import { createAppController } from './core/app/createAppController.js';
 import { createStandalonePersistence } from './platform/browser/localPersistence.js';
 import { loadSeed } from './platform/browser/seedLoader.js';
 import type { AppController, RegionId } from './shared/types.js';
+import type { PhaseTransitionRecord } from './world/contracts.js';
 
 type ActiveScreenUnmount = (() => void) | null;
 
@@ -64,7 +65,7 @@ function renderScreenBody(): ScreenNode {
   if (nav.screen === 'map') {
     const store = appController.getStore();
     if (store) {
-      const transition = store.getPendingPhaseTransitions()[0];
+      const transition = store.getPendingPhaseTransitions()[0] as PhaseTransitionRecord | undefined;
       if (transition) {
         return asScreenNode(renderPhaseTransitionInterstitial({
           transition,
