@@ -1,4 +1,4 @@
-import { resolveAsset } from '../../../st_bridge/asset.js';
+import { resolveAssetPath } from '../../../platform/browser/assetResolver.js';
 import { createInteractiveAtlasButton, createAtlasImage } from '../../components/interactiveAtlasButton.js';
 import { ensureBabylonRuntime, createBabylonUiRuntime } from '../../rendering/babylonRuntime.js';
 import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.js';
@@ -48,7 +48,7 @@ function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen }) {
 
   const inventoryViewport = createInventoryScreen({
     GUI,
-    textureUrl: resolveAsset('assets/sprites.png'),
+    textureUrl: resolveAssetPath('assets/sprites.png'),
     scale,
     viewportWidth: scale.w(PHONE_DISPLAY_BOUNDS.width),
     viewportHeight: scale.h(PHONE_DISPLAY_BOUNDS.height)
@@ -219,8 +219,8 @@ async function mountPhoneScene(canvas, { onRegionOpen }) {
   await ensureBabylonRuntime();
   const runtime = createBabylonUiRuntime(canvas);
   const GUI = runtime.BABYLON.GUI;
-  const textureUrl = resolveAsset('assets/sprites.png');
-  const mapTextureUrl = resolveAsset('assets/map.png');
+  const textureUrl = resolveAssetPath('assets/sprites.png');
+  const mapTextureUrl = resolveAssetPath('assets/map.png');
 
   const adt = GUI.AdvancedDynamicTexture.CreateFullscreenUI('phone-city-map-ui', true, runtime.scene);
   adt.idealWidth = SCREEN_SIZE.width;

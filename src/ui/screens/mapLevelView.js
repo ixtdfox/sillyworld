@@ -1,4 +1,4 @@
-import { resolveAsset } from '../../st_bridge/asset.js';
+import { resolveAssetPath } from '../../platform/browser/assetResolver.js';
 
 function pickImage(node) {
   return node?.meta?.mapImage || node?.meta?.backgroundImage || node?.meta?.avatar || '';
@@ -108,7 +108,7 @@ export function renderMapLevelView({ config, contextNode, nodes, onNodeClick, ac
   const image = document.createElement('img');
   image.className = 'sillyrpg-image';
   image.alt = `${title.textContent} view`;
-  image.src = resolveAsset(pickImage(contextNode));
+  image.src = resolveAssetPath(pickImage(contextNode));
 
   const description = document.createElement('p');
   description.className = 'sillyrpg-location-copy';

@@ -1,10 +1,5 @@
 import { startApp } from './app.js';
 
-window.__SILLYRPG__ = {
-  ...(window.__SILLYRPG__ || {}),
-  EXT_BASE: new URL('../', import.meta.url).toString()
-};
-
 function bootstrapStandalone() {
   startApp({
     title: 'SillyRPG',
