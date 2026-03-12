@@ -1,19 +1,20 @@
 import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.js';
 import { createMovementTargetState } from './movementTargetState.js';
 import { createPlayerAnimationController } from './playerAnimationController.js';
-import { attachPlayerMovementController } from './playerMovementController.js';
-import { attachGroundClickInput } from './sceneGroundClickInput.js';
+import { PlayerMovementController } from './playerMovementController.js';
+import { SceneGroundClickInput } from './sceneGroundClickInput.js';
 import { attachGameplayIsometricCamera } from './gameplayCameraController.js';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.js';
-import { attachEncounterInteractionInput, ENCOUNTER_INTERACTION_DISTANCE } from './encounterInteractionInput.js';
+import { ENCOUNTER_INTERACTION_DISTANCE, EncounterInteractionInput } from './encounterInteractionInput.js';
 import { createCombatRuntime } from './combatRuntime.js';
 import type {
   CombatStateLike,
   EncounterStartPayload,
   PositionLike,
   PositionNodeLike,
-  RuntimeDebugState,
+  RuntimeDebugState as RuntimeDebugSnapshot,
   RuntimeDispose,
+  RuntimeMode,
   RuntimeNormalizationState,
   SceneRuntimeMount,
   SceneRuntimeMountOptions
@@ -32,71 +33,27 @@ interface CombatRuntimeLike {
   dispose?: RuntimeDispose;
 }
 
-function toPositionSnapshot(node?: PositionNodeLike | null): PositionLike | null {
-  if (!node?.position) {
-    return null;
+class RuntimeDebugState {
+  readonly #options: SceneRuntimeMountOptions;
+  readonly #runtime: ReturnType<typeof createBabylonWorldRuntime>;
+  #mode: RuntimeMode = 'loading';
+
+  constructor(runtime: ReturnType<typeof createBabylonWorldRuntime>, options: SceneRuntimeMountOptions) {
+    this.#runtime = runtime;
+    this.#options = options;
   }
 
-  return {
-    x: node.position.x,
-    y: node.position.y,
-    z: node.position.z
-  };
-}
+  public setMode(mode: RuntimeMode): void {
+    this.#mode = mode;
+  }
 
-function createExplorationInputScope() {
-  let detachGroundClickInput: RuntimeDispose | null = null;
-  let detachEncounterInteractionInput: RuntimeDispose | null = null;
-  let detachPlayerMovementController: RuntimeDispose | null = null;
-  let detachGameplayCameraController: RuntimeDispose | null = null;
-
-  return {
-    setDetachFns(detachFns: {
-      detachGroundClickInput: RuntimeDispose;
-      detachEncounterInteractionInput: RuntimeDispose;
-      detachPlayerMovementController: RuntimeDispose;
-      detachGameplayCameraController: RuntimeDispose;
-    }) {
-      detachGroundClickInput = detachFns.detachGroundClickInput;
-      detachEncounterInteractionInput = detachFns.detachEncounterInteractionInput;
-      detachPlayerMovementController = detachFns.detachPlayerMovementController;
-      detachGameplayCameraController = detachFns.detachGameplayCameraController;
-    },
-    dispose() {
-      detachGroundClickInput?.();
-      detachEncounterInteractionInput?.();
-      detachPlayerMovementController?.();
-      detachGameplayCameraController?.();
-      detachGroundClickInput = null;
-      detachEncounterInteractionInput = null;
-      detachPlayerMovementController = null;
-      detachGameplayCameraController = null;
-    }
-  };
-}
-
-export const mountSceneRuntime: SceneRuntimeMount = async (
-  canvas: HTMLCanvasElement,
-  options: SceneRuntimeMountOptions = {}
-) => {
-  await ensureBabylonRuntime();
-
-  const runtime = createBabylonWorldRuntime(canvas);
-  const explorationInputScope = createExplorationInputScope();
-  let activeGameplayRuntime: ExplorationRuntimeLike | CombatRuntimeLike | null = null;
-  let combatTransitionStarted = false;
-  let combatExitInProgress = false;
-  let sceneMode: RuntimeDebugState['mode'] = 'loading';
-  let encounterInteractionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
-  const debugEnabled = options.debugEnabled === true;
-
-  const emitDebugState = () => {
-    if (!debugEnabled || !options.onDebugStateChange) {
+  public emit(activeGameplayRuntime: ExplorationRuntimeLike | CombatRuntimeLike | null, combatTransitionStarted: boolean, interactionDistance: number): void {
+    if (this.#options.debugEnabled !== true || !this.#options.onDebugStateChange) {
       return;
     }
 
-    const explorationRuntime = sceneMode === 'exploration' ? (activeGameplayRuntime as ExplorationRuntimeLike | null) : null;
-    const combatRuntime = sceneMode === 'combat' ? (activeGameplayRuntime as CombatRuntimeLike | null) : null;
+    const explorationRuntime = this.#mode === 'exploration' ? (activeGameplayRuntime as ExplorationRuntimeLike | null) : null;
+    const combatRuntime = this.#mode === 'combat' ? (activeGameplayRuntime as CombatRuntimeLike | null) : null;
 
     const normalizationSnapshot: RuntimeNormalizationState | null = explorationRuntime
       ? {
@@ -105,12 +62,11 @@ export const mountSceneRuntime: SceneRuntimeMount = async (
         }
       : null;
 
-    if (sceneMode === 'combat' && combatRuntime?.combatState) {
+    if (this.#mode === 'combat' && combatRuntime?.combatState) {
       const combatState = combatRuntime.combatState;
       const activeUnit = combatState.getActiveUnit?.() ?? null;
-
-      options.onDebugStateChange({
-        mode: sceneMode,
+      this.#options.onDebugStateChange({
+        mode: this.#mode,
         combat: {
           state: combatState.status ?? null,
           phase: combatState.phase ?? null,
@@ -131,164 +87,259 @@ export const mountSceneRuntime: SceneRuntimeMount = async (
       return;
     }
 
-    if (sceneMode === 'exploration' && explorationRuntime?.playerMeshRoot && explorationRuntime?.enemyMeshRoot) {
-      const playerPosition = toPositionSnapshot(explorationRuntime.playerMeshRoot);
-      const enemyPosition = toPositionSnapshot(explorationRuntime.enemyMeshRoot);
-      const distanceToEnemy = runtime.BABYLON.Vector3.Distance(
+    if (this.#mode === 'exploration' && explorationRuntime?.playerMeshRoot && explorationRuntime?.enemyMeshRoot) {
+      const playerPosition = SceneRuntime.toPositionSnapshot(explorationRuntime.playerMeshRoot);
+      const enemyPosition = SceneRuntime.toPositionSnapshot(explorationRuntime.enemyMeshRoot);
+      const distanceToEnemy = this.#runtime.BABYLON.Vector3.Distance(
         explorationRuntime.playerMeshRoot.position,
         explorationRuntime.enemyMeshRoot.position
       );
 
-      options.onDebugStateChange({
-        mode: sceneMode,
+      this.#options.onDebugStateChange({
+        mode: this.#mode,
         exploration: {
           playerPosition,
           enemyPosition,
           distanceToEnemy,
-          enemyInteractionAllowed: !combatTransitionStarted && distanceToEnemy <= encounterInteractionDistance,
+          enemyInteractionAllowed: !combatTransitionStarted && distanceToEnemy <= interactionDistance,
           normalization: normalizationSnapshot
         }
       });
       return;
     }
 
-    options.onDebugStateChange({ mode: sceneMode, normalization: normalizationSnapshot });
-  };
+    this.#options.onDebugStateChange({ mode: this.#mode, normalization: normalizationSnapshot } as RuntimeDebugSnapshot);
+  }
+}
 
-  const debugObserver = debugEnabled
-    ? runtime.scene.onBeforeRenderObservable.add(() => {
-        emitDebugState();
-      })
-    : null;
+class SceneMountSession {
+  #cleanup: RuntimeDispose[] = [];
 
-  const teardownActiveGameplayRuntime = () => {
-    explorationInputScope.dispose();
-    activeGameplayRuntime?.dispose?.();
-    activeGameplayRuntime = null;
-  };
+  public register(cleanup: RuntimeDispose): void {
+    this.#cleanup.push(cleanup);
+  }
 
-  const setupExplorationRuntime = async () => {
-    const explorationRuntime = await createDistrictExplorationRuntime(runtime, {
-      districtId: options.districtId,
-      sceneFile: options.sceneFile,
-      playerFile: options.playerFile,
-      enemyFile: options.enemyFile,
-      enemySpawn: options.enemySpawn,
-      playerNormalizationId: options.playerNormalizationId,
-      enemyNormalizationId: options.enemyNormalizationId,
-      enemyArchetypeId: options.enemyArchetypeId,
-      resolveAssetPath: options.resolveAssetPath
+  public dispose(): void {
+    for (let index = this.#cleanup.length - 1; index >= 0; index -= 1) {
+      this.#cleanup[index]?.();
+    }
+    this.#cleanup = [];
+  }
+}
+
+class EncounterCoordinator {
+  readonly #onEncounterStart?: (payload: EncounterStartPayload) => void;
+  #started = false;
+
+  constructor(onEncounterStart?: (payload: EncounterStartPayload) => void) {
+    this.#onEncounterStart = onEncounterStart;
+  }
+
+  public canStartCombat(): boolean {
+    return !this.#started;
+  }
+
+  public notifyCombatStarted(payload: EncounterStartPayload): void {
+    this.#started = true;
+    this.#onEncounterStart?.(payload);
+  }
+
+  public reset(): void {
+    this.#started = false;
+  }
+}
+
+export class SceneRuntime {
+  readonly #runtime: ReturnType<typeof createBabylonWorldRuntime>;
+  readonly #options: SceneRuntimeMountOptions;
+  readonly #debugState: RuntimeDebugState;
+  readonly #mountSession = new SceneMountSession();
+  readonly #encounterCoordinator: EncounterCoordinator;
+
+  #activeGameplayRuntime: ExplorationRuntimeLike | CombatRuntimeLike | null = null;
+  #combatExitInProgress = false;
+  #interactionDistance: number;
+
+  constructor(canvas: HTMLCanvasElement, options: SceneRuntimeMountOptions = {}) {
+    this.#runtime = createBabylonWorldRuntime(canvas);
+    this.#options = options;
+    this.#debugState = new RuntimeDebugState(this.#runtime, this.#options);
+    this.#encounterCoordinator = new EncounterCoordinator(this.#options.onEncounterStart);
+    this.#interactionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
+  }
+
+  public async mount(): Promise<RuntimeDispose> {
+    const debugObserver = this.#options.debugEnabled === true
+      ? this.#runtime.scene.onBeforeRenderObservable.add(() => {
+          this.#debugState.emit(this.#activeGameplayRuntime, !this.#encounterCoordinator.canStartCombat(), this.#interactionDistance);
+        })
+      : null;
+
+    if (debugObserver) {
+      this.#mountSession.register(() => this.#runtime.scene.onBeforeRenderObservable.remove(debugObserver));
+    }
+
+    this.#mountSession.register(() => {
+      this.#disposeActiveGameplayRuntime();
+      this.#runtime.dispose();
     });
-    activeGameplayRuntime = explorationRuntime;
 
-    if (!Number.isFinite(options.interactionDistance)) {
+    try {
+      await this.#setupExplorationRuntime();
+    } catch (error) {
+      this.#mountSession.dispose();
+      throw error;
+    }
+
+    return () => this.#mountSession.dispose();
+  }
+
+  static toPositionSnapshot(node?: PositionNodeLike | null): PositionLike | null {
+    if (!node?.position) {
+      return null;
+    }
+
+    return {
+      x: node.position.x,
+      y: node.position.y,
+      z: node.position.z
+    };
+  }
+
+  #disposeActiveGameplayRuntime(): void {
+    this.#activeGameplayRuntime?.dispose?.();
+    this.#activeGameplayRuntime = null;
+  }
+
+  async #setupExplorationRuntime(): Promise<void> {
+    const explorationRuntime = await createDistrictExplorationRuntime(this.#runtime, {
+      districtId: this.#options.districtId,
+      sceneFile: this.#options.sceneFile,
+      playerFile: this.#options.playerFile,
+      enemyFile: this.#options.enemyFile,
+      enemySpawn: this.#options.enemySpawn,
+      playerNormalizationId: this.#options.playerNormalizationId,
+      enemyNormalizationId: this.#options.enemyNormalizationId,
+      enemyArchetypeId: this.#options.enemyArchetypeId,
+      resolveAssetPath: this.#options.resolveAssetPath
+    });
+    this.#activeGameplayRuntime = explorationRuntime;
+
+    if (!Number.isFinite(this.#options.interactionDistance)) {
       const playerInteractionRadius = explorationRuntime.playerEntity?.gameplayDimensions?.interactionRadius;
       const enemyInteractionRadius = explorationRuntime.enemyEntity?.gameplayDimensions?.interactionRadius;
-      encounterInteractionDistance = Number.isFinite(playerInteractionRadius)
+      this.#interactionDistance = Number.isFinite(playerInteractionRadius)
         ? playerInteractionRadius
         : Number.isFinite(enemyInteractionRadius)
           ? enemyInteractionRadius
           : ENCOUNTER_INTERACTION_DISTANCE;
     }
 
-    sceneMode = 'exploration';
-    emitDebugState();
+    this.#debugState.setMode('exploration');
+    this.#debugState.emit(this.#activeGameplayRuntime, !this.#encounterCoordinator.canStartCombat(), this.#interactionDistance);
+
+    if (!explorationRuntime.playerEntity?.rootNode || !explorationRuntime.playerMeshRoot || !explorationRuntime.enemyMeshRoot) {
+      throw new Error('Exploration runtime must expose player and enemy mesh roots.');
+    }
 
     const playerAnimationController = createPlayerAnimationController(explorationRuntime.playerEntity);
     const movementTargetState = createMovementTargetState();
-
-    explorationInputScope.setDetachFns({
-      detachGameplayCameraController: attachGameplayIsometricCamera(runtime, explorationRuntime.playerMeshRoot),
-      detachEncounterInteractionInput: attachEncounterInteractionInput(runtime, {
-        playerRoot: explorationRuntime.playerMeshRoot,
-        enemyRoot: explorationRuntime.enemyMeshRoot,
-        interactionDistance: encounterInteractionDistance,
-        onEncounterStart: (details) => {
-          transitionToCombat(details).catch((error) => {
-            console.error('[SillyRPG] Failed to transition from exploration to combat.', error);
-          });
-        }
-      }),
-      detachGroundClickInput: attachGroundClickInput(runtime, movementTargetState),
-      detachPlayerMovementController: attachPlayerMovementController(
-        runtime,
-        explorationRuntime.playerEntity,
-        movementTargetState,
-        {
-          onMovingStateChange: (isMoving: boolean) => playerAnimationController.setMoving(isMoving)
-        }
-      )
+    const movementController = new PlayerMovementController(
+      this.#runtime,
+      explorationRuntime.playerEntity as { rootNode: PositionNodeLike & { position: PositionLike } },
+      movementTargetState,
+      {
+        onMovingStateChange: (isMoving: boolean) => playerAnimationController.setMoving(isMoving)
+      }
+    );
+    const groundClickInput = new SceneGroundClickInput(this.#runtime, movementTargetState);
+    const encounterInput = new EncounterInteractionInput(this.#runtime, {
+      playerRoot: explorationRuntime.playerMeshRoot,
+      enemyRoot: explorationRuntime.enemyMeshRoot,
+      interactionDistance: this.#interactionDistance,
+      onEncounterStart: (details) => {
+        this.#transitionToCombat(details).catch((error) => {
+          console.error('[SillyRPG] Failed to transition from exploration to combat.', error);
+        });
+      }
     });
-  };
 
-  const transitionOutOfCombat = async () => {
-    if (combatExitInProgress) {
+    const detachCamera = attachGameplayIsometricCamera(this.#runtime, explorationRuntime.playerMeshRoot);
+    const detachGroundInput = groundClickInput.attach();
+    const detachEncounterInput = encounterInput.attach();
+    const detachMovement = movementController.attach();
+
+    const previousDispose = explorationRuntime.dispose;
+    explorationRuntime.dispose = () => {
+      detachGroundInput();
+      detachEncounterInput();
+      detachMovement();
+      detachCamera();
+      previousDispose?.();
+    };
+  }
+
+  async #transitionOutOfCombat(): Promise<void> {
+    if (this.#combatExitInProgress) {
       return;
     }
 
-    combatExitInProgress = true;
-    sceneMode = 'transitioning';
-    emitDebugState();
-    teardownActiveGameplayRuntime();
-    combatTransitionStarted = false;
+    this.#combatExitInProgress = true;
+    this.#debugState.setMode('transitioning');
+    this.#debugState.emit(this.#activeGameplayRuntime, !this.#encounterCoordinator.canStartCombat(), this.#interactionDistance);
+    this.#disposeActiveGameplayRuntime();
+    this.#encounterCoordinator.reset();
 
     try {
-      await setupExplorationRuntime();
+      await this.#setupExplorationRuntime();
     } finally {
-      combatExitInProgress = false;
+      this.#combatExitInProgress = false;
     }
-  };
+  }
 
-  const transitionToCombat = async (encounterDetails: EncounterStartPayload) => {
-    if (combatTransitionStarted) {
+  async #transitionToCombat(encounterDetails: EncounterStartPayload): Promise<CombatStateLike | null> {
+    if (!this.#encounterCoordinator.canStartCombat()) {
       return null;
     }
 
-    combatTransitionStarted = true;
-    sceneMode = 'transitioning';
-    emitDebugState();
-    teardownActiveGameplayRuntime();
+    this.#debugState.setMode('transitioning');
+    this.#debugState.emit(this.#activeGameplayRuntime, true, this.#interactionDistance);
+    this.#disposeActiveGameplayRuntime();
 
-    const combatRuntime = await createCombatRuntime(runtime, {
-      sceneFile: options.combatSceneFile,
-      playerFile: options.playerFile,
-      enemyFile: options.enemyFile,
-      playerNormalizationId: options.playerNormalizationId,
-      enemyNormalizationId: options.enemyNormalizationId,
-      enemyArchetypeId: options.enemyArchetypeId,
-      resolveAssetPath: options.resolveAssetPath,
+    const combatRuntime = await createCombatRuntime(this.#runtime, {
+      sceneFile: this.#options.combatSceneFile,
+      playerFile: this.#options.playerFile,
+      enemyFile: this.#options.enemyFile,
+      playerNormalizationId: this.#options.playerNormalizationId,
+      enemyNormalizationId: this.#options.enemyNormalizationId,
+      enemyArchetypeId: this.#options.enemyArchetypeId,
+      resolveAssetPath: this.#options.resolveAssetPath,
       onCombatEnd: () => {
-        transitionOutOfCombat().catch((error) => {
+        this.#transitionOutOfCombat().catch((error) => {
           console.error('[SillyRPG] Failed to transition from combat to exploration.', error);
         });
       }
     });
 
-    activeGameplayRuntime = combatRuntime as CombatRuntimeLike;
-    sceneMode = 'combat';
-    emitDebugState();
+    this.#activeGameplayRuntime = combatRuntime as CombatRuntimeLike;
+    this.#debugState.setMode('combat');
+    this.#debugState.emit(this.#activeGameplayRuntime, true, this.#interactionDistance);
 
-    options.onEncounterStart?.({
+    const combatState = (combatRuntime as CombatRuntimeLike).combatState;
+    this.#encounterCoordinator.notifyCombatStarted({
       ...encounterDetails,
-      combatState: (combatRuntime as CombatRuntimeLike).combatState
+      combatState
     });
 
-    return (combatRuntime as CombatRuntimeLike).combatState;
-  };
-
-  try {
-    await setupExplorationRuntime();
-  } catch (error) {
-    teardownActiveGameplayRuntime();
-    runtime.dispose();
-    throw error;
+    return combatState ?? null;
   }
+}
 
-  return () => {
-    if (debugObserver) {
-      runtime.scene.onBeforeRenderObservable.remove(debugObserver);
-    }
-    teardownActiveGameplayRuntime();
-    runtime.dispose();
-  };
+export const mountSceneRuntime: SceneRuntimeMount = async (
+  canvas: HTMLCanvasElement,
+  options: SceneRuntimeMountOptions = {}
+) => {
+  await ensureBabylonRuntime();
+  const runtime = new SceneRuntime(canvas, options);
+  return runtime.mount();
 };
