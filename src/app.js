@@ -1,4 +1,4 @@
-import { hideRoot, mountContent, showRoot } from './ui/mount.js';
+import { configureMount, hideRoot, mountContent, showRoot } from './ui/mount.js';
 import { renderTopBar } from './ui/components/topBar.js';
 import { renderMainMenu, renderSettingsStub } from './ui/screens/mainMenu.js';
 import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionInterstitial.js';
@@ -10,6 +10,11 @@ import { createBrowserPersistence } from './platform/browser/localPersistence.js
 import { loadSeedFromSillyTavern } from './platform/sillytavern/seedLoader.js';
 
 let activeScreenUnmount = null;
+let appOptions = {
+  title: 'SillyRPG',
+  onExit: null,
+  isStandalone: false
+};
 
 const appController = createAppController({
   worldStore,
@@ -27,6 +32,11 @@ function exit() {
   if (activeScreenUnmount) {
     activeScreenUnmount();
     activeScreenUnmount = null;
+  }
+
+  if (typeof appOptions.onExit === 'function') {
+    appOptions.onExit();
+    return;
   }
 
   hideRoot();
@@ -95,7 +105,15 @@ function render() {
   const box = document.createElement('div');
   box.className = 'sillyrpg-panel';
   box.append(
-    renderTopBar({ title: 'SillyRPG', breadcrumb, phaseInfo, onBack: back, onExit: exit, canGoBack }),
+    renderTopBar({
+      title: appOptions.title,
+      breadcrumb,
+      phaseInfo,
+      onBack: back,
+      onExit: exit,
+      canGoBack,
+      hideExit: appOptions.isStandalone
+    }),
     Object.assign(document.createElement('div'), { className: 'sillyrpg-content' })
   );
   const screenNode = renderScreenBody();
@@ -116,7 +134,23 @@ function render() {
   }
 }
 
-export function openApp() {
+export function startApp(options = {}) {
+  appOptions = {
+    title: options.title || 'SillyRPG',
+    onExit: typeof options.onExit === 'function' ? options.onExit : null,
+    isStandalone: Boolean(options.isStandalone)
+  };
+
+  configureMount({
+    rootId: options.rootId,
+    rootHostSelectors: options.rootHostSelectors,
+    manageExternalUi: options.manageExternalUi
+  });
+
   showRoot();
   appController.initialize().catch(() => {});
+}
+
+export function openApp() {
+  startApp();
 }

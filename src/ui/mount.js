@@ -1,8 +1,11 @@
 const ROOT_ID = 'sillyrpg-root';
 const ROOT_HOST_SELECTORS = ['#movingDivs', '#movingUIWrapper', '#bg_load'];
+let currentRootId = ROOT_ID;
+let currentRootHostSelectors = [...ROOT_HOST_SELECTORS];
+let shouldManageExternalUi = true;
 
 function getRootHost() {
-  for (const selector of ROOT_HOST_SELECTORS) {
+  for (const selector of currentRootHostSelectors) {
     const host = document.querySelector(selector);
     if (host) return host;
   }
@@ -53,26 +56,44 @@ function setChatVisibility(hidden) {
 }
 
 export function ensureRoot() {
-  let root = document.getElementById(ROOT_ID);
+  let root = document.getElementById(currentRootId);
   if (!root) {
     root = document.createElement('div');
-    root.id = ROOT_ID;
+    root.id = currentRootId;
     root.hidden = true;
     getRootHost().appendChild(root);
   }
   return root;
 }
 
+export function configureMount({ rootId, rootHostSelectors, manageExternalUi } = {}) {
+  if (typeof rootId === 'string' && rootId.trim()) {
+    currentRootId = rootId;
+  }
+
+  if (Array.isArray(rootHostSelectors) && rootHostSelectors.length > 0) {
+    currentRootHostSelectors = [...rootHostSelectors];
+  }
+
+  if (typeof manageExternalUi === 'boolean') {
+    shouldManageExternalUi = manageExternalUi;
+  }
+}
+
 export function showRoot() {
   const root = ensureRoot();
   root.hidden = false;
-  setChatVisibility(true);
+  if (shouldManageExternalUi) {
+    setChatVisibility(true);
+  }
 }
 
 export function hideRoot() {
   const root = ensureRoot();
   root.hidden = true;
-  setChatVisibility(false);
+  if (shouldManageExternalUi) {
+    setChatVisibility(false);
+  }
 }
 
 export function mountContent(node) {

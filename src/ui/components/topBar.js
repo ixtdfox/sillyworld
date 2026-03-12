@@ -1,16 +1,18 @@
-export function renderTopBar({ title, breadcrumb, phaseInfo, onBack, onExit, canGoBack }) {
+export function renderTopBar({ title, breadcrumb, phaseInfo, onBack, onExit, canGoBack, hideExit = false }) {
   const top = document.createElement('div');
   top.className = 'sillyrpg-topbar';
 
   const left = document.createElement('div');
   left.className = 'sillyrpg-topbar-left';
 
-  const backToChat = document.createElement('button');
-  backToChat.type = 'button';
-  backToChat.className = 'sillyrpg-btn';
-  backToChat.textContent = 'Back to Chat';
-  backToChat.addEventListener('click', onExit);
-  left.appendChild(backToChat);
+  if (!hideExit) {
+    const backToChat = document.createElement('button');
+    backToChat.type = 'button';
+    backToChat.className = 'sillyrpg-btn';
+    backToChat.textContent = 'Back to Chat';
+    backToChat.addEventListener('click', onExit);
+    left.appendChild(backToChat);
+  }
 
   if (canGoBack) {
     const back = document.createElement('button');
