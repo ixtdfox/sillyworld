@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-import { createWorldStore } from '../src/world/worldStore.js';
-import { TIME_OF_DAY, TIME_PHASE, TIME_PHASE_ORDER } from '../src/world/constants/types.js';
-import { createGameState } from '../src/world/worldState.js';
+import { createWorldStore } from '../src/world/worldStore.ts';
+import { TIME_OF_DAY, TIME_PHASE, TIME_PHASE_ORDER } from '../src/world/constants/types.ts';
+import { createGameState } from '../src/world/worldState.ts';
 import {
   advanceTime,
   advanceTimeBySteps,
@@ -13,10 +13,10 @@ import {
   normalizeTimePhase,
   setTimeOfDay,
   setTimePhase
-} from '../src/world/actions/timeActions.js';
-import { consumeNextPhaseTransition } from '../src/world/actions/phaseTransitionActions.js';
-import { evaluateLocationAvailability, getLocationAvailability } from '../src/world/selectors/locationAvailabilitySelectors.js';
-import { evaluateNpcAvailability, getNpcAvailability, getNpcsForLocation } from '../src/world/selectors/npcAvailabilitySelectors.js';
+} from '../src/world/actions/timeActions.ts';
+import { consumeNextPhaseTransition } from '../src/world/actions/phaseTransitionActions.ts';
+import { evaluateLocationAvailability, getLocationAvailability } from '../src/world/selectors/locationAvailabilitySelectors.ts';
+import { evaluateNpcAvailability, getNpcAvailability, getNpcsForLocation } from '../src/world/selectors/npcAvailabilitySelectors.ts';
 
 const seed = JSON.parse(fs.readFileSync(new URL('../src/world/seed_world.json', import.meta.url), 'utf8'));
 

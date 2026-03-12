@@ -1,4 +1,4 @@
-import type { GameState, GameStateSeed, WorldStoreContract as DomainWorldStore, WorldClockState, TimePhase, PhaseTransitionRecord, PersistenceStorage as WorldPersistenceStorage } from '../world/contracts.js';
+import type { GameState, GameStateSeed, WorldStoreContract as DomainWorldStore, WorldClockState, TimePhase, PhaseTransitionRecord, PersistenceStorage as WorldPersistenceStorage } from '../world/contracts.ts';
 
 export type ScreenId = 'mainMenu' | 'map' | 'scene' | 'settings';
 

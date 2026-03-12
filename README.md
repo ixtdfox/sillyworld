@@ -29,13 +29,13 @@ Production flow:
 
 - Runtime assets live in `assets/`.
 - Scene/map placeholders are organized by domain subfolders (for example `assets/city/`, `assets/districts/`, `assets/locations/`, `assets/npcs/`).
-- Asset path resolution is handled by `src/platform/browser/assetResolver.js`.
+- Asset path resolution is handled by `src/platform/browser/assetResolver.ts`.
 
 ## Application entrypoint
 
 - HTML shell: `index.html`
-- JavaScript bootstrap entrypoint: `src/standalone.js`
-- App orchestration root: `src/app.js`
+- TypeScript bootstrap entrypoint: `src/standalone.ts`
+- App orchestration root: `src/app.ts`
 
 ## Project structure (high level)
 
@@ -44,4 +44,4 @@ Production flow:
 - `src/ui/*`: UI composition, screens, and rendering/runtime modules
 - `src/world/*`: world data model, actions, selectors, and persistence/migrations
 
-See also: `docs/standalone-run.md`, `docs/assets.md`, and `docs/sillytavern-removal-summary.md`.
+See also: `docs/standalone-run.md`, `docs/assets.md`, `docs/sillytavern-removal-summary.md`, and `docs/final-typescript-state.md`.

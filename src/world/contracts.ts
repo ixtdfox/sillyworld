@@ -1,9 +1,9 @@
 export type SchemaVersion = 4;
 
-export type TimePhase = import('./constants/types.js').TimePhase;
-export type TimeOfDay = import('./constants/types.js').TimeOfDay;
-export type MapLevel = import('./constants/types.js').MapLevel;
-export type EquipmentSlot = import('./constants/types.js').EquipmentSlot;
+export type TimePhase = import('./constants/types.ts').TimePhase;
+export type TimeOfDay = import('./constants/types.ts').TimeOfDay;
+export type MapLevel = import('./constants/types.ts').MapLevel;
+export type EquipmentSlot = import('./constants/types.ts').EquipmentSlot;
 
 export interface WorldClockState {
   dayNumber: number;

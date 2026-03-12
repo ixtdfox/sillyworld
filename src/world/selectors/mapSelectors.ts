@@ -1,4 +1,4 @@
-import type { GameState, MapLevel, MapLevelConfigState, MapNodeState } from '../contracts.js';
+import type { GameState, MapLevel, MapLevelConfigState, MapNodeState } from '../contracts.ts';
 
 export function getMapConfig(state: GameState, level: MapLevel): MapLevelConfigState | null {
   return state.maps.levelConfigs[level] || null;

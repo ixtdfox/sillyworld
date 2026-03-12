@@ -1,12 +1,12 @@
-import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.js';
-import { createMovementTargetState } from './movementTargetState.js';
-import { createPlayerAnimationController } from './playerAnimationController.js';
-import { PlayerMovementController } from './playerMovementController.js';
-import { SceneGroundClickInput } from './sceneGroundClickInput.js';
-import { attachGameplayIsometricCamera } from './gameplayCameraController.js';
-import { createDistrictExplorationRuntime } from './districtExplorationRuntime.js';
-import { ENCOUNTER_INTERACTION_DISTANCE, EncounterInteractionInput } from './encounterInteractionInput.js';
-import { createCombatRuntime } from './combatRuntime.js';
+import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.ts';
+import { createMovementTargetState } from './movementTargetState.ts';
+import { createPlayerAnimationController } from './playerAnimationController.ts';
+import { PlayerMovementController } from './playerMovementController.ts';
+import { SceneGroundClickInput } from './sceneGroundClickInput.ts';
+import { attachGameplayIsometricCamera } from './gameplayCameraController.ts';
+import { createDistrictExplorationRuntime } from './districtExplorationRuntime.ts';
+import { ENCOUNTER_INTERACTION_DISTANCE, EncounterInteractionInput } from './encounterInteractionInput.ts';
+import { createCombatRuntime } from './combatRuntime.ts';
 import type {
   CombatStateLike,
   EncounterStartPayload,
@@ -18,7 +18,7 @@ import type {
   RuntimeNormalizationState,
   SceneRuntimeMount,
   SceneRuntimeMountOptions
-} from './runtimeContracts.js';
+} from './runtimeContracts.ts';
 
 interface ExplorationRuntimeLike {
   playerEntity?: { normalizationDebug?: RuntimeNormalizationState['player']; gameplayDimensions?: { interactionRadius?: number } };

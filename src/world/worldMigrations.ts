@@ -1,6 +1,6 @@
-import { SCHEMA_VERSION } from './constants/types.js';
-import { createGameState } from './worldState.js';
-import { normalizeTimePhase } from './actions/timeActions.js';
+import { SCHEMA_VERSION } from './constants/types.ts';
+import { createGameState } from './worldState.ts';
+import { normalizeTimePhase } from './actions/timeActions.ts';
 
 function migrateV1ToV2(v1State, fallbackSeed) {
   const base = createGameState(fallbackSeed);

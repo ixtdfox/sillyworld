@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { attachCombatPlayerMovementController } from '../src/ui/rendering/combatPlayerMovementController.js';
+import { attachCombatPlayerMovementController } from '../src/ui/rendering/combatPlayerMovementController.ts';
 
 class Vector3 {
   constructor(x, y, z) {

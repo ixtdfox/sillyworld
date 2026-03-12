@@ -1,4 +1,4 @@
-import type { SeedLoader as SeedLoaderContract, WorldSeed } from '../../shared/types.js';
+import type { SeedLoader as SeedLoaderContract, WorldSeed } from '../../shared/types.ts';
 
 export interface SeedLoader {
   loadSeed(seedPath?: string): Promise<WorldSeed>;

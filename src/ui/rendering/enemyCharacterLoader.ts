@@ -1,8 +1,8 @@
-import { loadAndNormalizeEntityCharacter } from './entityCharacterLoader.js';
+import { loadAndNormalizeEntityCharacter } from './entityCharacterLoader.ts';
 import {
   DEFAULT_ENEMY_ARCHETYPE_ID,
   resolveEnemyArchetype
-} from './entityArchetypes.js';
+} from './entityArchetypes.ts';
 
 export async function loadEnemyCharacter(runtime, options = {}) {
   const enemyArchetypeId = options.enemyArchetypeId ?? DEFAULT_ENEMY_ARCHETYPE_ID;

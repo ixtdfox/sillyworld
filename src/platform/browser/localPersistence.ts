@@ -1,4 +1,4 @@
-import type { PersistenceContract, PersistenceKeys, PersistenceStorage } from '../../shared/types.js';
+import type { PersistenceContract, PersistenceKeys, PersistenceStorage } from '../../shared/types.ts';
 
 export interface BrowserPersistenceStorageProvider {
   getLocalStorage(): PersistenceStorage | undefined;

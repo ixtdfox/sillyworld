@@ -1,4 +1,4 @@
-import { indexBy } from '../utils/object.js';
+import { indexBy } from '../utils/object.ts';
 
 export function createDefaultMaps(seed = {}) {
   return {

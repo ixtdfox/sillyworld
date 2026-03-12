@@ -1,4 +1,4 @@
-import { createGameState } from './worldState.js';
+import { createGameState } from './worldState.ts';
 import type {
   CombinedLocationAvailability,
   DistrictState,
@@ -21,17 +21,17 @@ import type {
   WorldClockState,
   WorldStoreContract,
   WorldStoreListener
-} from './contracts.js';
-import { deepClone } from './utils/object.js';
-import { setTimeOfDay, setTimePhase, advanceTime } from './actions/timeActions.js';
-import { addItemToPlayer, moveItemToSlot, removeItemFromPlayer, unequipSlot } from './actions/inventoryActions.js';
-import { setRelationship } from './actions/relationshipActions.js';
-import { movePlayerToNode } from './actions/navigationActions.js';
-import { getAvailableRestActions, performRestAction } from './actions/restActions.js';
-import { getMapConfig, getNodesForLevel, getNodeById } from './selectors/mapSelectors.js';
-import { canTakeItem, getInventoryWeight } from './selectors/inventorySelectors.js';
-import { getRelationship } from './selectors/relationshipSelectors.js';
-import { getTimeOfDay, getTimePhase, getWorldClock } from './selectors/worldSelectors.js';
+} from './contracts.ts';
+import { deepClone } from './utils/object.ts';
+import { setTimeOfDay, setTimePhase, advanceTime } from './actions/timeActions.ts';
+import { addItemToPlayer, moveItemToSlot, removeItemFromPlayer, unequipSlot } from './actions/inventoryActions.ts';
+import { setRelationship } from './actions/relationshipActions.ts';
+import { movePlayerToNode } from './actions/navigationActions.ts';
+import { getAvailableRestActions, performRestAction } from './actions/restActions.ts';
+import { getMapConfig, getNodesForLevel, getNodeById } from './selectors/mapSelectors.ts';
+import { canTakeItem, getInventoryWeight } from './selectors/inventorySelectors.ts';
+import { getRelationship } from './selectors/relationshipSelectors.ts';
+import { getTimeOfDay, getTimePhase, getWorldClock } from './selectors/worldSelectors.ts';
 import {
   getDistrictById,
   getDistricts,
@@ -40,11 +40,11 @@ import {
   getLocationMeta,
   getPointOfInterestById,
   getPointsOfInterestForDistrict
-} from './selectors/settingSelectors.js';
-import { getLocationAvailability } from './selectors/locationAvailabilitySelectors.js';
-import { getNpcAvailability, getNpcsForLocation } from './selectors/npcAvailabilitySelectors.js';
-import { deserializeGameState, saveGameState, loadGameState, serializeGameState } from './worldPersistence.js';
-import { consumeNextPhaseTransition, getPendingPhaseTransitions } from './actions/phaseTransitionActions.js';
+} from './selectors/settingSelectors.ts';
+import { getLocationAvailability } from './selectors/locationAvailabilitySelectors.ts';
+import { getNpcAvailability, getNpcsForLocation } from './selectors/npcAvailabilitySelectors.ts';
+import { deserializeGameState, saveGameState, loadGameState, serializeGameState } from './worldPersistence.ts';
+import { consumeNextPhaseTransition, getPendingPhaseTransitions } from './actions/phaseTransitionActions.ts';
 
 interface MovePlayerRawFailure {
   ok: false;

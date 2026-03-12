@@ -1,5 +1,5 @@
-import { TIME_PHASE } from '../constants/types.js';
-import { advanceTimeBySteps, advanceToTimePhase } from './timeActions.js';
+import { TIME_PHASE } from '../constants/types.ts';
+import { advanceTimeBySteps, advanceToTimePhase } from './timeActions.ts';
 
 const REST_ACTION = Object.freeze({
   UntilEvening: 'rest-until-evening',

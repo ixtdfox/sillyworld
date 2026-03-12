@@ -1,4 +1,4 @@
-import type { PositionLike, RuntimeDispose } from './runtimeContracts.js';
+import type { PositionLike, RuntimeDispose } from './runtimeContracts.ts';
 
 const DEFAULT_MOVE_SPEED = 2.5;
 const DEFAULT_STOP_DISTANCE = 0.1;

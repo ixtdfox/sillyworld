@@ -1,5 +1,5 @@
-import { TIME_OF_DAY, TIME_PHASE } from '../constants/types.js';
-import { normalizeTimePhase } from '../actions/timeActions.js';
+import { TIME_OF_DAY, TIME_PHASE } from '../constants/types.ts';
+import { normalizeTimePhase } from '../actions/timeActions.ts';
 
 const PHASE_TO_TIME_OF_DAY = Object.freeze({
   [TIME_PHASE.Morning]: TIME_OF_DAY.Morning,

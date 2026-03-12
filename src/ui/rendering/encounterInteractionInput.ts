@@ -1,4 +1,4 @@
-import type { EncounterInteractionPayload, PositionNodeLike, RuntimeDispose } from './runtimeContracts.js';
+import type { EncounterInteractionPayload, PositionNodeLike, RuntimeDispose } from './runtimeContracts.ts';
 
 export const ENCOUNTER_INTERACTION_DISTANCE = 2.5;
 

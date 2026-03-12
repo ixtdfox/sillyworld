@@ -1,7 +1,7 @@
-import { TIME_PHASE } from '../constants/types.js';
-import type { GameState, LocationMetaState, TimePhase } from '../contracts.js';
-import { getDistrictById, getPointOfInterestById } from './settingSelectors.js';
-import { getTimePhase } from './worldSelectors.js';
+import { TIME_PHASE } from '../constants/types.ts';
+import type { GameState, LocationMetaState, TimePhase } from '../contracts.ts';
+import { getDistrictById, getPointOfInterestById } from './settingSelectors.ts';
+import { getTimePhase } from './worldSelectors.ts';
 
 const ALL_PHASES = new Set<TimePhase>(Object.values(TIME_PHASE));
 

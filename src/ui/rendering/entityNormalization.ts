@@ -2,12 +2,12 @@ import {
   DEFAULT_ENEMY_NORMALIZATION_ID,
   DEFAULT_PLAYER_NORMALIZATION_ID,
   ENTITY_NORMALIZATION_CONFIG
-} from './entityNormalizationConfig.js';
+} from './entityNormalizationConfig.ts';
 import {
   getEntityVisualHeight,
   placeEntityOnGround,
   refreshEntityWorldMatrices
-} from './entityVisualBounds.js';
+} from './entityVisualBounds.ts';
 
 function toRadians(degrees) {
   return (degrees * Math.PI) / 180;

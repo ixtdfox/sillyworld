@@ -1,5 +1,5 @@
-import type { GameState } from '../contracts.js';
-import { getRelationship } from '../selectors/relationshipSelectors.js';
+import type { GameState } from '../contracts.ts';
+import { getRelationship } from '../selectors/relationshipSelectors.ts';
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));

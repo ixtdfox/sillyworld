@@ -4,7 +4,7 @@ import type {
   GameState,
   LocationMetaState,
   PointOfInterestState
-} from '../contracts.js';
+} from '../contracts.ts';
 
 export function getDistricts(state: GameState): DistrictState[] {
   return Object.values(state.setting?.districtsById || {});

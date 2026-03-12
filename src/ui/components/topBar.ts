@@ -1,4 +1,4 @@
-import type { PhasePresentation } from '../../shared/types.js';
+import type { PhasePresentation } from '../../shared/types.ts';
 
 export interface TopBarProps {
   title: string;

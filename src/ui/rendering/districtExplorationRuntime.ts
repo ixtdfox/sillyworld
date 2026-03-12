@@ -1,8 +1,8 @@
-import { loadWorldScene } from './worldSceneLoader.js';
-import { loadPlayerCharacter } from './playerCharacterLoader.js';
-import { loadEnemyCharacter } from './enemyCharacterLoader.js';
-import { spawnPlayerCharacter } from './playerSpawn.js';
-import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from './runtimeContracts.js';
+import { loadWorldScene } from './worldSceneLoader.ts';
+import { loadPlayerCharacter } from './playerCharacterLoader.ts';
+import { loadEnemyCharacter } from './enemyCharacterLoader.ts';
+import { spawnPlayerCharacter } from './playerSpawn.ts';
+import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from './runtimeContracts.ts';
 
 const DEFAULT_ENEMY_SPAWN: Readonly<{ x: number; z: number }> = Object.freeze({ x: 2, z: 2 });
 

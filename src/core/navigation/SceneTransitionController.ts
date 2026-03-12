@@ -4,7 +4,7 @@ import type {
   SceneTransitionController as SceneTransitionControllerContract,
   SceneTransitionControllerDeps,
   SceneTransitionPayload
-} from '../../shared/types.js';
+} from '../../shared/types.ts';
 
 function createEnterScenePayload(regionId: RegionId): SceneTransitionPayload {
   return { regionId };
