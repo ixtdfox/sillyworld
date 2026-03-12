@@ -5,43 +5,63 @@ export interface AssetPathResolver {
   resolveCatalogAssetPath(pathKey: string): string;
 }
 
-interface BrowserUrlEnvironment {
-  hasDocumentBaseUri: boolean;
-  hasWindowLocationHref: boolean;
+export interface BrowserUrlProvider {
+  getDocumentBaseUri(): string | null;
+  getWindowLocationHref(): string | null;
 }
 
-const DEFAULT_ASSET_BASE_URL = 'http://localhost/';
+class GlobalBrowserUrlProvider implements BrowserUrlProvider {
+  getDocumentBaseUri(): string | null {
+    if (typeof document === 'undefined' || typeof document.baseURI !== 'string') return null;
+    return document.baseURI.length > 0 ? document.baseURI : null;
+  }
 
-function resolveBrowserUrlEnvironment(): BrowserUrlEnvironment {
-  const hasDocumentBaseUri =
-    typeof document !== 'undefined' &&
-    typeof document.baseURI === 'string' &&
-    document.baseURI.length > 0;
-
-  const hasWindowLocationHref =
-    typeof window !== 'undefined' &&
-    typeof window.location?.href === 'string' &&
-    window.location.href.length > 0;
-
-  return {
-    hasDocumentBaseUri,
-    hasWindowLocationHref
-  };
+  getWindowLocationHref(): string | null {
+    if (typeof window === 'undefined' || typeof window.location?.href !== 'string') return null;
+    return window.location.href.length > 0 ? window.location.href : null;
+  }
 }
 
-function resolveAssetBaseUrl(): string {
-  const env = resolveBrowserUrlEnvironment();
-  if (env.hasDocumentBaseUri) return document.baseURI;
-  if (env.hasWindowLocationHref) return window.location.href;
-
-  // Explicit fallback keeps URL resolution deterministic in non-DOM environments.
-  return DEFAULT_ASSET_BASE_URL;
+export interface AssetResolverConfig {
+  defaultAssetBaseUrl?: string;
+  urlProvider?: BrowserUrlProvider;
 }
+
+export class AssetResolver implements AssetPathResolver {
+  private readonly defaultAssetBaseUrl: string;
+  private readonly urlProvider: BrowserUrlProvider;
+
+  constructor(config: AssetResolverConfig = {}) {
+    this.defaultAssetBaseUrl = config.defaultAssetBaseUrl ?? 'http://localhost/';
+    this.urlProvider = config.urlProvider ?? new GlobalBrowserUrlProvider();
+  }
+
+  resolveAssetPath(relPath: string): string {
+    return new URL(relPath, this.resolveAssetBaseUrl()).toString();
+  }
+
+  resolveCatalogAssetPath(pathKey: string): string {
+    return this.resolveAssetPath(getAssetPath(pathKey));
+  }
+
+  private resolveAssetBaseUrl(): string {
+    const baseUri = this.urlProvider.getDocumentBaseUri();
+    if (baseUri) return baseUri;
+
+    const locationHref = this.urlProvider.getWindowLocationHref();
+    if (locationHref) return locationHref;
+
+    // Explicit fallback keeps URL resolution deterministic in non-DOM environments.
+    return this.defaultAssetBaseUrl;
+  }
+}
+
+const defaultAssetResolver = new AssetResolver();
 
 export const resolveAssetPath: AssetPathResolver['resolveAssetPath'] = (relPath) => {
-  return new URL(relPath, resolveAssetBaseUrl()).toString();
+  return defaultAssetResolver.resolveAssetPath(relPath);
 };
 
 export const resolveCatalogAssetPath: AssetPathResolver['resolveCatalogAssetPath'] = (pathKey) => {
-  return resolveAssetPath(getAssetPath(pathKey));
+  return defaultAssetResolver.resolveCatalogAssetPath(pathKey);
 };

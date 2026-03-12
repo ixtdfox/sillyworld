@@ -7,8 +7,8 @@ import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionI
 import { renderPhoneCityMapScreen } from './ui/screens/phoneMap/phoneCityMapScreen.js';
 import { renderSceneViewScreen } from './ui/screens/sceneViewScreen.js';
 import { MAP_LEVEL, worldStore } from './world/index.js';
-import { createStandalonePersistence } from './platform/browser/localPersistence.js';
-import { loadSeed } from './platform/browser/seedLoader.js';
+import { createStandalonePersistence } from './platform/browser/localPersistence.ts';
+import { loadSeed } from './platform/browser/seedLoader.ts';
 import type { AppController as AppControllerContract, RegionId } from './shared/types.js';
 import type { PhaseTransitionRecord } from './world/contracts.js';
 import { AppController } from './core/app/AppController.js';

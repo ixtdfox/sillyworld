@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createStandalonePersistence, PERSISTENCE_KEYS } from '../src/platform/browser/localPersistence.js';
+import { createStandalonePersistence, PERSISTENCE_KEYS } from '../src/platform/browser/localPersistence.ts';
 
 function createStorageStub(initial = {}) {
   const map = new Map(Object.entries(initial));

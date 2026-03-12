@@ -1,52 +1,67 @@
-import type { SeedLoader, WorldSeed } from '../../shared/types.js';
+import type { SeedLoader as SeedLoaderContract, WorldSeed } from '../../shared/types.js';
 
-interface SeedFetchEnvironment {
-  supportsFetch: boolean;
+export interface SeedLoader {
+  loadSeed(seedPath?: string): Promise<WorldSeed>;
 }
 
-interface SeedRequestDescriptor {
-  requestedPath: string;
-  resolvedUrl: string;
+export interface SeedFetchApi {
+  fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
 }
 
-export interface SeedLoadResult {
-  seed: WorldSeed;
-  resolvedUrl: string;
+export interface SeedUrlResolver {
+  resolve(seedPath: string): string;
 }
 
-function resolveSeedFetchEnvironment(): SeedFetchEnvironment {
-  return {
-    supportsFetch: typeof fetch === 'function'
-  };
+class BrowserSeedFetchApi implements SeedFetchApi {
+  fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    return fetch(input, init);
+  }
 }
 
-function resolveSeedRequest(seedPath: string): SeedRequestDescriptor {
-  return {
-    requestedPath: seedPath,
-    resolvedUrl: new URL(seedPath, import.meta.url).toString()
-  };
+class ModuleSeedUrlResolver implements SeedUrlResolver {
+  resolve(seedPath: string): string {
+    return new URL(seedPath, import.meta.url).toString();
+  }
 }
 
-export const loadSeed: SeedLoader = async (seedPath = '../../world/seed_world.json') => {
-  const fetchEnv = resolveSeedFetchEnvironment();
-  if (!fetchEnv.supportsFetch) {
-    throw new Error('Failed to load seed data: fetch API is not available in this environment.');
+export interface SeedLoaderConfig {
+  fetchApi?: SeedFetchApi;
+  urlResolver?: SeedUrlResolver;
+  defaultSeedPath?: string;
+}
+
+export class BrowserSeedLoader implements SeedLoader {
+  private readonly fetchApi: SeedFetchApi;
+  private readonly urlResolver: SeedUrlResolver;
+  private readonly defaultSeedPath: string;
+
+  constructor(config: SeedLoaderConfig = {}) {
+    this.fetchApi = config.fetchApi ?? new BrowserSeedFetchApi();
+    this.urlResolver = config.urlResolver ?? new ModuleSeedUrlResolver();
+    this.defaultSeedPath = config.defaultSeedPath ?? '../../world/seed_world.json';
   }
 
-  const request = resolveSeedRequest(seedPath);
-  console.info('[SillyRPG] Loading world seed.', { url: request.resolvedUrl });
-  const response = await fetch(request.resolvedUrl);
+  async loadSeed(seedPath = this.defaultSeedPath): Promise<WorldSeed> {
+    if (typeof fetch !== 'function') {
+      throw new Error('Failed to load seed data: fetch API is not available in this environment.');
+    }
 
-  if (!response.ok) {
-    throw new Error(`Failed to load seed data: ${response.status} ${response.statusText}`);
+    const resolvedUrl = this.urlResolver.resolve(seedPath);
+    console.info('[SillyRPG] Loading world seed.', { url: resolvedUrl });
+    const response = await this.fetchApi.fetch(resolvedUrl);
+
+    if (!response.ok) {
+      throw new Error(`Failed to load seed data: ${response.status} ${response.statusText}`);
+    }
+
+    const seed: WorldSeed = await response.json();
+    console.info('[SillyRPG] World seed loaded.', { url: resolvedUrl });
+    return seed;
   }
+}
 
-  const seed: WorldSeed = await response.json();
-  const result: SeedLoadResult = {
-    seed,
-    resolvedUrl: request.resolvedUrl
-  };
+const defaultSeedLoader = new BrowserSeedLoader();
 
-  console.info('[SillyRPG] World seed loaded.', { url: result.resolvedUrl });
-  return result.seed;
+export const loadSeed: SeedLoaderContract = async (seedPath) => {
+  return defaultSeedLoader.loadSeed(seedPath);
 };

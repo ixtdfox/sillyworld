@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getAssetPath } from '../src/core/assets/assetCatalog.js';
-import { resolveAssetPath, resolveCatalogAssetPath } from '../src/platform/browser/assetResolver.js';
+import { resolveAssetPath, resolveCatalogAssetPath } from '../src/platform/browser/assetResolver.ts';
 
 test('getAssetPath resolves catalog keys for scene, textures, and models', () => {
   assert.equal(getAssetPath('scenes.districtExploration'), 'assets/scene_test.glb');

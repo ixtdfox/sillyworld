@@ -1,4 +1,4 @@
-import { resolveAssetPath } from '../../platform/browser/assetResolver.js';
+import { resolveAssetPath } from '../../platform/browser/assetResolver.ts';
 import { mountSceneRuntime } from '../rendering/sceneRuntime.js';
 import type {
   EncounterStartPayload,
