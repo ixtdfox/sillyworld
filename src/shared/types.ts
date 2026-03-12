@@ -73,14 +73,14 @@ export type WorldSeed = GameStateSeed;
 export type SeedLoader = (seedPath?: string) => Promise<WorldSeed>;
 
 export interface WorldStore extends DomainWorldStore {
-  getTimePhase(): TimePhaseId | TimePhase | string;
+  getTimePhase(): TimePhaseId | TimePhase;
   getWorldClock(): WorldClockState | null;
-  getPendingPhaseTransitions(): unknown[];
-  consumeNextPhaseTransition(): unknown;
+  getPendingPhaseTransitions(): PhaseTransitionRecord[];
+  consumeNextPhaseTransition(): PhaseTransitionRecord | null;
   getState(): GameState;
   save(storage: PersistenceStorage): boolean;
   load(storage: PersistenceStorage): boolean;
-  reset(seed: WorldSeed): void;
+  reset(seed?: WorldSeed): void;
 }
 
 
