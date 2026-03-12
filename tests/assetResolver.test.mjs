@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getAssetPath } from '../src/core/assets/assetCatalog.ts';
-import { resolveAssetPath, resolveCatalogAssetPath } from '../src/platform/browser/assetResolver.ts';
+import { AssetResolver, resolveAssetPath, resolveCatalogAssetPath } from '../src/platform/browser/assetResolver.ts';
 
 test('getAssetPath resolves catalog keys for scene, textures, and models', () => {
   assert.equal(getAssetPath('scenes.districtExploration'), 'assets/scene_test.glb');
@@ -23,4 +23,11 @@ test('resolveCatalogAssetPath resolves catalog entries into absolute urls', () =
 
   assert.equal(resolveCatalogAssetPath('textures.cityMap'), 'https://example.invalid/game/assets/map.png');
   assert.equal(resolveCatalogAssetPath('icons.npcPlaceholder'), 'https://example.invalid/game/assets/npcs/npc_placeholder.svg');
+});
+
+test('AssetResolver rejects empty default base url invariant', () => {
+  assert.throws(
+    () => new AssetResolver({ defaultAssetBaseUrl: '   ' }),
+    /defaultAssetBaseUrl must be a non-empty string/
+  );
 });
