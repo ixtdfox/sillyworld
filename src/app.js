@@ -9,11 +9,8 @@ import { createAppController } from './core/app/createAppController.js';
 import { createStandalonePersistence } from './platform/browser/localPersistence.js';
 import { loadSeed } from './platform/browser/seedLoader.js';
 
+const APP_TITLE = 'SillyRPG';
 let activeScreenUnmount = null;
-let appOptions = {
-  title: 'SillyRPG',
-  onExit: null
-};
 
 const appController = createAppController({
   worldStore,
@@ -31,11 +28,6 @@ function exit() {
   if (activeScreenUnmount) {
     activeScreenUnmount();
     activeScreenUnmount = null;
-  }
-
-  if (typeof appOptions.onExit === 'function') {
-    appOptions.onExit();
-    return;
   }
 
   hideRoot();
@@ -105,7 +97,7 @@ function render() {
   box.className = 'sillyrpg-panel';
   box.append(
     renderTopBar({
-      title: appOptions.title,
+      title: APP_TITLE,
       breadcrumb,
       phaseInfo,
       onBack: back,
@@ -133,16 +125,7 @@ function render() {
   }
 }
 
-export function startApp(options = {}) {
-  appOptions = {
-    title: options.title || 'SillyRPG',
-    onExit: typeof options.onExit === 'function' ? options.onExit : null,
-  };
-
+export function startApp() {
   showRoot();
   appController.initialize().catch(() => {});
-}
-
-export function openApp() {
-  startApp();
 }

@@ -1,33 +1,47 @@
-# Sillyworld (Standalone Web App)
+# Sillyworld
 
-Sillyworld is a lightweight, menu-driven RPG web application built with Vite.
+Sillyworld is a standalone browser RPG application built with Vite. It runs as a normal web app with no SillyTavern extension runtime, bridge API, or host integration requirements.
 
-## Quick start
+## What it is
+
+- A menu-driven RPG with map navigation, scene exploration, combat runtime hooks, inventory UI, and world state progression.
+- A client-side app that loads seed world data and persists saves locally in the browser.
+
+## How to run it
 
 1. Install dependencies:
    ```bash
    npm install
    ```
-2. Run the development server:
+2. Start development mode:
    ```bash
    npm run dev
    ```
-3. Open the local URL printed by Vite (typically `http://localhost:5173`).
+3. Open the Vite URL shown in the terminal (default: `http://localhost:5173`).
 
-## Scripts
+Production flow:
 
-- `npm run dev` / `npm start`: start local dev server
-- `npm run build`: build production assets into `dist/`
-- `npm run preview`: preview production build
-- `npm test`: run Node test suite
+- Build: `npm run build`
+- Preview built output: `npm run preview`
+- Test suite: `npm test`
 
-## Project layout
+## Assets organization
 
-- `index.html`: standalone HTML shell with `#app` mount
-- `src/standalone.js`: web bootstrap entrypoint
-- `src/app.js`: app orchestration and screen flow
-- `src/platform/browser/*`: browser-specific adapters (assets, persistence, seed loading)
-- `src/core/*`: app/core logic isolated from host environment assumptions
-- `src/world/*`: world state, actions, selectors, and seed data
+- Runtime assets live in `assets/`.
+- Scene/map placeholders are organized by domain subfolders (for example `assets/city/`, `assets/districts/`, `assets/locations/`, `assets/npcs/`).
+- Asset path resolution is handled by `src/platform/browser/assetResolver.js`.
 
-See `docs/standalone-structure.md` for the full packaging migration notes.
+## Application entrypoint
+
+- HTML shell: `index.html`
+- JavaScript bootstrap entrypoint: `src/standalone.js`
+- App orchestration root: `src/app.js`
+
+## Project structure (high level)
+
+- `src/core/*`: app-core orchestration and navigation logic
+- `src/platform/browser/*`: browser adapters (persistence, assets, seed loading)
+- `src/ui/*`: UI composition, screens, and rendering/runtime modules
+- `src/world/*`: world data model, actions, selectors, and persistence/migrations
+
+See also: `docs/standalone-run.md`, `docs/assets.md`, and `docs/sillytavern-removal-summary.md`.
