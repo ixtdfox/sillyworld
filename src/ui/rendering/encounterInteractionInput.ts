@@ -31,10 +31,8 @@ function isDescendantOf(node: { parent?: unknown } | null | undefined, candidate
     if (current === candidateAncestor) {
       return true;
     }
-
     current = (current.parent as { parent?: unknown } | null | undefined) ?? null;
   }
-
   return false;
 }
 
@@ -42,71 +40,94 @@ function isEnemyPick({ pickedMesh, enemyRoot }: { pickedMesh: unknown; enemyRoot
   if (!pickedMesh || !enemyRoot) {
     return false;
   }
-
   return pickedMesh === enemyRoot || isDescendantOf(pickedMesh as { parent?: unknown }, enemyRoot);
 }
 
-function computeDistance(BABYLON: BabylonRuntimeSubset['BABYLON'], sourceNode: PositionNodeLike, targetNode: PositionNodeLike): number {
-  const source = sourceNode?.position;
-  const target = targetNode?.position;
+export class EncounterInteractionInput {
+  readonly #runtime: BabylonRuntimeSubset;
+  readonly #playerRoot: PositionNodeLike;
+  readonly #enemyRoot: PositionNodeLike;
+  readonly #onEncounterStart?: (payload: EncounterInteractionPayload) => void;
+  readonly #interactionDistance: number;
 
-  if (!source || !target) {
-    return Number.POSITIVE_INFINITY;
+  #observer: unknown | null = null;
+  #encounterStarted = false;
+
+  constructor(runtime: BabylonRuntimeSubset, options: EncounterInputOptions = {}) {
+    if (!options.playerRoot || !options.enemyRoot) {
+      throw new Error('Encounter interaction input requires both playerRoot and enemyRoot.');
+    }
+
+    this.#runtime = runtime;
+    this.#playerRoot = options.playerRoot;
+    this.#enemyRoot = options.enemyRoot;
+    this.#onEncounterStart = options.onEncounterStart;
+    this.#interactionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
   }
 
-  return BABYLON.Vector3.Distance(source, target);
+  public attach(): RuntimeDispose {
+    if (this.#observer) {
+      return () => this.dispose();
+    }
+
+    this.#observer = this.#runtime.scene.onPointerObservable.add((pointerInfo) => {
+      if (pointerInfo.type !== this.#runtime.BABYLON.PointerEventTypes.POINTERDOWN) {
+        return;
+      }
+
+      const pickResult = this.#runtime.scene.pick(this.#runtime.scene.pointerX, this.#runtime.scene.pointerY);
+      if (!pickResult?.hit || !isEnemyPick({ pickedMesh: pickResult.pickedMesh, enemyRoot: this.#enemyRoot })) {
+        return;
+      }
+
+      pointerInfo.skipOnPointerObservable = true;
+
+      if (this.#encounterStarted) {
+        console.debug('[SillyRPG] Encounter start ignored because combat has already started.');
+        return;
+      }
+
+      const distanceToEnemy = this.#computeDistance();
+      if (distanceToEnemy > this.#interactionDistance) {
+        console.debug('[SillyRPG] Encounter start ignored because player is too far from enemy.', {
+          distanceToEnemy,
+          interactionDistance: this.#interactionDistance
+        });
+        return;
+      }
+
+      this.#encounterStarted = true;
+      this.#onEncounterStart?.({
+        playerRoot: this.#playerRoot,
+        enemyRoot: this.#enemyRoot,
+        distanceToEnemy,
+        interactionDistance: this.#interactionDistance
+      });
+    });
+
+    return () => this.dispose();
+  }
+
+  public dispose(): void {
+    if (this.#observer) {
+      this.#runtime.scene.onPointerObservable.remove(this.#observer);
+      this.#observer = null;
+    }
+  }
+
+  #computeDistance(): number {
+    const source = this.#playerRoot?.position;
+    const target = this.#enemyRoot?.position;
+
+    if (!source || !target) {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    return this.#runtime.BABYLON.Vector3.Distance(source, target);
+  }
 }
 
-export function attachEncounterInteractionInput(
-  runtime: BabylonRuntimeSubset,
-  options: EncounterInputOptions = {}
-): RuntimeDispose {
-  const playerRoot = options.playerRoot;
-  const enemyRoot = options.enemyRoot;
-  const onEncounterStart = options.onEncounterStart;
-  const interactionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
-  let encounterStarted = false;
-
-  if (!playerRoot || !enemyRoot) {
-    throw new Error('Encounter interaction input requires both playerRoot and enemyRoot.');
-  }
-
-  const pointerObserver = runtime.scene.onPointerObservable.add((pointerInfo) => {
-    if (pointerInfo.type !== runtime.BABYLON.PointerEventTypes.POINTERDOWN) {
-      return;
-    }
-
-    const pickResult = runtime.scene.pick(runtime.scene.pointerX, runtime.scene.pointerY);
-    if (!pickResult?.hit || !isEnemyPick({ pickedMesh: pickResult.pickedMesh, enemyRoot })) {
-      return;
-    }
-
-    pointerInfo.skipOnPointerObservable = true;
-
-    if (encounterStarted) {
-      console.debug('[SillyRPG] Encounter start ignored because combat has already started.');
-      return;
-    }
-
-    const distanceToEnemy = computeDistance(runtime.BABYLON, playerRoot, enemyRoot);
-    if (distanceToEnemy > interactionDistance) {
-      console.debug('[SillyRPG] Encounter start ignored because player is too far from enemy.', {
-        distanceToEnemy,
-        interactionDistance
-      });
-      return;
-    }
-
-    encounterStarted = true;
-    onEncounterStart?.({
-      playerRoot,
-      enemyRoot,
-      distanceToEnemy,
-      interactionDistance
-    });
-  });
-
-  return () => {
-    runtime.scene.onPointerObservable.remove(pointerObserver);
-  };
+export function attachEncounterInteractionInput(runtime: BabylonRuntimeSubset, options: EncounterInputOptions = {}): RuntimeDispose {
+  const input = new EncounterInteractionInput(runtime, options);
+  return input.attach();
 }
