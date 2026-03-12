@@ -1,4 +1,20 @@
-export function renderMainMenu({ onNewGame, onContinue, onLoadGame, onSettings, onExit, hasSave }) {
+export interface MainMenuProps {
+  onNewGame: () => void;
+  onContinue: () => void;
+  onLoadGame: () => void;
+  onSettings: () => void;
+  onExit: () => void;
+  hasSave: boolean;
+}
+
+interface MainMenuButtonConfig {
+  label: string;
+  onClick: () => void;
+  hidden?: boolean;
+  disabled?: boolean;
+}
+
+export function renderMainMenu({ onNewGame, onContinue, onLoadGame, onSettings, onExit, hasSave }: MainMenuProps): HTMLDivElement {
   const wrap = document.createElement('div');
   wrap.className = 'sillyrpg-menu';
 
@@ -7,7 +23,7 @@ export function renderMainMenu({ onNewGame, onContinue, onLoadGame, onSettings, 
   title.textContent = 'Main Menu';
   wrap.appendChild(title);
 
-  const buttons = [
+  const buttons: MainMenuButtonConfig[] = [
     { label: 'New Game', onClick: onNewGame },
     { label: 'Continue', onClick: onContinue, hidden: !hasSave },
     { label: hasSave ? 'Load Game' : 'Load Game (No saves yet)', onClick: onLoadGame, disabled: !hasSave },
@@ -29,7 +45,11 @@ export function renderMainMenu({ onNewGame, onContinue, onLoadGame, onSettings, 
   return wrap;
 }
 
-export function renderSettingsStub({ onBack }) {
+export interface SettingsStubProps {
+  onBack: () => void;
+}
+
+export function renderSettingsStub({ onBack }: SettingsStubProps): HTMLDivElement {
   const section = document.createElement('div');
   section.className = 'sillyrpg-menu';
 

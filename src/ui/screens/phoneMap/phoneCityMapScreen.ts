@@ -1,4 +1,6 @@
 import { resolveCatalogAssetPath } from '../../../platform/browser/assetResolver.js';
+import type { RegionId } from '../../../shared/types.js';
+import { asScreenNode, type ScreenNode } from '../../screenContract.js';
 import { createInteractiveAtlasButton, createAtlasImage } from '../../components/interactiveAtlasButton.js';
 import { ensureBabylonRuntime, createBabylonUiRuntime } from '../../rendering/babylonRuntime.js';
 import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.js';
@@ -10,7 +12,37 @@ import { createInventoryScreen } from './inventory/inventoryScreen.js';
 const SCREEN_SIZE = Object.freeze({ width: 1280, height: 920 });
 const PHONE_SIZE = Object.freeze({ width: 555, height: 918, scale: 0.78 });
 
-function createPhoneScaler(phoneWidth, phoneHeight) {
+interface PhoneScaler {
+  x: (value: number) => number;
+  y: (value: number) => number;
+  w: (value: number) => number;
+  h: (value: number) => number;
+}
+
+interface PhoneDisplayController {
+  displayArea: any;
+  openMap: () => void;
+  openInventory: () => void;
+}
+
+interface PhoneButtonCallbacks {
+  map: () => void;
+  log: () => void;
+  msg: () => void;
+  inv: () => void;
+  acceptCall: () => void;
+  endCall: () => void;
+}
+
+interface MountPhoneSceneOptions {
+  onRegionOpen: (regionId: RegionId) => void;
+}
+
+export interface PhoneCityMapScreenProps {
+  onRegionOpen?: (regionId: RegionId) => void;
+}
+
+function createPhoneScaler(phoneWidth: number, phoneHeight: number): PhoneScaler {
   const scaleX = phoneWidth / PHONE_SIZE.width;
   const scaleY = phoneHeight / PHONE_SIZE.height;
 
@@ -22,7 +54,7 @@ function createPhoneScaler(phoneWidth, phoneHeight) {
   };
 }
 
-function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen }) {
+function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen }: { GUI: any; scale: PhoneScaler; mapTextureUrl: string; onRegionOpen: (regionId: RegionId) => void }): PhoneDisplayController {
   const displayArea = new GUI.Rectangle('phone-display-area');
   displayArea.width = `${scale.w(PHONE_DISPLAY_BOUNDS.width)}px`;
   displayArea.height = `${scale.h(PHONE_DISPLAY_BOUNDS.height)}px`;
@@ -56,7 +88,7 @@ function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen }) {
   inventoryViewport.isVisible = false;
   displayArea.addControl(inventoryViewport);
 
-  const hideAllScreens = () => {
+  const hideAllScreens = (): void => {
     mapViewport.isVisible = false;
     inventoryViewport.isVisible = false;
   };
@@ -74,7 +106,7 @@ function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen }) {
   };
 }
 
-function createButtonCallbacks({ phoneDisplay }) {
+function createButtonCallbacks({ phoneDisplay }: { phoneDisplay: PhoneDisplayController }): PhoneButtonCallbacks {
   return {
     map: () => phoneDisplay.openMap(),
     log: () => console.log('LOG clicked'),
@@ -88,7 +120,7 @@ function createButtonCallbacks({ phoneDisplay }) {
   };
 }
 
-function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }) {
+function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }: { GUI: any; textureUrl: string; mapTextureUrl: string; onRegionOpen: (regionId: RegionId) => void }): any {
   const uiRoot = new GUI.Rectangle('phone-root');
   uiRoot.width = `${SCREEN_SIZE.width}px`;
   uiRoot.height = `${SCREEN_SIZE.height}px`;
@@ -116,7 +148,7 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }) {
   phoneFrame.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
   phoneFrame.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
   phoneFrame.isPointerBlocker = false;
-  phoneFrame.isHitTestVisible = false; // <-- важно
+  phoneFrame.isHitTestVisible = false;
   phoneFrame.zIndex = 10;
 
   const phoneDisplay = createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen });
@@ -124,7 +156,7 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }) {
 
   const callbacks = createButtonCallbacks({ phoneDisplay });
 
-  const menuButtonPlacement = [
+  const menuButtonPlacement: Array<{ id: keyof Pick<PhoneButtonCallbacks, 'map' | 'log' | 'msg' | 'inv'>; top: number }> = [
     { id: 'map', top: 180 },
     { id: 'log', top: 225 },
     { id: 'msg', top: 268 },
@@ -215,7 +247,7 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }) {
   return uiRoot;
 }
 
-async function mountPhoneScene(canvas, { onRegionOpen }) {
+async function mountPhoneScene(canvas: HTMLCanvasElement, { onRegionOpen }: MountPhoneSceneOptions): Promise<() => void> {
   await ensureBabylonRuntime();
   const runtime = createBabylonUiRuntime(canvas);
   const GUI = runtime.BABYLON.GUI;
@@ -237,8 +269,8 @@ async function mountPhoneScene(canvas, { onRegionOpen }) {
   };
 }
 
-export function renderPhoneCityMapScreen({ onRegionOpen } = {}) {
-  const wrap = document.createElement('div');
+export function renderPhoneCityMapScreen({ onRegionOpen }: PhoneCityMapScreenProps = {}): ScreenNode {
+  const wrap = asScreenNode(document.createElement('div'));
   wrap.className = 'sillyrpg-screen sillyrpg-phone-map-screen';
 
   const canvas = document.createElement('canvas');
@@ -246,18 +278,18 @@ export function renderPhoneCityMapScreen({ onRegionOpen } = {}) {
   canvas.setAttribute('aria-label', 'City map phone UI');
   wrap.appendChild(canvas);
 
-  let cleanup = null;
+  let cleanup: null | (() => void) = null;
 
   wrap.__sillyOnMount = () => {
     mountPhoneScene(canvas, {
       onRegionOpen: typeof onRegionOpen === 'function' ? onRegionOpen : () => {}
     })
-        .then((dispose) => {
-          cleanup = dispose;
-        })
-        .catch((error) => {
-          console.error('[SillyRPG] Failed to mount Babylon phone UI.', error);
-        });
+      .then((dispose) => {
+        cleanup = dispose;
+      })
+      .catch((error) => {
+        console.error('[SillyRPG] Failed to mount Babylon phone UI.', error);
+      });
   };
 
   wrap.__sillyOnUnmount = () => {
