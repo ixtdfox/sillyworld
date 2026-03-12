@@ -1,3 +1,4 @@
+import { resolveAsset } from '../../st_bridge/asset.js';
 import { mountSceneRuntime } from '../rendering/sceneRuntime.js';
 
 function formatPosition(position) {
@@ -142,7 +143,8 @@ export function renderSceneViewScreen({ districtId, onEncounterStart } = {}) {
       districtId,
       debugEnabled,
       onEncounterStart: startCombat,
-      onDebugStateChange: updateDebugOverlay
+      onDebugStateChange: updateDebugOverlay,
+      resolveAssetPath: resolveAsset
     })
       .then((dispose) => {
         cleanup = dispose;

@@ -1,4 +1,3 @@
-import { resolveAsset } from '../../st_bridge/asset.js';
 import { applyEntityNormalization, resolveEntityNormalizationConfig } from './entityNormalization.js';
 import {
   applyEntityCollisionFromDimensions,
@@ -19,7 +18,8 @@ export async function loadAndNormalizeEntityCharacter(runtime, options = {}) {
   const {
     entityLabel,
     modelFile,
-    normalizationConfigId
+    normalizationConfigId,
+    resolveAssetPath = (path) => path
   } = options;
 
   if (typeof entityLabel !== 'string' || entityLabel.length === 0) {
@@ -37,7 +37,7 @@ export async function loadAndNormalizeEntityCharacter(runtime, options = {}) {
   console.log(`[SillyRPG] ${entityLabel} GLB loading start:`, modelFile);
 
   try {
-    const result = await runtime.BABYLON.SceneLoader.ImportMeshAsync('', '', resolveAsset(modelFile), runtime.scene);
+    const result = await runtime.BABYLON.SceneLoader.ImportMeshAsync('', '', resolveAssetPath(modelFile), runtime.scene);
     const rootNode = resolveImportedRootNode(result);
     const normalizationConfig = resolveEntityNormalizationConfig(normalizationConfigId);
 

@@ -30,19 +30,22 @@ function placeEnemyOnGround(runtime, enemyEntity, spawnPreset = DEFAULT_ENEMY_SP
 export async function createDistrictExplorationRuntime(runtime, options = {}) {
   const districtScene = await loadWorldScene(runtime, {
     sceneFile: options.sceneFile,
-    containerName: options.sceneContainerName ?? 'districtSceneRoot'
+    containerName: options.sceneContainerName ?? 'districtSceneRoot',
+    resolveAssetPath: options.resolveAssetPath
   });
 
   const playerEntity = await loadPlayerCharacter(runtime, {
     playerFile: options.playerFile,
-    playerNormalizationId: options.playerNormalizationId
+    playerNormalizationId: options.playerNormalizationId,
+    resolveAssetPath: options.resolveAssetPath
   });
   spawnPlayerCharacter(runtime, playerEntity);
 
   const enemyEntity = await loadEnemyCharacter(runtime, {
     enemyFile: options.enemyFile,
     enemyNormalizationId: options.enemyNormalizationId,
-    enemyArchetypeId: options.enemyArchetypeId
+    enemyArchetypeId: options.enemyArchetypeId,
+    resolveAssetPath: options.resolveAssetPath
   });
   placeEnemyOnGround(runtime, enemyEntity, options.enemySpawn);
 

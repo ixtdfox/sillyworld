@@ -1,6 +1,6 @@
-import { resolveAsset } from '../../st_bridge/asset.js';
+import { ASSET_PATHS } from '../../core/assets/assetCatalog.js';
 
-const SCENE_FILE = 'assets/scene_test.glb';
+const SCENE_FILE = ASSET_PATHS.scene.districtExploration;
 const GROUND_MESH_NAME = 'Ground';
 
 function resolveSceneRoots(result) {
@@ -31,12 +31,13 @@ function resolveGroundMesh({ scene, importedMeshes }) {
 
 export async function loadWorldScene(runtime, options = {}) {
   const sceneFile = options.sceneFile ?? SCENE_FILE;
+  const resolveAssetPath = options.resolveAssetPath ?? ((path) => path);
   const containerName = options.containerName ?? 'districtSceneRoot';
 
   console.log('[SillyRPG] Scene GLB loading start:', sceneFile);
 
   try {
-    const result = await runtime.BABYLON.SceneLoader.ImportMeshAsync('', '', resolveAsset(sceneFile), runtime.scene);
+    const result = await runtime.BABYLON.SceneLoader.ImportMeshAsync('', '', resolveAssetPath(sceneFile), runtime.scene);
     const sceneContainer = new runtime.BABYLON.TransformNode(containerName, runtime.scene);
     const sceneRoots = resolveSceneRoots(result);
     for (const node of sceneRoots) {

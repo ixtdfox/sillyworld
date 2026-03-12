@@ -8,6 +8,7 @@ export async function loadPlayerCharacter(runtime, options = {}) {
   return loadAndNormalizeEntityCharacter(runtime, {
     entityLabel: PLAYER_CHARACTER_ARCHETYPE.entityLabel,
     modelFile: playerFile,
-    normalizationConfigId
+    normalizationConfigId,
+    resolveAssetPath: options.resolveAssetPath
   });
 }
