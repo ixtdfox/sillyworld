@@ -1,7 +1,7 @@
 // @ts-nocheck
-const BABYLON_SCRIPT_SRC = 'https://cdn.babylonjs.com/babylon.min.js';
-const BABYLON_GUI_SCRIPT_SRC = 'https://cdn.babylonjs.com/gui/babylon.gui.min.js';
-const BABYLON_LOADERS_SCRIPT_SRC = 'https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js';
+const BABYLON_SCRIPT_SRC = '/vendor/babylon/babylon.min.js';
+const BABYLON_GUI_SCRIPT_SRC = '/vendor/babylon/babylon.gui.min.js';
+const BABYLON_LOADERS_SCRIPT_SRC = '/vendor/babylon/babylonjs.loaders.min.js';
 
 interface PositionLike { x: number; y: number; z: number; }
 interface BabylonCameraLike { name?: string; isDisposed?: () => boolean; setTarget?: (target: unknown) => void; minZ?: number; maxZ?: number; }
@@ -54,12 +54,24 @@ function loadScript(src: string): Promise<void> {
 export function ensureBabylonRuntime(): Promise<BabylonNamespaceLike> {
   if (window.BABYLON?.GUI) return Promise.resolve(window.BABYLON);
   if (!babylonLoadPromise) {
+    console.info('[SillyRPG] Loading Babylon runtime from local bundled assets.', {
+      core: BABYLON_SCRIPT_SRC,
+      gui: BABYLON_GUI_SCRIPT_SRC,
+      loaders: BABYLON_LOADERS_SCRIPT_SRC
+    });
     babylonLoadPromise = loadScript(BABYLON_SCRIPT_SRC)
       .then(() => loadScript(BABYLON_GUI_SCRIPT_SRC))
       .then(() => loadScript(BABYLON_LOADERS_SCRIPT_SRC))
       .then(() => {
         if (!window.BABYLON?.GUI) throw new Error('Babylon runtime loaded but BABYLON.GUI is unavailable.');
         return window.BABYLON;
+      })
+      .catch((error) => {
+        console.error('[SillyRPG] Babylon runtime bootstrap failed.', {
+          error,
+          attemptedSources: [BABYLON_SCRIPT_SRC, BABYLON_GUI_SCRIPT_SRC, BABYLON_LOADERS_SCRIPT_SRC]
+        });
+        throw error;
       });
   }
   return babylonLoadPromise;
