@@ -283,6 +283,11 @@ interface GuiObservable<T = unknown> {
 }
 
 export interface GuiControlLike {
+  sourceLeft?: number;
+  sourceTop?: number;
+  sourceWidth?: number;
+  sourceHeight?: number;
+  cornerRadius?: number;
   width?: string;
   height?: string;
   thickness?: number;
@@ -308,7 +313,21 @@ export interface GuiControlLike {
   onPointerUpObservable: GuiObservable<PointerInfo>;
   onPointerClickObservable: GuiObservable<PointerInfo>;
   onPointerOutObservable?: GuiObservable<PointerInfo>;
+  onWheelObservable?: GuiObservable<{ y?: number }>;
+  onValueChangedObservable?: GuiObservable<number>;
+  _currentMeasure?: { left: number; top: number };
 }
+
+export interface GuiSliderLike extends GuiControlLike {
+  minimum: number;
+  maximum: number;
+  value: number;
+  isVertical?: boolean;
+  barOffset?: number;
+  thumbColor?: string;
+  borderColor?: string;
+}
+
 
 export interface GuiRectangleLike extends GuiControlLike {}
 
@@ -323,11 +342,14 @@ export interface BabylonGuiLike {
   Image: {
     new (name: string, url?: string): GuiControlLike;
     STRETCH_FILL: number;
+    STRETCH_NONE: number;
   };
   Rectangle: new (name: string) => GuiRectangleLike;
   Ellipse: new (name: string) => GuiControlLike;
   TextBlock: new (name: string, text?: string) => GuiControlLike;
+  Slider: new (name: string) => GuiSliderLike;
 }
+
 
 //c: x:333, y:0 s: x:133, y:135
 //start: x:1060, y:160

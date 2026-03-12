@@ -1,25 +1,23 @@
 import { hideRoot, mountContent, showRoot } from './ui/mount.js';
-import { asScreenNode, hasScreenMount, hasScreenUnmount } from './ui/screenContract.js';
-import type { ScreenNode } from './ui/screenContract.js';
 import { renderTopBar } from './ui/components/topBar.js';
-import { renderMainMenu, renderSettingsStub } from './ui/screens/mainMenu.js';
+import { renderSettingsStub } from './ui/screens/mainMenu.js';
+import { MainMenuScreen } from './ui/screens/mainMenuScreen.js';
 import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionInterstitial.js';
-import { renderPhoneCityMapScreen } from './ui/screens/phoneMap/phoneCityMapScreen.js';
-import { renderSceneViewScreen } from './ui/screens/sceneViewScreen.js';
+import { MapScreen } from './ui/screens/phoneMap/phoneCityMapScreen.js';
+import { SceneViewScreen } from './ui/screens/sceneViewScreen.js';
+import { ScreenManager } from './ui/screens/screenSystem.js';
 import { MAP_LEVEL, worldStore } from './world/index.js';
-import { createStandalonePersistence } from './platform/browser/localPersistence.ts';
-import { loadSeed } from './platform/browser/seedLoader.ts';
+import { createStandalonePersistence } from './platform/browser/localPersistence.js';
+import { loadSeed } from './platform/browser/seedLoader.js';
 import type { AppController as AppControllerContract, RegionId } from './shared/types.js';
 import type { PhaseTransitionRecord } from './world/contracts.js';
 import { AppController } from './core/app/AppController.js';
-
-type ActiveScreenUnmount = (() => void) | null;
 
 const APP_TITLE = 'SillyRPG';
 
 class ApplicationSession {
   readonly #controller: AppControllerContract;
-  #activeScreenUnmount: ActiveScreenUnmount = null;
+  readonly #screenManager = new ScreenManager();
 
   constructor(controller: AppControllerContract) {
     this.#controller = controller;
@@ -28,14 +26,8 @@ class ApplicationSession {
   async start(): Promise<void> {
     console.info('[SillyRPG] Mounting application root.');
     showRoot();
-
-    try {
-      await this.#controller.initialize();
-      console.info('[SillyRPG] Startup complete.');
-    } catch (error) {
-      console.error('[SillyRPG] Startup failed during initialization.', error);
-      throw error;
-    }
+    await this.#controller.initialize();
+    console.info('[SillyRPG] Startup complete.');
   }
 
   render(): void {
@@ -52,34 +44,12 @@ class ApplicationSession {
     content.className = 'sillyrpg-content';
 
     box.append(
-      renderTopBar({
-        title: APP_TITLE,
-        breadcrumb,
-        phaseInfo,
-        onBack: () => this.back(),
-        onExit: () => this.exit(),
-        canGoBack,
-        hideExit: true
-      }),
+      renderTopBar({ title: APP_TITLE, breadcrumb, phaseInfo, onBack: () => this.back(), onExit: () => this.exit(), canGoBack, hideExit: true }),
       content
     );
 
-    const screenNode = this.renderScreenBody();
-    if (this.#activeScreenUnmount) {
-      this.#activeScreenUnmount();
-      this.#activeScreenUnmount = null;
-    }
-
-    content.appendChild(screenNode);
-    if (hasScreenUnmount(screenNode)) {
-      this.#activeScreenUnmount = screenNode.__sillyOnUnmount;
-    }
-
     mountContent(box);
-
-    if (hasScreenMount(screenNode)) {
-      screenNode.__sillyOnMount();
-    }
+    this.renderScreenBody(content);
   }
 
   private back(): void {
@@ -87,35 +57,26 @@ class ApplicationSession {
   }
 
   private exit(): void {
-    if (this.#activeScreenUnmount) {
-      this.#activeScreenUnmount();
-      this.#activeScreenUnmount = null;
-    }
-
+    this.#screenManager.clear();
     hideRoot();
   }
 
-  private renderMapScreen(): ScreenNode {
-    return asScreenNode(renderPhoneCityMapScreen({
-      onRegionOpen: (regionId: RegionId) => this.#controller.sceneTransitionController.onMapPinClick(regionId)
-    }));
-  }
-
-  private renderScreenBody(): ScreenNode {
+  private renderScreenBody(content: HTMLElement): void {
     const nav = this.#controller.navigation.getState();
-    if (nav.screen === 'settings') return asScreenNode(renderSettingsStub({ onBack: () => this.back() }));
+    if (nav.screen === 'settings') {
+      this.#screenManager.clear(content);
+      content.replaceChildren(renderSettingsStub({ onBack: () => this.back() }));
+      return;
+    }
 
     if (nav.screen === 'scene') {
-      return asScreenNode(renderSceneViewScreen({
+      this.#screenManager.mount(content, new SceneViewScreen({
         districtId: nav.contextId,
         onEncounterStart: ({ distanceToEnemy, interactionDistance }) => {
-          console.log('[SillyRPG] Transitioning exploration mode into combat mode.', {
-            districtId: nav.contextId,
-            distanceToEnemy,
-            interactionDistance
-          });
+          console.log('[SillyRPG] Transitioning exploration mode into combat mode.', { districtId: nav.contextId, distanceToEnemy, interactionDistance });
         }
       }));
+      return;
     }
 
     if (nav.screen === 'map') {
@@ -123,19 +84,19 @@ class ApplicationSession {
       if (store) {
         const [transition] = store.getPendingPhaseTransitions() as Array<PhaseTransitionRecord | undefined>;
         if (transition) {
-          return asScreenNode(renderPhaseTransitionInterstitial({
-            transition,
-            onContinue: () => {
-              this.#controller.consumePendingPhaseTransition();
-            }
-          }));
+          this.#screenManager.clear(content);
+          content.replaceChildren(renderPhaseTransitionInterstitial({ transition, onContinue: () => this.#controller.consumePendingPhaseTransition() }));
+          return;
         }
 
-        return this.renderMapScreen();
+        this.#screenManager.mount(content, new MapScreen({
+          onRegionOpen: (regionId: RegionId) => this.#controller.sceneTransitionController.onMapPinClick(regionId)
+        }));
+        return;
       }
     }
 
-    return asScreenNode(renderMainMenu({
+    this.#screenManager.mount(content, new MainMenuScreen({
       onNewGame: () => this.#controller.startNewGame(),
       onContinue: () => this.#controller.loadAndResumeGame(),
       onLoadGame: () => this.#controller.loadAndResumeGame(),

@@ -1,18 +1,40 @@
 import { createAtlasImage } from '../../../components/interactiveAtlasButton.js';
+import type { BabylonGuiLike, GuiControlLike } from '../worldMapViewport.js';
 import { INVENTORY_LAYOUT, INVENTORY_SLOT_REGION, getInventoryLayoutMetrics } from './inventoryConfig.js';
 import { createInventoryScrollbar } from './inventoryScrollbar.js';
 
-function clamp(value, min, max) {
+interface PhoneScale {
+  x: (value: number) => number;
+  y: (value: number) => number;
+  w: (value: number) => number;
+  h: (value: number) => number;
+}
+
+export interface InventoryGridViewProps {
+  GUI: BabylonGuiLike;
+  textureUrl: string;
+  scale: PhoneScale;
+  viewportWidth: number;
+  viewportHeight: number;
+}
+
+interface InventoryCell {
+  row: number;
+  col: number;
+  index: number;
+}
+
+function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function isCellVisible({ row, metrics, scrollOffset, viewportHeight }) {
+function isCellVisible({ row, metrics, scrollOffset, viewportHeight }: { row: number; metrics: ReturnType<typeof getInventoryLayoutMetrics>; scrollOffset: number; viewportHeight: number }): boolean {
   const top = metrics.originY + (row * metrics.slotHeight) - scrollOffset;
   const bottom = top + metrics.slotHeight;
   return bottom > 0 && top < viewportHeight;
 }
 
-export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth, viewportHeight }) {
+export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth, viewportHeight }: InventoryGridViewProps): GuiControlLike {
   const metrics = getInventoryLayoutMetrics(scale);
 
   const root = new GUI.Rectangle('inventory-screen-root');
@@ -38,15 +60,7 @@ export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth,
 
   for (let row = 0; row < INVENTORY_LAYOUT.rows; row += 1) {
     for (let col = 0; col < INVENTORY_LAYOUT.columns; col += 1) {
-      const slot = createAtlasImage({
-        GUI,
-        textureUrl,
-        region: INVENTORY_SLOT_REGION,
-        width: metrics.slotWidth,
-        height: metrics.slotHeight,
-        left: col * metrics.slotWidth,
-        top: row * metrics.slotHeight
-      });
+      const slot = createAtlasImage({ GUI, textureUrl, region: INVENTORY_SLOT_REGION, width: metrics.slotWidth, height: metrics.slotHeight, left: col * metrics.slotWidth, top: row * metrics.slotHeight });
       slot.isPointerBlocker = false;
       slot.isHitTestVisible = false;
       gridLayer.addControl(slot);
@@ -95,70 +109,10 @@ export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth,
 
   const maxScroll = Math.max(0, metrics.contentHeight - metrics.visibleHeight);
   let scrollOffset = 0;
-  let selectedIndex = null;
+  let selectedIndex: number | null = null;
   let isMenuVisible = false;
 
-  const scrollbar = createInventoryScrollbar({
-    GUI,
-    viewportHeight: metrics.visibleHeight,
-    top: metrics.originY,
-    left: metrics.scrollbarLeft,
-    width: metrics.scrollbarWidth,
-    maxScroll,
-    onScroll: (value) => {
-      scrollOffset = clamp(value, 0, maxScroll);
-      gridLayer.topInPixels = Math.round(metrics.originY - scrollOffset);
-      updateSelectionPresentation();
-      console.log(`inventory scrollOffset=${Math.round(scrollOffset)}`);
-    }
-  });
-
-  function getCellFromPointer(pointerCoords) {
-    const pointerX = pointerCoords?.x;
-    const pointerY = pointerCoords?.y;
-    if (typeof pointerX !== 'number' || typeof pointerY !== 'number') {
-      return null;
-    }
-
-    const bounds = pointerLayer._currentMeasure;
-    const localX = pointerX - bounds.left;
-    const localY = pointerY - bounds.top;
-    console.log(`inventory click screen=(${Math.round(pointerX)},${Math.round(pointerY)})`);
-    console.log(`inventory click local=(${Math.round(localX)},${Math.round(localY)})`);
-
-    const insideGridX = localX >= metrics.originX && localX < metrics.originX + metrics.contentWidth;
-    const insideGridY = localY >= metrics.originY && localY < metrics.originY + metrics.visibleHeight;
-    if (!insideGridX || !insideGridY) return null;
-
-    const contentX = localX - metrics.originX;
-    const contentY = localY - metrics.originY + scrollOffset;
-
-    if (contentY < 0 || contentY >= metrics.contentHeight) return null;
-
-    const col = Math.floor(contentX / metrics.slotWidth);
-    const row = Math.floor(contentY / metrics.slotHeight);
-
-    if (col < 0 || col >= INVENTORY_LAYOUT.columns || row < 0 || row >= INVENTORY_LAYOUT.rows) {
-      return null;
-    }
-
-    const index = row * INVENTORY_LAYOUT.columns + col;
-    console.log(`inventory row=${row}, col=${col}, slotIndex=${index}`);
-    console.log(`inventory scrollOffset=${Math.round(scrollOffset)}`);
-
-    return { col, row, index };
-  }
-
-  function clearSelection() {
-    if (selectedIndex !== null) {
-      console.log(`inventory selected slot=${selectedIndex} -> cleared`);
-    }
-    selectedIndex = null;
-    isMenuVisible = false;
-    updateSelectionPresentation();
-  }
-
-  function updateSelectionPresentation() {
+  const updateSelectionPresentation = (): void => {
     if (selectedIndex === null) {
       highlight.isVisible = false;
       contextMenu.isVisible = false;
@@ -178,21 +132,57 @@ export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth,
       return;
     }
 
-    const menuLeft = clamp(
-      metrics.originX + ((col + 1) * metrics.slotWidth) + scale.w(INVENTORY_LAYOUT.contextMenuOffsetX),
-      0,
-      viewportWidth - scale.w(INVENTORY_LAYOUT.contextMenuWidth)
-    );
-    const menuTop = clamp(
-      metrics.originY + (row * metrics.slotHeight) - scrollOffset + scale.h(INVENTORY_LAYOUT.contextMenuOffsetY),
-      0,
-      viewportHeight - scale.h(INVENTORY_LAYOUT.contextMenuHeight)
-    );
-
-    contextMenu.leftInPixels = Math.round(menuLeft);
-    contextMenu.topInPixels = Math.round(menuTop);
+    contextMenu.leftInPixels = Math.round(clamp(metrics.originX + ((col + 1) * metrics.slotWidth) + scale.w(INVENTORY_LAYOUT.contextMenuOffsetX), 0, viewportWidth - scale.w(INVENTORY_LAYOUT.contextMenuWidth)));
+    contextMenu.topInPixels = Math.round(clamp(metrics.originY + (row * metrics.slotHeight) - scrollOffset + scale.h(INVENTORY_LAYOUT.contextMenuOffsetY), 0, viewportHeight - scale.h(INVENTORY_LAYOUT.contextMenuHeight)));
     contextMenu.isVisible = true;
-  }
+  };
+
+  const scrollbar = createInventoryScrollbar({
+    GUI,
+    viewportHeight: metrics.visibleHeight,
+    top: metrics.originY,
+    left: metrics.scrollbarLeft,
+    width: metrics.scrollbarWidth,
+    maxScroll,
+    onScroll: (value) => {
+      scrollOffset = clamp(value, 0, maxScroll);
+      gridLayer.topInPixels = Math.round(metrics.originY - scrollOffset);
+      updateSelectionPresentation();
+      console.log(`inventory scrollOffset=${Math.round(scrollOffset)}`);
+    }
+  });
+
+  const getCellFromPointer = (pointerCoords: { x?: number; y?: number } | undefined): InventoryCell | null => {
+    const pointerX = pointerCoords?.x;
+    const pointerY = pointerCoords?.y;
+    if (typeof pointerX !== 'number' || typeof pointerY !== 'number') return null;
+
+    const bounds = pointerLayer._currentMeasure;
+    if (!bounds) return null;
+
+    const localX = pointerX - bounds.left;
+    const localY = pointerY - bounds.top;
+
+    const insideGridX = localX >= metrics.originX && localX < metrics.originX + metrics.contentWidth;
+    const insideGridY = localY >= metrics.originY && localY < metrics.originY + metrics.visibleHeight;
+    if (!insideGridX || !insideGridY) return null;
+
+    const contentX = localX - metrics.originX;
+    const contentY = localY - metrics.originY + scrollOffset;
+    if (contentY < 0 || contentY >= metrics.contentHeight) return null;
+
+    const col = Math.floor(contentX / metrics.slotWidth);
+    const row = Math.floor(contentY / metrics.slotHeight);
+    if (col < 0 || col >= INVENTORY_LAYOUT.columns || row < 0 || row >= INVENTORY_LAYOUT.rows) return null;
+
+    return { col, row, index: row * INVENTORY_LAYOUT.columns + col };
+  };
+
+  const clearSelection = (): void => {
+    selectedIndex = null;
+    isMenuVisible = false;
+    updateSelectionPresentation();
+  };
 
   pointerLayer.onPointerClickObservable.add((pointerCoords) => {
     const cell = getCellFromPointer(pointerCoords);
@@ -201,9 +191,7 @@ export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth,
       return;
     }
 
-    if (selectedIndex !== null && selectedIndex !== cell.index) {
-      isMenuVisible = false;
-    }
+    if (selectedIndex !== null && selectedIndex !== cell.index) isMenuVisible = false;
 
     if (selectedIndex === cell.index) {
       isMenuVisible = !isMenuVisible;
@@ -213,11 +201,10 @@ export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth,
 
     selectedIndex = cell.index;
     isMenuVisible = true;
-    console.log(`inventory selected slot=${selectedIndex}`);
     updateSelectionPresentation();
   });
 
-  pointerLayer.onWheelObservable.add((wheelInfo) => {
+  pointerLayer.onWheelObservable?.add((wheelInfo) => {
     const delta = wheelInfo.y;
     if (typeof delta !== 'number' || Number.isNaN(delta)) return;
     scrollbar.setValue(scrollOffset + (delta > 0 ? metrics.slotHeight / 3 : -metrics.slotHeight / 3));

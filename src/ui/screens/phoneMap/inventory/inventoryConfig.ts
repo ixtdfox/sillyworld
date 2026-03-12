@@ -1,5 +1,12 @@
 import { PHONE_DISPLAY_BOUNDS } from '../phoneDisplayLayout.js';
 
+interface PhoneScale {
+  x: (value: number) => number;
+  y: (value: number) => number;
+  w: (value: number) => number;
+  h: (value: number) => number;
+}
+
 export const INVENTORY_LAYOUT = Object.freeze({
   columns: 3,
   rows: 10,
@@ -22,7 +29,7 @@ export const INVENTORY_SLOT_REGION = Object.freeze({
   height: 135
 });
 
-export function getInventoryLayoutMetrics(scale) {
+export function getInventoryLayoutMetrics(scale: PhoneScale) {
   const originX = scale.x(INVENTORY_LAYOUT.originX - PHONE_DISPLAY_BOUNDS.left);
   const originY = scale.y(INVENTORY_LAYOUT.originY - PHONE_DISPLAY_BOUNDS.top);
   const slotWidth = scale.w(INVENTORY_LAYOUT.slotWidth);

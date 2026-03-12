@@ -1,3 +1,10 @@
+export interface AtlasRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export const PHONE_UI_TEXTURE_SIZE = Object.freeze({ width: 1536, height: 1024 });
 
 export const PHONE_UI_ATLAS = Object.freeze({
@@ -17,7 +24,7 @@ export const PHONE_UI_ATLAS = Object.freeze({
     },
     msg: {
       normal: { x: 0, y: 279, width: 166, height: 93 },
-      pressed: { x: 172 , y: 279, width: 166, height: 93 }
+      pressed: { x: 172, y: 279, width: 166, height: 93 }
     }
   },
   statusStrip: {
@@ -35,4 +42,3 @@ export const PHONE_UI_ATLAS = Object.freeze({
     }
   }
 });
-

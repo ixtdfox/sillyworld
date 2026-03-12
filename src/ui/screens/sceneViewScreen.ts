@@ -1,5 +1,6 @@
-import { resolveAssetPath } from '../../platform/browser/assetResolver.ts';
+import { resolveAssetPath } from '../../platform/browser/assetResolver.js';
 import { mountSceneRuntime } from '../rendering/sceneRuntime.js';
+import { Screen } from './screenSystem.js';
 import type {
   EncounterStartPayload,
   NormalizationDebugInfo,
@@ -8,26 +9,23 @@ import type {
   RuntimeDispose
 } from '../rendering/runtimeContracts.js';
 
-function formatPosition(position: PositionLike | null | undefined) {
-  if (!position) {
-    return 'n/a';
-  }
+export interface SceneViewScreenProps {
+  districtId?: string;
+  onEncounterStart?: (details: EncounterStartPayload) => void;
+}
 
+function formatPosition(position: PositionLike | null | undefined): string {
+  if (!position) return 'n/a';
   return `x:${position.x.toFixed(2)} y:${position.y.toFixed(2)} z:${position.z.toFixed(2)}`;
 }
 
-function formatNumber(value: number | null | undefined) {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    return 'n/a';
-  }
-
+function formatNumber(value: number | null | undefined): string {
+  if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
   return value.toFixed(2);
 }
 
-function formatNormalizationLine(label: string, normalization: NormalizationDebugInfo | null | undefined) {
-  if (!normalization) {
-    return `${label}: n/a`;
-  }
+function formatNormalizationLine(label: string, normalization: NormalizationDebugInfo | null | undefined): string {
+  if (!normalization) return `${label}: n/a`;
 
   return [
     `${label}: ${normalization.entityId ?? 'n/a'}`,
@@ -40,7 +38,7 @@ function formatNormalizationLine(label: string, normalization: NormalizationDebu
   ].join(' | ');
 }
 
-function buildDebugLines(debugState: RuntimeDebugState) {
+function buildDebugLines(debugState: RuntimeDebugState): string[] {
   const mode = debugState?.mode ?? 'loading';
 
   if (mode === 'combat') {
@@ -80,93 +78,106 @@ function buildDebugLines(debugState: RuntimeDebugState) {
   return ['[Debug Overlay]', `mode: ${mode}`];
 }
 
-function resolveSceneDebugEnabled() {
-  if (typeof window === 'undefined') {
-    return false;
-  }
+function resolveSceneDebugEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
 
   const params = new URLSearchParams(window.location.search);
   const queryFlag = params.get('debugScene');
-  if (queryFlag === '1' || queryFlag === 'true') {
-    return true;
-  }
-
-  if (queryFlag === '0' || queryFlag === 'false') {
-    return false;
-  }
-
+  if (queryFlag === '1' || queryFlag === 'true') return true;
+  if (queryFlag === '0' || queryFlag === 'false') return false;
   return true;
 }
 
-export function renderSceneViewScreen({ districtId, onEncounterStart }: { districtId?: string; onEncounterStart?: (details: EncounterStartPayload) => void } = {}) {
-  const wrap = document.createElement('div') as HTMLDivElement & {
-    __sillyOnMount?: () => void;
-    __sillyOnUnmount?: () => void;
-  };
-  wrap.className = 'sillyrpg-screen sillyrpg-scene-view-screen';
-  wrap.dataset['mode'] = 'exploration';
+export class SceneViewScreen extends Screen {
+  readonly #props: SceneViewScreenProps;
+  readonly #debugEnabled: boolean;
 
-  const canvas = document.createElement('canvas');
-  canvas.className = 'sillyrpg-babylon-canvas sillyrpg-scene-canvas';
-  canvas.setAttribute('aria-label', '3D scene view');
-  wrap.appendChild(canvas);
+  #canvas: HTMLCanvasElement | null = null;
+  #debugOverlay: HTMLPreElement | null = null;
+  #cleanup: RuntimeDispose | null = null;
+  #combatStarted = false;
 
-  const debugEnabled = resolveSceneDebugEnabled();
+  constructor(props: SceneViewScreenProps = {}) {
+    super();
+    this.#props = props;
+    this.#debugEnabled = resolveSceneDebugEnabled();
+  }
 
-  const debugOverlay = document.createElement('pre');
-  debugOverlay.className = 'sillyrpg-scene-debug-overlay';
-  debugOverlay.hidden = !debugEnabled;
-  debugOverlay.setAttribute('aria-live', 'polite');
-  wrap.appendChild(debugOverlay);
+  protected createRoot(): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'sillyrpg-screen sillyrpg-scene-view-screen';
+    wrap.dataset['mode'] = 'exploration';
 
-  let cleanup: RuntimeDispose | null = null;
-  let combatStarted = false;
+    this.#canvas = document.createElement('canvas');
+    this.#canvas.className = 'sillyrpg-babylon-canvas sillyrpg-scene-canvas';
+    this.#canvas.setAttribute('aria-label', '3D scene view');
 
-  const startCombat = (details: EncounterStartPayload) => {
-    if (combatStarted) {
-      return;
-    }
+    this.#debugOverlay = document.createElement('pre');
+    this.#debugOverlay.className = 'sillyrpg-scene-debug-overlay';
+    this.#debugOverlay.hidden = !this.#debugEnabled;
+    this.#debugOverlay.setAttribute('aria-live', 'polite');
 
-    combatStarted = true;
-    wrap.dataset['mode'] = 'combat';
-    wrap.classList.add('sillyrpg-scene-combat-mode');
-    onEncounterStart?.(details);
-  };
+    wrap.append(this.#canvas, this.#debugOverlay);
+    this.updateDebugOverlay({ mode: 'loading' });
 
-  const updateDebugOverlay = (debugState: RuntimeDebugState) => {
-    if (!debugEnabled) {
-      return;
-    }
+    return wrap;
+  }
 
-    const mode = debugState?.mode ?? 'loading';
-    wrap.dataset['mode'] = mode;
-    debugOverlay.textContent = buildDebugLines(debugState).join('\n');
-  };
+  override mount(): void {
+    if (!this.#canvas) return;
 
-  updateDebugOverlay({ mode: 'loading' });
-
-  wrap.__sillyOnMount = () => {
-    mountSceneRuntime(canvas, {
-      districtId,
-      debugEnabled,
-      onEncounterStart: startCombat,
-      onDebugStateChange: updateDebugOverlay,
+    mountSceneRuntime(this.#canvas, {
+      districtId: this.#props.districtId,
+      debugEnabled: this.#debugEnabled,
+      onEncounterStart: (details) => this.startCombat(details),
+      onDebugStateChange: (debugState) => this.updateDebugOverlay(debugState),
       resolveAssetPath
     })
       .then((dispose) => {
-        cleanup = dispose;
+        this.#cleanup = dispose;
       })
       .catch((error: unknown) => {
         console.error('[SillyRPG] Failed to mount 3D scene view.', error);
       });
-  };
+  }
 
-  wrap.__sillyOnUnmount = () => {
-    if (cleanup) {
-      cleanup();
-      cleanup = null;
+  override update(): void {
+    this.updateDebugOverlay({ mode: this.#combatStarted ? 'combat' : 'loading' });
+  }
+
+  override unmount(): void {
+    if (this.#cleanup) {
+      this.#cleanup();
+      this.#cleanup = null;
     }
-  };
+  }
 
-  return wrap;
+  override dispose(): void {
+    super.dispose();
+    this.#canvas = null;
+    this.#debugOverlay = null;
+    this.#combatStarted = false;
+  }
+
+  private startCombat(details: EncounterStartPayload): void {
+    if (this.#combatStarted) return;
+
+    this.#combatStarted = true;
+    if (this.root) {
+      this.root.dataset['mode'] = 'combat';
+      this.root.classList.add('sillyrpg-scene-combat-mode');
+    }
+
+    this.#props.onEncounterStart?.(details);
+  }
+
+  private updateDebugOverlay(debugState: RuntimeDebugState): void {
+    if (!this.#debugEnabled || !this.#debugOverlay) return;
+
+    if (this.root) {
+      this.root.dataset['mode'] = debugState?.mode ?? 'loading';
+    }
+
+    this.#debugOverlay.textContent = buildDebugLines(debugState).join('\n');
+  }
 }

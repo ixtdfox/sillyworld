@@ -1,16 +1,27 @@
-function clamp(value, min, max) {
+import type { BabylonGuiLike, GuiControlLike, GuiSliderLike } from '../worldMapViewport.js';
+
+function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export function createInventoryScrollbar({
-  GUI,
-  viewportHeight,
-  top,
-  left,
-  width,
-  maxScroll,
-  onScroll
-}) {
+export interface InventoryScrollbarProps {
+  GUI: BabylonGuiLike;
+  viewportHeight: number;
+  top: number;
+  left: number;
+  width: number;
+  maxScroll: number;
+  onScroll: (value: number) => void;
+}
+
+export interface InventoryScrollbarController {
+  control: GuiControlLike;
+  setValue: (value: number) => void;
+  getValue: () => number;
+  max: () => number;
+}
+
+export function createInventoryScrollbar({ GUI, viewportHeight, top, left, width, maxScroll, onScroll }: InventoryScrollbarProps): InventoryScrollbarController {
   const control = new GUI.Rectangle('inventory-scrollbar-root');
   control.width = `${width}px`;
   control.height = `${viewportHeight}px`;
@@ -25,9 +36,7 @@ export function createInventoryScrollbar({
   control.zIndex = 55;
 
   const thumbMinHeight = Math.max(16, Math.round(width * 1.4));
-  const thumbHeight = maxScroll <= 0
-    ? viewportHeight
-    : Math.max(thumbMinHeight, Math.round((viewportHeight / (viewportHeight + maxScroll)) * viewportHeight));
+  const thumbHeight = maxScroll <= 0 ? viewportHeight : Math.max(thumbMinHeight, Math.round((viewportHeight / (viewportHeight + maxScroll)) * viewportHeight));
 
   const thumb = new GUI.Rectangle('inventory-scrollbar-thumb');
   thumb.width = `${Math.max(2, width - 4)}px`;
@@ -42,7 +51,7 @@ export function createInventoryScrollbar({
   thumb.isPointerBlocker = false;
   control.addControl(thumb);
 
-  const slider = new GUI.Slider('inventory-scrollbar-slider');
+  const slider = new GUI.Slider('inventory-scrollbar-slider') as GuiSliderLike;
   slider.minimum = 0;
   slider.maximum = Math.max(0, maxScroll);
   slider.value = 0;
@@ -61,13 +70,13 @@ export function createInventoryScrollbar({
   slider.zIndex = 56;
   control.addControl(slider);
 
-  const updateThumbPosition = (value) => {
+  const updateThumbPosition = (value: number): void => {
     const travel = Math.max(0, viewportHeight - thumbHeight);
     const ratio = slider.maximum <= 0 ? 0 : value / slider.maximum;
     thumb.topInPixels = Math.round(travel * ratio);
   };
 
-  const setValue = (nextValue) => {
+  const setValue = (nextValue: number): void => {
     const value = clamp(nextValue, 0, slider.maximum);
     if (Math.abs(slider.value - value) > 0.01) {
       slider.value = value;
@@ -77,7 +86,7 @@ export function createInventoryScrollbar({
     onScroll(value);
   };
 
-  slider.onValueChangedObservable.add((value) => {
+  slider.onValueChangedObservable?.add((value: number) => {
     updateThumbPosition(value);
     onScroll(value);
   });
