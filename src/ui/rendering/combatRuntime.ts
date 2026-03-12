@@ -20,8 +20,8 @@ import { createCombatDebugShell } from './combatDebugShell.ts';
 import { ASSET_PATHS } from '../../core/assets/assetCatalog.ts';
 
 const COMBAT_SCENE_FILE = ASSET_PATHS.scenes.combatPrototype;
-const DEFAULT_PLAYER_SPAWN = Object.freeze({ x: -1.5, y: 0, z: 1.5 });
-const DEFAULT_ENEMY_SPAWN = Object.freeze({ x: 1.5, y: 0, z: -1.5 });
+const DEFAULT_PLAYER_SPAWN_CELL = Object.freeze({ x: -1, z: 1 });
+const DEFAULT_ENEMY_SPAWN_CELL = Object.freeze({ x: 1, z: -1 });
 const DEFAULT_AP_PER_TURN = 2;
 const DEFAULT_MP_PER_TURN = 6;
 const DEFAULT_HP = 20;
@@ -47,9 +47,51 @@ function resolveGroundY({ runtime, x, z, fallbackY = 0 }) {
   return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 }
 
-function placeOnGround(runtime, rootNode, spawn) {
-  const y = resolveGroundY({ runtime, x: spawn.x, z: spawn.z, fallbackY: spawn.y ?? 0 });
-  rootNode.position.copyFrom(new runtime.BABYLON.Vector3(spawn.x, y, spawn.z));
+function normalizeCell(cell, fallbackCell) {
+  if (cell && Number.isFinite(cell.x) && Number.isFinite(cell.z)) {
+    return {
+      x: Math.trunc(cell.x),
+      z: Math.trunc(cell.z)
+    };
+  }
+
+  return { ...fallbackCell };
+}
+
+function placeUnitAtCell(runtime, unit, gridMapper, cell, options = {}) {
+  const resolvedCell = normalizeCell(cell, options.fallbackCell ?? { x: 0, z: 0 });
+  const worldPosition = gridMapper.gridCellToWorld(resolvedCell, {
+    resolveY: ({ x, z }) => resolveGroundY({
+      runtime,
+      x,
+      z,
+      fallbackY: options.fallbackY ?? unit?.rootNode?.position?.y ?? 0
+    })
+  });
+
+  unit.rootNode.position.copyFrom(new runtime.BABYLON.Vector3(
+    worldPosition.x,
+    worldPosition.y,
+    worldPosition.z
+  ));
+  unit.gridCell = resolvedCell;
+
+  console.debug('[SillyRPG] Combat unit placement applied', {
+    unitId: unit.id,
+    source: options.source ?? 'unknown',
+    logicalCell: resolvedCell,
+    computedWorld: worldPosition,
+    finalRootTransform: {
+      x: unit.rootNode.position.x,
+      y: unit.rootNode.position.y,
+      z: unit.rootNode.position.z
+    }
+  });
+
+  return {
+    cell: resolvedCell,
+    worldPosition
+  };
 }
 
 function createCombatUnit(id, team, entity, initiative = 0, displayName = id) {
@@ -143,14 +185,22 @@ export async function createCombatRuntime(runtime, options = {}) {
     blockedCells: combatGridConfig.blockedCells
   });
 
-  placeOnGround(runtime, playerEntity.rootNode, options.playerSpawn ?? DEFAULT_PLAYER_SPAWN);
-  placeOnGround(runtime, enemyEntity.rootNode, options.enemySpawn ?? DEFAULT_ENEMY_SPAWN);
-
   const playerUnit = createCombatUnit('player_1', 'player', playerEntity, options.playerInitiative ?? 100, 'Player');
   const enemyUnit = createCombatUnit('enemy_1', 'enemy', enemyEntity, options.enemyInitiative ?? 10, 'Enemy');
+  const playerSpawnCell = normalizeCell(options.playerSpawnCell, DEFAULT_PLAYER_SPAWN_CELL);
+  const enemySpawnCell = normalizeCell(options.enemySpawnCell, DEFAULT_ENEMY_SPAWN_CELL);
 
-  playerUnit.gridCell = gridMapper.worldToGridCell(playerUnit.rootNode.position);
-  enemyUnit.gridCell = gridMapper.worldToGridCell(enemyUnit.rootNode.position);
+  placeUnitAtCell(runtime, playerUnit, gridMapper, playerSpawnCell, {
+    source: 'combat_spawn_player',
+    fallbackCell: DEFAULT_PLAYER_SPAWN_CELL,
+    fallbackY: options.playerSpawn?.y ?? 0
+  });
+  placeUnitAtCell(runtime, enemyUnit, gridMapper, enemySpawnCell, {
+    source: 'combat_spawn_enemy',
+    fallbackCell: DEFAULT_ENEMY_SPAWN_CELL,
+    fallbackY: options.enemySpawn?.y ?? 0
+  });
+
   grid.setOccupied(playerUnit.gridCell, playerUnit.id);
   grid.setOccupied(enemyUnit.gridCell, enemyUnit.id);
 
@@ -163,6 +213,8 @@ export async function createCombatRuntime(runtime, options = {}) {
   const combatState = createCombatState({ combatScene, playerUnit, enemyUnit, turnManager });
   combatState.status = 'active';
   combatState.result = null;
+  combatState.endRequested = false;
+  combatState.endReason = null;
   const actionMode = createPlayerActionModeStateMachine({
     initialMode: PLAYER_ACTION_MODES.IDLE
   });
@@ -399,7 +451,7 @@ export async function createCombatRuntime(runtime, options = {}) {
 
     const livingActiveUnit = advanceToNextLivingUnit();
     if (!livingActiveUnit) {
-      evaluateAndFinalizeCombat();
+      evaluateAndFinalizeCombat('turn_start_no_living_units');
       syncCombatHudState();
       return;
     }
@@ -431,8 +483,8 @@ export async function createCombatRuntime(runtime, options = {}) {
     startTurn();
   };
 
-  const evaluateAndFinalizeCombat = () => {
-    if (combatState.status !== 'active') {
+  const evaluateAndFinalizeCombat = (source = 'unknown') => {
+    if (combatState.status !== 'active' || combatState.endRequested) {
       return {
         ended: true,
         result: combatState.result
@@ -444,6 +496,8 @@ export async function createCombatRuntime(runtime, options = {}) {
       return outcome;
     }
 
+    combatState.endRequested = true;
+    combatState.endReason = source;
     combatState.status = 'ended';
     combatState.result = outcome.result;
     combatState.phase = 'combat_end';
@@ -457,6 +511,11 @@ export async function createCombatRuntime(runtime, options = {}) {
       action: 'combat_end',
       result: outcome.result
     };
+
+    console.info('[SillyRPG] Combat end triggered', {
+      source,
+      result: outcome.result
+    });
 
     options.onCombatEnd?.({
       result: outcome.result,
@@ -492,7 +551,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     }
 
     combatState.resetPendingMovementInput('attack_resolved');
-    const outcome = evaluateAndFinalizeCombat();
+    const outcome = evaluateAndFinalizeCombat('basic_attack');
     syncCombatHudState();
     return {
       ...result,
@@ -584,14 +643,10 @@ export async function createCombatRuntime(runtime, options = {}) {
         break;
       }
 
-      const destinationWorld = gridMapper.gridCellToWorld(selectedMove.destinationCell, {
-        resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: activeUnit.rootNode.position.y })
+      placeUnitAtCell(runtime, activeUnit, gridMapper, selectedMove.destinationCell, {
+        source: 'enemy_movement',
+        fallbackY: activeUnit.rootNode.position.y
       });
-      activeUnit.rootNode.position.copyFrom(new runtime.BABYLON.Vector3(
-        destinationWorld.x,
-        destinationWorld.y,
-        destinationWorld.z
-      ));
 
       combatState.lastActionResult = {
         success: true,
@@ -716,19 +771,33 @@ export async function createCombatRuntime(runtime, options = {}) {
     createPanel: () => null
   });
 
+  let disposed = false;
+
+  const dispose = () => {
+    if (disposed) {
+      return;
+    }
+
+    disposed = true;
+    console.debug('[SillyRPG] Combat runtime cleanup start', {
+      result: combatState.result,
+      endReason: combatState.endReason
+    });
+    detachCombatAttackInputController?.();
+    detachCombatMovementController?.();
+    debugShell?.dispose?.();
+    detachCamera?.();
+    enemyEntity.rootNode?.dispose(false, true);
+    playerEntity.rootNode?.dispose(false, true);
+    combatScene.sceneContainer?.dispose(false, true);
+    console.debug('[SillyRPG] Combat runtime cleanup complete');
+  };
+
   return {
     combatState,
     combatScene,
     playerUnit,
     enemyUnit,
-    dispose: () => {
-      detachCamera?.();
-      detachCombatMovementController?.();
-      detachCombatAttackInputController?.();
-      debugShell?.dispose?.();
-      enemyEntity.rootNode?.dispose(false, true);
-      playerEntity.rootNode?.dispose(false, true);
-      combatScene.sceneContainer?.dispose(false, true);
-    }
+    dispose
   };
 }

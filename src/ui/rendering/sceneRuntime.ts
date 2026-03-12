@@ -282,10 +282,12 @@ export class SceneRuntime {
 
   async #transitionOutOfCombat(): Promise<void> {
     if (this.#combatExitInProgress) {
+      console.debug('[SillyRPG] Combat exit ignored because a transition is already in progress.');
       return;
     }
 
     this.#combatExitInProgress = true;
+    console.info('[SillyRPG] Combat exit transition start');
     this.#debugState.setMode('transitioning');
     this.#debugState.emit(this.#activeGameplayRuntime, !this.#encounterCoordinator.canStartCombat(), this.#interactionDistance);
     this.#disposeActiveGameplayRuntime();
@@ -295,6 +297,7 @@ export class SceneRuntime {
       await this.#setupExplorationRuntime();
     } finally {
       this.#combatExitInProgress = false;
+      console.info('[SillyRPG] Combat exit transition complete');
     }
   }
 
@@ -315,7 +318,11 @@ export class SceneRuntime {
       enemyNormalizationId: this.#options.enemyNormalizationId,
       enemyArchetypeId: this.#options.enemyArchetypeId,
       resolveAssetPath: this.#options.resolveAssetPath,
-      onCombatEnd: () => {
+      onCombatEnd: ({ result, combatState: resolvedCombatState }) => {
+        console.info('[SillyRPG] Combat end callback received', {
+          result: result ?? null,
+          source: resolvedCombatState?.endReason ?? 'unknown'
+        });
         this.#transitionOutOfCombat().catch((error) => {
           console.error('[SillyRPG] Failed to transition from combat to exploration.', error);
         });
