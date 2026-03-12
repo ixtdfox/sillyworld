@@ -67,8 +67,14 @@ export function createCombatGridOverlayRenderer(runtime, options = {}) {
 
   let gridMesh = null;
   let signature = '';
+  let layerVisible = true;
 
   const rebuildOverlay = () => {
+    if (!layerVisible) {
+      gridMesh?.setEnabled(false);
+      return;
+    }
+
     const mapper = combatState.gridMapper;
     const bounds = combatState.grid?.bounds;
 
@@ -103,14 +109,24 @@ export function createCombatGridOverlayRenderer(runtime, options = {}) {
       gridMesh.material.wireframe = false;
     }
 
+    gridMesh.setEnabled(true);
+
   };
 
   const beforeRenderObserver = runtime.scene.onBeforeRenderObservable.add(rebuildOverlay);
   rebuildOverlay();
 
-  return () => {
-    runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
-    gridMesh?.dispose(false, true);
-    gridMesh = null;
+  return {
+    setVisible: (visible) => {
+      layerVisible = visible !== false;
+      if (gridMesh) {
+        gridMesh.setEnabled(layerVisible);
+      }
+    },
+    dispose: () => {
+      runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
+      gridMesh?.dispose(false, true);
+      gridMesh = null;
+    }
   };
 }

@@ -61,6 +61,7 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
 
   const highlightsByCell = new Map();
   let cacheSignature = '';
+  let layerVisible = true;
 
   const clear = () => {
     cacheSignature = '';
@@ -73,6 +74,7 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       combatState.status === 'active'
       && combatState.phase === 'turn_active'
       && activeUnit?.id === playerUnit.id
+      && layerVisible
       && isVisible()
       && playerUnit.isAlive
     );
@@ -112,8 +114,18 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
   const beforeRenderObserver = runtime.scene.onBeforeRenderObservable.add(render);
   render();
 
-  return () => {
-    runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
-    clear();
+  const controller = {
+    setVisible: (visible) => {
+      layerVisible = visible !== false;
+      if (!layerVisible) {
+        clear();
+      }
+    },
+    dispose: () => {
+      runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
+      clear();
+    }
   };
+
+  return controller;
 }
