@@ -79,8 +79,24 @@ export function attachGameplayIsometricCamera(runtime, followTarget, options = {
 
   return () => {
     runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
+    const detachedCameraWasActive = runtime.scene.activeCamera === camera;
+    const detachedCameraPosition = camera.position?.clone?.();
     if (!camera.isDisposed()) {
       camera.dispose();
+    }
+
+    if (detachedCameraWasActive) {
+      const fallbackCamera = new BABYLON.FreeCamera(
+        'gameplayCameraDetachedFallback',
+        detachedCameraPosition ?? new BABYLON.Vector3(0, 8, -10),
+        runtime.scene
+      );
+      fallbackCamera.setTarget(new BABYLON.Vector3(0, 0, 0));
+      fallbackCamera.minZ = 0.1;
+      fallbackCamera.maxZ = 1000;
+      runtime.scene.activeCamera = fallbackCamera;
+      runtime.camera = fallbackCamera;
+      console.debug('[SillyRPG] Gameplay camera detached; fallback camera activated.');
     }
   };
 }
