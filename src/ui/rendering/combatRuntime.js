@@ -16,8 +16,9 @@ import { createCombatGridOverlayRenderer } from './combatGridOverlayRenderer.js'
 import { createCombatMovementRangeHighlighter } from './combatMovementRangeHighlighter.js';
 import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from './playerActionModeStateMachine.js';
 import { createCombatDebugShell } from './combatDebugShell.js';
+import { ASSET_PATHS } from '../../core/assets/assetCatalog.js';
 
-const COMBAT_SCENE_FILE = 'assets/combat.glb';
+const COMBAT_SCENE_FILE = ASSET_PATHS.scenes.combatPrototype;
 const DEFAULT_PLAYER_SPAWN = Object.freeze({ x: -1.5, y: 0, z: 1.5 });
 const DEFAULT_ENEMY_SPAWN = Object.freeze({ x: 1.5, y: 0, z: -1.5 });
 const DEFAULT_AP_PER_TURN = 2;

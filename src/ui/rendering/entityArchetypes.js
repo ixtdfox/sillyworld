@@ -1,6 +1,8 @@
-const PLAYER_CHARACTER_FILE = 'assets/character.glb';
-const HUMANOID_ENEMY_FILE = 'assets/enemy.glb';
-const STONE_GOLEM_FILE = 'assets/enemy.glb';
+import { ASSET_PATHS } from '../../core/assets/assetCatalog.js';
+
+const PLAYER_CHARACTER_FILE = ASSET_PATHS.models.characters.player;
+const HUMANOID_ENEMY_FILE = ASSET_PATHS.models.characters.enemyHumanoidRaider;
+const STONE_GOLEM_FILE = ASSET_PATHS.models.characters.monsterStoneGolem;
 
 export const PLAYER_CHARACTER_ARCHETYPE = Object.freeze({
   archetypeId: 'player',
