@@ -1,68 +1,79 @@
 import { createNavigationStore } from '../navigation/navigationStore.js';
 import { createSceneTransitionController } from '../navigation/sceneTransitionController.js';
+import type {
+  AppController,
+  AppControllerDeps,
+  AppControllerState,
+  MapLevelContext,
+  NavigationState,
+  PhaseLabels,
+  PhasePresentation,
+  TimePhaseId,
+  WorldClockSnapshot,
+  WorldStore,
+  WorldStoreStateSnapshot
+} from '../../shared/types.js';
 
-/** @typedef {import('../../shared/types').AppController} AppController */
-/** @typedef {import('../../shared/types').AppControllerDeps} AppControllerDeps */
-/** @typedef {import('../../shared/types').MapLevelId} MapLevelId */
-/** @typedef {import('../../shared/types').NavigationState} NavigationState */
-/** @typedef {import('../../shared/types').PhasePresentation} PhasePresentation */
-
-const PHASE_LABELS = Object.freeze({
+const PHASE_LABELS: PhaseLabels = Object.freeze({
   morning: 'Morning',
   day: 'Day',
   evening: 'Evening',
   night: 'Night'
 });
 
-const PHASE_HINTS = Object.freeze({
+const PHASE_HINTS: PhaseLabels = Object.freeze({
   morning: 'Most civic services are open and people are easier to find.',
   day: 'Public movement is busiest; daytime-only locations are active.',
   evening: 'Some routines wind down while night-active contacts begin to appear.',
   night: 'Night-only routes and contacts open up, while many daytime spots close.'
 });
 
-/** @param {import('../../shared/types').WorldStore | null} store @returns {PhasePresentation | null} */
-export function getPhasePresentation(store) {
+export function getPhasePresentation(store: WorldStore | null): PhasePresentation | null {
   if (!store) return null;
+
   const phaseKey = store.getTimePhase();
-  const clock = store.getWorldClock();
+  const clock: WorldClockSnapshot | null = store.getWorldClock();
 
   return {
     key: phaseKey,
-    label: PHASE_LABELS[phaseKey] || phaseKey,
-    hint: PHASE_HINTS[phaseKey] || '',
-    dayNumber: clock?.dayNumber || 1
+    label: PHASE_LABELS[phaseKey as TimePhaseId] ?? phaseKey,
+    hint: PHASE_HINTS[phaseKey as TimePhaseId] ?? '',
+    dayNumber: clock?.dayNumber ?? 1
   };
 }
 
-/** @param {any} state @param {AppControllerDeps['mapLevel']} mapLevel @returns {NavigationState} */
-function buildMapNavState(state, mapLevel) {
+function buildMapNavState(state: WorldStoreStateSnapshot, mapLevel: AppControllerDeps['mapLevel']): NavigationState {
+  const currentNodeId = state.player.currentNodeId;
+  const districtId = state.maps.nodesById[currentNodeId]?.parentId ?? null;
+
+  const navStack: MapLevelContext[] = [
+    { level: mapLevel.City, contextId: 'city:larkspur' },
+    { level: mapLevel.District, contextId: districtId }
+  ].filter((entry): entry is MapLevelContext => Boolean(entry.contextId));
+
   return {
     screen: 'map',
     level: mapLevel.Building,
-    contextId: state.player.currentNodeId,
-    navStack: [
-      { level: mapLevel.City, contextId: 'city:larkspur' },
-      { level: mapLevel.District, contextId: state.maps.nodesById[state.player.currentNodeId]?.parentId || null }
-    ].filter((step) => Boolean(step.contextId))
+    contextId: currentNodeId,
+    navStack
   };
 }
 
-/** @param {AppControllerDeps} deps @returns {AppController} */
 export function createAppController({
   worldStore,
   mapLevel,
   loadSeed,
   persistence,
   onStateChange = () => {}
-}) {
-  /** @type {{ seed: import('../../shared/types').WorldSeed | null }} */
-  const appState = { seed: null };
+}: AppControllerDeps): AppController {
+  const appState: AppControllerState = { seed: null };
   const navigationStore = createNavigationStore();
 
-  const getStore = () => worldStore.get();
+  const getStore = (): WorldStore | null => worldStore.get();
 
-  const requestRender = () => onStateChange();
+  const requestRender = (): void => {
+    onStateChange();
+  };
 
   const sceneTransitionController = createSceneTransitionController({
     onEnterScene: ({ regionId }) => {
