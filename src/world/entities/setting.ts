@@ -5,7 +5,8 @@ import type {
   LocationMetaState,
   MapsState,
   PointOfInterestState,
-  SettingState
+  SettingState,
+  MapNodeState
 } from '../contracts.ts';
 import { indexBy } from '../utils/object.ts';
 
@@ -18,47 +19,45 @@ function asArray<T>(value: T[] | unknown): T[] {
 }
 
 function normalizeLocationMeta(meta: Partial<LocationMetaState> = {}): LocationMetaState {
-  const allowedPhases = asArray(meta.availability?.allowedPhases || meta.allowedPhases);
-  const preferredPhases = asArray(meta.availability?.preferredPhases || meta.preferredPhases);
+  const allowedPhases = asArray(meta.availability?.allowedPhases ?? []) as LocationMetaState['availability']['allowedPhases'];
+  const preferredPhases = asArray(meta.availability?.preferredPhases ?? []) as LocationMetaState['availability']['preferredPhases'];
 
-  let mode = meta.availability?.mode || meta.availabilityMode;
-  if (!mode) {
-    mode = meta.nightAccessAllowed === false ? 'not-night' : DEFAULT_AVAILABILITY_MODE;
-  }
+  const mode = meta.availability?.mode
+    ?? (meta.nightAccessAllowed === false ? 'not-night' : DEFAULT_AVAILABILITY_MODE);
 
   return {
-    dangerLevel: meta.dangerLevel || DEFAULT_DANGER_LEVEL,
+    dangerLevel: meta.dangerLevel ?? DEFAULT_DANGER_LEVEL,
     accessRestrictions: asArray(meta.accessRestrictions),
     nightAccessAllowed: meta.nightAccessAllowed ?? true,
-    quarantineStatus: meta.quarantineStatus || DEFAULT_QUARANTINE_STATUS,
+    quarantineStatus: meta.quarantineStatus ?? DEFAULT_QUARANTINE_STATUS,
     availability: {
       mode,
       allowedPhases,
       preferredPhases,
-      unavailableReason: meta.availability?.unavailableReason || meta.unavailableReason || '',
-      restrictedProfile: meta.availability?.restrictedProfile || meta.restrictedProfile || ''
+      unavailableReason: meta.availability?.unavailableReason ?? '',
+      restrictedProfile: meta.availability?.restrictedProfile ?? ''
     }
   };
 }
 
 function normalizeDistrict(district: Partial<DistrictState>): DistrictState {
   return {
-    id: district.id || '',
-    nodeId: district.nodeId || district.id || '',
-    name: district.name || district.id || '',
-    zoneType: district.zoneType || 'urban',
-    controllingFactionId: district.controllingFactionId || null,
+    id: district.id ?? '',
+    nodeId: district.nodeId ?? district.id ?? '',
+    name: district.name ?? district.id ?? '',
+    zoneType: district.zoneType ?? 'urban',
+    controllingFactionId: district.controllingFactionId ?? null,
     meta: normalizeLocationMeta(district.meta)
   };
 }
 
 function normalizePointOfInterest(poi: Partial<PointOfInterestState>): PointOfInterestState {
   return {
-    id: poi.id || '',
-    nodeId: poi.nodeId || '',
-    districtId: poi.districtId || null,
-    name: poi.name || poi.id || '',
-    poiType: poi.poiType || 'landmark',
+    id: poi.id ?? '',
+    nodeId: poi.nodeId ?? '',
+    districtId: poi.districtId ?? null,
+    name: poi.name ?? poi.id ?? '',
+    poiType: poi.poiType ?? 'landmark',
     factionIds: asArray(poi.factionIds),
     meta: normalizeLocationMeta(poi.meta)
   };
@@ -66,35 +65,35 @@ function normalizePointOfInterest(poi: Partial<PointOfInterestState>): PointOfIn
 
 function normalizeFaction(faction: Partial<FactionState>): FactionState {
   return {
-    id: faction.id || '',
-    name: faction.name || faction.id || '',
-    kind: faction.kind || 'civic',
-    influence: faction.influence || 'local'
+    id: faction.id ?? '',
+    name: faction.name ?? faction.id ?? '',
+    kind: faction.kind ?? 'civic',
+    influence: faction.influence ?? 'local'
   };
 }
 
 function inferSettingFromMaps(maps: Partial<MapsState> = {}): SettingState {
-  const nodes = Object.values(maps.nodesById || {});
+  const nodes: MapNodeState[] = Object.values(maps.nodesById ?? {});
 
   const districts = nodes
     .filter((node) => node.level === 'district')
     .map((node) => normalizeDistrict({
       id: node.id,
       nodeId: node.id,
-      name: node.name,
-      zoneType: typeof node.meta?.zoneType === 'string' ? node.meta.zoneType : 'urban',
-      meta: (node.meta?.locationMeta as Partial<LocationMetaState>) || {}
+      name: node.name ?? '',
+      zoneType: typeof node.meta?.['zoneType'] === 'string' ? node.meta['zoneType'] : 'urban',
+      meta: normalizeLocationMeta((node.meta?.['locationMeta'] as Partial<LocationMetaState> | undefined) ?? {})
     }));
 
   const pointsOfInterest = nodes
     .filter((node) => node.level === 'building')
     .map((node) => normalizePointOfInterest({
-      id: `poi:${node.id.split(':')[1] || node.id}`,
+      id: `poi:${node.id.split(':')[1] ?? node.id}`,
       nodeId: node.id,
-      districtId: node.parentId || null,
-      name: node.name,
-      poiType: node.type || 'landmark',
-      meta: (node.meta?.locationMeta as Partial<LocationMetaState>) || {}
+      districtId: node.parentId ?? null,
+      name: node.name ?? '',
+      poiType: node.type ?? 'landmark',
+      meta: normalizeLocationMeta((node.meta?.['locationMeta'] as Partial<LocationMetaState> | undefined) ?? {})
     }));
 
   return {
@@ -110,7 +109,7 @@ interface SettingSeed extends Partial<SettingState> {
   factions?: Partial<FactionState>[];
 }
 
-export function createDefaultSetting(seed: SettingSeed = {}, maps: GameState['maps'] = {}): SettingState {
+export function createDefaultSetting(seed: SettingSeed = {}, maps: GameState['maps'] = { levelConfigs: {}, nodesById: {} }): SettingState {
   const inferred = inferSettingFromMaps(maps);
 
   const districts = asArray<Partial<DistrictState>>(seed.districts).map(normalizeDistrict);
@@ -120,15 +119,15 @@ export function createDefaultSetting(seed: SettingSeed = {}, maps: GameState['ma
   return {
     districtsById: {
       ...inferred.districtsById,
-      ...(seed.districtsById || indexBy(districts, 'id'))
+      ...(seed.districtsById ?? indexBy(districts, 'id'))
     },
     pointsOfInterestById: {
       ...inferred.pointsOfInterestById,
-      ...(seed.pointsOfInterestById || indexBy(pointsOfInterest, 'id'))
+      ...(seed.pointsOfInterestById ?? indexBy(pointsOfInterest, 'id'))
     },
     factionsById: {
       ...inferred.factionsById,
-      ...(seed.factionsById || indexBy(factions, 'id'))
+      ...(seed.factionsById ?? indexBy(factions, 'id'))
     }
   };
 }

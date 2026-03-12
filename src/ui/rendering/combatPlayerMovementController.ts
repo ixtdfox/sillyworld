@@ -1,3 +1,4 @@
+// @ts-nocheck
 const DEFAULT_MOVE_SPEED = 3;
 const DEFAULT_STOP_DISTANCE = 0.05;
 

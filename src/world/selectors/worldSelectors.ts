@@ -2,7 +2,7 @@ import type { GameState, TimeOfDay, TimePhase, WorldClockState } from '../contra
 import { normalizeTimePhase } from '../actions/timeActions.ts';
 
 export function getTimePhase(state: GameState): TimePhase {
-  return normalizeTimePhase(state.world?.timePhase, normalizeTimePhase(state.world?.timeOfDay));
+  return normalizeTimePhase(state.world?.timePhase, normalizeTimePhase(state.world?.timeOfDay)) ?? 'morning';
 }
 
 export function getTimeOfDay(state: GameState): TimeOfDay {

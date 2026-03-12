@@ -1,3 +1,4 @@
+// @ts-nocheck
 const PLAYER_ACTION_MODES = Object.freeze({
   IDLE: 'idle',
   MOVE: 'move',

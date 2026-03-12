@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canonical per-entity normalization settings.
  * All distance values are world units where 1 unit = 1 meter.

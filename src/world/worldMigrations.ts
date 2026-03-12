@@ -1,9 +1,15 @@
 import { SCHEMA_VERSION } from './constants/types.ts';
 import { createGameState } from './worldState.ts';
 import { normalizeTimePhase } from './actions/timeActions.ts';
+import type { GameState, GameStateSeed } from './contracts.ts';
 
-function migrateV1ToV2(v1State, fallbackSeed) {
-  const base = createGameState(fallbackSeed);
+type MigratableState = Record<string, unknown> & {
+  schemaVersion?: number | null;
+  world?: Record<string, unknown> & { timePhase?: unknown; timeOfDay?: unknown };
+};
+
+function migrateV1ToV2(v1State: MigratableState, fallbackSeed: GameStateSeed): MigratableState {
+  const base = createGameState(fallbackSeed) as unknown as MigratableState;
   return {
     ...base,
     ...v1State,
@@ -12,16 +18,15 @@ function migrateV1ToV2(v1State, fallbackSeed) {
   };
 }
 
-function migrateV2ToV3(v2State) {
-  return {
-    ...v2State,
-    schemaVersion: 3
-  };
+function migrateV2ToV3(v2State: MigratableState): MigratableState {
+  return { ...v2State, schemaVersion: 3 };
 }
 
-function migrateV3ToV4(v3State) {
-  const currentPhase = normalizeTimePhase(v3State?.world?.timePhase, normalizeTimePhase(v3State?.world?.timeOfDay));
-
+function migrateV3ToV4(v3State: MigratableState): MigratableState {
+  const currentPhase = normalizeTimePhase(
+    typeof v3State?.world?.timePhase === 'string' ? v3State.world.timePhase : undefined,
+    normalizeTimePhase(typeof v3State?.world?.timeOfDay === 'string' ? v3State.world.timeOfDay : undefined)
+  );
   return {
     ...v3State,
     schemaVersion: 4,
@@ -32,29 +37,15 @@ function migrateV3ToV4(v3State) {
   };
 }
 
-export function migrateGameState(rawState, fallbackSeed = {}) {
+export function migrateGameState(rawState: unknown, fallbackSeed: GameStateSeed = {}): GameState | null {
   if (!rawState || typeof rawState !== 'object') return null;
+  const state = rawState as MigratableState;
 
-  if (rawState.schemaVersion === SCHEMA_VERSION) {
-    return createGameState(rawState);
+  if (state.schemaVersion === SCHEMA_VERSION) return createGameState(state as unknown as GameStateSeed);
+  if (state.schemaVersion === 3) return createGameState(migrateV3ToV4(state) as unknown as GameStateSeed);
+  if (state.schemaVersion === 2) return createGameState(migrateV3ToV4(migrateV2ToV3(state)) as unknown as GameStateSeed);
+  if (state.schemaVersion === 1 || state.schemaVersion == null) {
+    return createGameState(migrateV3ToV4(migrateV2ToV3(migrateV1ToV2(state, fallbackSeed))) as unknown as GameStateSeed);
   }
-
-  if (rawState.schemaVersion === 3) {
-    return createGameState(migrateV3ToV4(rawState));
-  }
-
-  if (rawState.schemaVersion === 2) {
-    const v3 = migrateV2ToV3(rawState);
-    const v4 = migrateV3ToV4(v3);
-    return createGameState(v4);
-  }
-
-  if (rawState.schemaVersion === 1 || rawState.schemaVersion == null) {
-    const v2 = migrateV1ToV2(rawState, fallbackSeed);
-    const v3 = migrateV2ToV3(v2);
-    const v4 = migrateV3ToV4(v3);
-    return createGameState(v4);
-  }
-
   return null;
 }

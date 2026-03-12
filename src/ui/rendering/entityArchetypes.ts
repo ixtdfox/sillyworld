@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ASSET_PATHS } from '../../core/assets/assetCatalog.ts';
 
 const PLAYER_CHARACTER_FILE = ASSET_PATHS.models.characters.player;

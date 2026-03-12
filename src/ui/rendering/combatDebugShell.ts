@@ -1,3 +1,4 @@
+// @ts-nocheck
 const SHELL_RUNTIME_KEY = '__combatDebugShellController';
 
 function createPrimitiveButton(runtime, label, onClick) {

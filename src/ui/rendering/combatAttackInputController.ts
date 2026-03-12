@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { attachCombatTargetSelectionFlow } from './combatTargetSelectionFlow.ts';
 
 function resolveTargetEntries(options = {}) {

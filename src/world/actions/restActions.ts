@@ -1,5 +1,6 @@
 import { TIME_PHASE } from '../constants/types.ts';
 import { advanceTimeBySteps, advanceToTimePhase } from './timeActions.ts';
+import type { GameState, PhaseTransitionRecord, RestActionResponse } from '../contracts.ts';
 
 const REST_ACTION = Object.freeze({
   UntilEvening: 'rest-until-evening',
@@ -7,16 +8,16 @@ const REST_ACTION = Object.freeze({
   NextPhase: 'advance-to-next-phase'
 });
 
-function isAtHome(state) {
-  return Boolean(state?.player?.currentNodeId) && state.player.currentNodeId === state.player.homeNodeId;
+function isAtHome(state: GameState): boolean {
+  return Boolean(state.player.currentNodeId) && state.player.currentNodeId === state.player.homeNodeId;
 }
 
-function summarizeTransitions(state, previousPendingCount) {
-  const pending = Array.isArray(state.world?.phaseTransitions?.pending) ? state.world.phaseTransitions.pending : [];
+function summarizeTransitions(state: GameState, previousPendingCount: number): PhaseTransitionRecord[] {
+  const pending = Array.isArray(state.world.phaseTransitions?.pending) ? state.world.phaseTransitions.pending : [];
   return pending.slice(previousPendingCount);
 }
 
-export function getAvailableRestActions(state) {
+export function getAvailableRestActions(state: GameState): Array<{ id: string; label: string; description: string }> {
   if (!isAtHome(state)) return [];
 
   return [
@@ -38,7 +39,7 @@ export function getAvailableRestActions(state) {
   ];
 }
 
-export function performRestAction(state, actionId) {
+export function performRestAction(state: GameState, actionId: string) {
   if (!isAtHome(state)) {
     return {
       ok: false,
@@ -47,7 +48,7 @@ export function performRestAction(state, actionId) {
     };
   }
 
-  const previousPendingCount = Array.isArray(state.world?.phaseTransitions?.pending)
+  const previousPendingCount = Array.isArray(state.world.phaseTransitions?.pending)
     ? state.world.phaseTransitions.pending.length
     : 0;
 
@@ -74,7 +75,7 @@ export function performRestAction(state, actionId) {
   return {
     ok: true,
     state: nextState,
-    timeCostSteps,
+    ...(Number.isFinite(timeCostSteps) ? { timeCostSteps } : {}),
     transitions: summarizeTransitions(nextState, previousPendingCount)
   };
 }

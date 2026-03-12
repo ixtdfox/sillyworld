@@ -126,13 +126,15 @@ export class SceneViewScreen extends Screen {
   override mount(): void {
     if (!this.#canvas) return;
 
-    mountSceneRuntime(this.#canvas, {
-      districtId: this.#props.districtId,
+    const mountOptions = {
+      ...(this.#props.districtId ? { districtId: this.#props.districtId } : {}),
       debugEnabled: this.#debugEnabled,
-      onEncounterStart: (details) => this.startCombat(details),
-      onDebugStateChange: (debugState) => this.updateDebugOverlay(debugState),
+      onEncounterStart: (details: EncounterStartPayload) => this.startCombat(details),
+      onDebugStateChange: (debugState: RuntimeDebugState) => this.updateDebugOverlay(debugState),
       resolveAssetPath
-    })
+    };
+
+    mountSceneRuntime(this.#canvas, mountOptions)
       .then((dispose) => {
         this.#cleanup = dispose;
       })

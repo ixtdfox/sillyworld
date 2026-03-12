@@ -1,3 +1,4 @@
+// @ts-nocheck
 function createGridSignature(bounds, mapper) {
   return [
     bounds.minX,

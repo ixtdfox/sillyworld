@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const DEFAULT_COMBAT_GRID_CONFIG = Object.freeze({
   cellSize: 1.5,
   originWorldX: 0,

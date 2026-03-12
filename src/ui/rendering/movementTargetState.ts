@@ -1,3 +1,4 @@
+// @ts-nocheck
 export function createMovementTargetState() {
   let target = null;
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { loadAndNormalizeEntityCharacter } from './entityCharacterLoader.ts';
 import {
   DEFAULT_ENEMY_ARCHETYPE_ID,

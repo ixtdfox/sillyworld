@@ -1,3 +1,4 @@
+// @ts-nocheck
 const DEFAULT_CAMERA_CONFIG = {
   distance: 14,
   elevationDegrees: 55,

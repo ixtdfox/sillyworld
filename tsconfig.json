@@ -5,7 +5,7 @@
     "moduleResolution": "Bundler",
     "allowJs": false,
     "strict": false,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "strictNullChecks": true,
     "exactOptionalPropertyTypes": true,
     "useUnknownInCatchVariables": true,

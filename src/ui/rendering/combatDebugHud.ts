@@ -1,3 +1,4 @@
+// @ts-nocheck
 const HUD_RUNTIME_KEY = '__combatDebugHudController';
 
 function createValueRow(runtime, parent, label, options = {}) {

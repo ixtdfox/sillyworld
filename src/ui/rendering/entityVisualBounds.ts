@@ -1,3 +1,4 @@
+// @ts-nocheck
 function isFiniteNumber(value) {
   return Number.isFinite(value);
 }

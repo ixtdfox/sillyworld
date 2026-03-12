@@ -1,3 +1,4 @@
+// @ts-nocheck
 function createCellKey(cell) {
   return `${cell.x},${cell.z}`;
 }

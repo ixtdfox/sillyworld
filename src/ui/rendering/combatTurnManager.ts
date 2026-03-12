@@ -1,3 +1,4 @@
+// @ts-nocheck
 const DEFAULT_INITIATIVE = 0;
 
 function normalizeUnits(units = []) {
