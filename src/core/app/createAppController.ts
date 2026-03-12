@@ -31,13 +31,13 @@ const PHASE_HINTS: PhaseLabels = Object.freeze({
 export function getPhasePresentation(store: WorldStore | null): PhasePresentation | null {
   if (!store) return null;
 
-  const phaseKey = store.getTimePhase();
+  const phaseKey = store.getTimePhase() as TimePhaseId;
   const clock: WorldClockSnapshot | null = store.getWorldClock();
 
   return {
     key: phaseKey,
-    label: PHASE_LABELS[phaseKey as TimePhaseId] ?? phaseKey,
-    hint: PHASE_HINTS[phaseKey as TimePhaseId] ?? '',
+    label: PHASE_LABELS[phaseKey] ?? phaseKey,
+    hint: PHASE_HINTS[phaseKey] ?? '',
     dayNumber: clock?.dayNumber ?? 1
   };
 }

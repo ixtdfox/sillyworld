@@ -4,6 +4,10 @@ import { getTimePhase } from './worldSelectors.js';
 
 const ALL_PHASES = new Set<TimePhase>(Object.values(TIME_PHASE));
 
+function isTimePhase(value: string): value is TimePhase {
+  return ALL_PHASES.has(value as TimePhase);
+}
+
 interface NpcPhaseRule {
   available: boolean;
   reason?: string;
@@ -28,7 +32,7 @@ export interface NpcAvailabilityResult {
 function normalizePhaseRules(rules: Record<string, boolean | NpcPhaseRule> = {}): NpcPhaseRules {
   return Object.fromEntries(
     Object.entries(rules)
-      .filter(([phase]) => ALL_PHASES.has(phase as TimePhase))
+      .filter(([phase]) => isTimePhase(phase))
       .map(([phase, value]) => {
         if (typeof value === 'boolean') {
           return [phase, { available: value }];
@@ -43,7 +47,7 @@ function normalizePhaseRules(rules: Record<string, boolean | NpcPhaseRule> = {})
           {
             available: value.available !== false,
             reason: value.reason || '',
-            locationId: value.locationId || (value as NpcPhaseRule & { atLocationId?: string | null }).atLocationId || null
+            locationId: value.locationId || ('atLocationId' in value ? value.atLocationId : null) || null
           }
         ];
       })
