@@ -22,6 +22,7 @@ class FakeMesh {
     this.name = name;
     this.position = { x: 0, y: 0, z: 0 };
     this.metadata = {};
+    this.rotation = { x: 0, y: 0, z: 0 };
   }
 
   dispose() {
@@ -117,7 +118,8 @@ test('updates and clears hovered movement destination during move mode', () => {
     toCellKey: (cell) => `${cell.x},${cell.z}`,
     getReachableCells: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }],
     getOccupancyRevision: () => 0,
-    isWithinBounds: () => true
+    isWithinBounds: () => true,
+    findPath: (_from, to) => [{ x: 0, z: 0 }, { x: to.x, z: to.z }]
   };
 
   const highlighter = createCombatMovementRangeHighlighter(runtime, {
@@ -132,10 +134,12 @@ test('updates and clears hovered movement destination during move mode', () => {
     cell: { x: 1, z: 0 },
     isReachable: true
   });
+  assert.deepEqual(combatState.hoveredMovementPath, [{ x: 0, z: 0 }, { x: 1, z: 0 }]);
 
   combatState.playerMovementInProgress = true;
   runtime.tick();
   assert.equal(combatState.hoveredMovementDestination, null);
+  assert.equal(combatState.hoveredMovementPath, null);
 
   highlighter.dispose();
 });
