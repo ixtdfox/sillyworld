@@ -1,7 +1,8 @@
 import { startApp } from './app.js';
 
 function bootstrapStandalone() {
-  startApp();
+  console.info('[SillyRPG] Standalone bootstrap starting.');
+  void startApp();
 }
 
 if (document.readyState === 'loading') {

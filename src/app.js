@@ -74,9 +74,9 @@ function renderScreenBody() {
   }
 
   return renderMainMenu({
-    onNewGame: () => appController.startNewGame().catch(() => {}),
-    onContinue: () => appController.loadAndResumeGame().catch(() => {}),
-    onLoadGame: () => appController.loadAndResumeGame().catch(() => {}),
+    onNewGame: () => appController.startNewGame(),
+    onContinue: () => appController.loadAndResumeGame(),
+    onLoadGame: () => appController.loadAndResumeGame(),
     onSettings: () => {
       appController.navigationStore.setScreen('settings');
       render();
@@ -126,6 +126,12 @@ function render() {
 }
 
 export function startApp() {
+  console.info('[SillyRPG] Mounting application root.');
   showRoot();
-  appController.initialize().catch(() => {});
+  return appController.initialize().then(() => {
+    console.info('[SillyRPG] Startup complete.');
+  }).catch((error) => {
+    console.error('[SillyRPG] Startup failed during initialization.', error);
+    throw error;
+  });
 }
