@@ -105,12 +105,16 @@ export async function createCombatRuntime(runtime, options = {}) {
     resolveAssetPath: options.resolveAssetPath
   });
 
-  resolveOrCreateSceneCamera(runtime, {
+  const resolvedCombatCamera = resolveOrCreateSceneCamera(runtime, {
     preferredCameras: combatScene.cameras,
     fallbackCameraName: 'combatFallbackCamera',
     fallbackPosition: options.fallbackCameraPosition ?? { x: 0, y: 11, z: -12 },
     fallbackTarget: options.fallbackCameraTarget ?? { x: 0, y: 0, z: 0 }
   });
+
+  if (!resolvedCombatCamera || resolvedCombatCamera.isDisposed?.() || runtime.scene.activeCamera !== resolvedCombatCamera) {
+    throw new Error('Combat scene initialization failed: unable to resolve an active camera.');
+  }
 
   const playerEntity = await loadPlayerCharacter(runtime, {
     playerFile: options.playerFile,

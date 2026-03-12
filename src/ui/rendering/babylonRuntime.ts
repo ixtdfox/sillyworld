@@ -85,7 +85,21 @@ function createBaseRuntime(canvas: HTMLCanvasElement, clearColor: [number, numbe
   const scene = new BABYLON.Scene(engine);
   scene.clearColor = new BABYLON.Color4(...clearColor);
   const camera = new BABYLON.FreeCamera(cameraName, new BABYLON.Vector3(cameraPosition.x, cameraPosition.y, cameraPosition.z), scene);
-  engine.runRenderLoop(() => scene.render());
+  scene.activeCamera = camera;
+
+  let reportedMissingCamera = false;
+  engine.runRenderLoop(() => {
+    if (!scene.activeCamera || scene.activeCamera.isDisposed?.()) {
+      if (!reportedMissingCamera) {
+        reportedMissingCamera = true;
+        console.error('[SillyRPG] Runtime render loop skipped because no active camera is available.');
+      }
+      return;
+    }
+
+    reportedMissingCamera = false;
+    scene.render();
+  });
   const onResize = () => engine.resize();
   window.addEventListener('resize', onResize);
   return { BABYLON, engine, scene, camera, dispose: () => { window.removeEventListener('resize', onResize); scene.dispose(); engine.dispose(); } };
