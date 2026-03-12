@@ -1,13 +1,13 @@
-import { resolveCatalogAssetPath } from '../../../platform/browser/assetResolver.ts';
+import { resolveCatalogAssetPath } from '../../../platform/browser/assetResolver.js';
 import type { RegionId } from '../../../shared/types.js';
-import { asScreenNode, type ScreenNode } from '../../screenContract.js';
-import { createInteractiveAtlasButton, createAtlasImage } from '../../components/interactiveAtlasButton.js';
-import { ensureBabylonRuntime, createBabylonUiRuntime } from '../../rendering/babylonRuntime.js';
-import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.js';
+import { createAtlasImage, createInteractiveAtlasButton } from '../../components/interactiveAtlasButton.js';
+import { createBabylonUiRuntime, ensureBabylonRuntime } from '../../rendering/babylonRuntime.js';
+import { Screen } from '../screenSystem.js';
 import { PHONE_DISPLAY_BOUNDS } from './phoneDisplayLayout.js';
-import { WORLD_MAP_REGIONS } from './worldMapRegions.js';
-import { createWorldMapViewport, type BabylonGuiLike, type GuiControlLike } from './worldMapViewport.js';
+import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.js';
 import { createInventoryScreen } from './inventory/inventoryScreen.js';
+import { type BabylonGuiLike, type GuiControlLike, createWorldMapViewport } from './worldMapViewport.js';
+import { WORLD_MAP_REGIONS } from './worldMapRegions.js';
 
 const SCREEN_SIZE = Object.freeze({ width: 1280, height: 920 });
 const PHONE_SIZE = Object.freeze({ width: 555, height: 918, scale: 0.78 });
@@ -42,7 +42,6 @@ export interface PhoneCityMapScreenProps {
   onRegionOpen?: (regionId: RegionId) => void;
 }
 
-
 interface PhoneGuiNamespace extends BabylonGuiLike {
   AdvancedDynamicTexture: {
     CreateFullscreenUI: (name: string, foreground: boolean, scene: unknown) => {
@@ -55,7 +54,6 @@ interface PhoneGuiNamespace extends BabylonGuiLike {
     };
   };
 }
-
 
 function createPhoneScaler(phoneWidth: number, phoneHeight: number): PhoneScaler {
   const scaleX = phoneWidth / PHONE_SIZE.width;
@@ -81,25 +79,11 @@ function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen }: { 
   displayArea.background = '#10141F';
   displayArea.clipChildren = true;
 
-  const mapViewport = createWorldMapViewport({
-    GUI,
-    mapTextureUrl,
-    viewportWidth: scale.w(PHONE_DISPLAY_BOUNDS.width),
-    viewportHeight: scale.h(PHONE_DISPLAY_BOUNDS.height),
-    regions: WORLD_MAP_REGIONS,
-    onRegionOpen
-  });
-
+  const mapViewport = createWorldMapViewport({ GUI, mapTextureUrl, viewportWidth: scale.w(PHONE_DISPLAY_BOUNDS.width), viewportHeight: scale.h(PHONE_DISPLAY_BOUNDS.height), regions: WORLD_MAP_REGIONS, onRegionOpen });
   mapViewport.isVisible = false;
   displayArea.addControl(mapViewport);
 
-  const inventoryViewport = createInventoryScreen({
-    GUI,
-    textureUrl: resolveCatalogAssetPath('textures.phoneUiAtlas'),
-    scale,
-    viewportWidth: scale.w(PHONE_DISPLAY_BOUNDS.width),
-    viewportHeight: scale.h(PHONE_DISPLAY_BOUNDS.height)
-  });
+  const inventoryViewport = createInventoryScreen({ GUI, textureUrl: resolveCatalogAssetPath('textures.phoneUiAtlas'), scale, viewportWidth: scale.w(PHONE_DISPLAY_BOUNDS.width), viewportHeight: scale.h(PHONE_DISPLAY_BOUNDS.height) });
   inventoryViewport.isVisible = false;
   displayArea.addControl(inventoryViewport);
 
@@ -153,13 +137,7 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }: { GUI: 
   phoneLayer.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
   phoneLayer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
 
-  const phoneFrame = createAtlasImage({
-    GUI,
-    textureUrl,
-    region: PHONE_UI_ATLAS.phoneFrame,
-    width: phoneWidth,
-    height: phoneHeight
-  });
+  const phoneFrame = createAtlasImage({ GUI, textureUrl, region: PHONE_UI_ATLAS.phoneFrame, width: phoneWidth, height: phoneHeight });
   phoneFrame.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
   phoneFrame.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
   phoneFrame.isPointerBlocker = false;
@@ -170,7 +148,6 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }: { GUI: 
   phoneDisplay.displayArea.zIndex = 5;
 
   const callbacks = createButtonCallbacks({ phoneDisplay });
-
   const menuButtonPlacement: Array<{ id: keyof Pick<PhoneButtonCallbacks, 'map' | 'log' | 'msg' | 'inv'>; top: number }> = [
     { id: 'map', top: 180 },
     { id: 'log', top: 225 },
@@ -178,77 +155,27 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }: { GUI: 
     { id: 'inv', top: 309 }
   ];
 
-  const menuButtonWidth = 56;
-  const menuButtonHeight = 36;
-  const menuLeft = 6;
-
-  const statusLocSig = createAtlasImage({
-    GUI,
-    textureUrl,
-    region: PHONE_UI_ATLAS.statusStrip.locSig,
-    width: scale.w(218),
-    height: scale.h(40),
-    left: scale.x(58),
-    top: scale.y(689)
-  });
-  statusLocSig.zIndex = 30;
-  statusLocSig.isPointerBlocker = false;
-  statusLocSig.isHitTestVisible = false;
-
-  const statusMoneyTime = createAtlasImage({
-    GUI,
-    textureUrl,
-    region: PHONE_UI_ATLAS.statusStrip.moneyTime,
-    width: scale.w(228),
-    height: scale.h(40),
-    left: scale.x(274),
-    top: scale.y(690)
-  });
-  statusMoneyTime.zIndex = 30;
-  statusMoneyTime.isPointerBlocker = false;
-  statusMoneyTime.isHitTestVisible = false;
-
   for (const entry of menuButtonPlacement) {
     const buttonRegion = PHONE_UI_ATLAS.menuButtons[entry.id];
-    const menuButton = createInteractiveAtlasButton({
-      GUI,
-      textureUrl,
-      normalRegion: buttonRegion.normal,
-      pressedRegion: buttonRegion.pressed,
-      width: scale.w(menuButtonWidth),
-      height: scale.h(menuButtonHeight),
-      left: scale.x(menuLeft),
-      top: scale.y(entry.top),
-      onClick: callbacks[entry.id]
-    });
+    const menuButton = createInteractiveAtlasButton({ GUI, textureUrl, normalRegion: buttonRegion.normal, pressedRegion: buttonRegion.pressed, width: scale.w(56), height: scale.h(36), left: scale.x(6), top: scale.y(entry.top), onClick: callbacks[entry.id] });
     menuButton.zIndex = 20;
     phoneLayer.addControl(menuButton);
   }
 
-  const greenCallButton = createInteractiveAtlasButton({
-    GUI,
-    textureUrl,
-    normalRegion: PHONE_UI_ATLAS.callButtons.green.normal,
-    pressedRegion: PHONE_UI_ATLAS.callButtons.green.pressed,
-    width: scale.w(135),
-    height: scale.h(60),
-    left: scale.x(42),
-    top: scale.y(749),
-    onClick: callbacks.acceptCall
-  });
+  const statusLocSig = createAtlasImage({ GUI, textureUrl, region: PHONE_UI_ATLAS.statusStrip.locSig, width: scale.w(218), height: scale.h(40), left: scale.x(58), top: scale.y(689) });
+  statusLocSig.zIndex = 30;
+  statusLocSig.isPointerBlocker = false;
+  statusLocSig.isHitTestVisible = false;
+
+  const statusMoneyTime = createAtlasImage({ GUI, textureUrl, region: PHONE_UI_ATLAS.statusStrip.moneyTime, width: scale.w(228), height: scale.h(40), left: scale.x(274), top: scale.y(690) });
+  statusMoneyTime.zIndex = 30;
+  statusMoneyTime.isPointerBlocker = false;
+  statusMoneyTime.isHitTestVisible = false;
+
+  const greenCallButton = createInteractiveAtlasButton({ GUI, textureUrl, normalRegion: PHONE_UI_ATLAS.callButtons.green.normal, pressedRegion: PHONE_UI_ATLAS.callButtons.green.pressed, width: scale.w(135), height: scale.h(60), left: scale.x(42), top: scale.y(749), onClick: callbacks.acceptCall });
   greenCallButton.zIndex = 40;
 
-  const redCallButton = createInteractiveAtlasButton({
-    GUI,
-    textureUrl,
-    normalRegion: PHONE_UI_ATLAS.callButtons.red.normal,
-    pressedRegion: PHONE_UI_ATLAS.callButtons.red.pressed,
-    width: scale.w(135),
-    height: scale.h(60),
-    left: scale.x(385),
-    top: scale.y(749),
-    onClick: callbacks.endCall
-  });
+  const redCallButton = createInteractiveAtlasButton({ GUI, textureUrl, normalRegion: PHONE_UI_ATLAS.callButtons.red.normal, pressedRegion: PHONE_UI_ATLAS.callButtons.red.pressed, width: scale.w(135), height: scale.h(60), left: scale.x(385), top: scale.y(749), onClick: callbacks.endCall });
   redCallButton.zIndex = 40;
 
   phoneLayer.addControl(phoneDisplay.displayArea);
@@ -266,9 +193,8 @@ async function mountPhoneScene(canvas: HTMLCanvasElement, { onRegionOpen }: Moun
   await ensureBabylonRuntime();
   const runtime = createBabylonUiRuntime(canvas);
   const GUI = runtime.BABYLON.GUI as PhoneGuiNamespace | undefined;
-  if (!GUI) {
-    throw new Error('Babylon GUI runtime is unavailable.');
-  }
+  if (!GUI) throw new Error('Babylon GUI runtime is unavailable.');
+
   const textureUrl = resolveCatalogAssetPath('textures.phoneUiAtlas');
   const mapTextureUrl = resolveCatalogAssetPath('textures.cityMap');
 
@@ -278,8 +204,7 @@ async function mountPhoneScene(canvas: HTMLCanvasElement, { onRegionOpen }: Moun
   adt.renderAtIdealSize = true;
   adt.useSmallestIdeal = true;
 
-  const ui = buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen });
-  adt.addControl(ui);
+  adt.addControl(buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }));
 
   return () => {
     adt.dispose();
@@ -287,35 +212,51 @@ async function mountPhoneScene(canvas: HTMLCanvasElement, { onRegionOpen }: Moun
   };
 }
 
-export function renderPhoneCityMapScreen({ onRegionOpen }: PhoneCityMapScreenProps = {}): ScreenNode {
-  const wrap = asScreenNode(document.createElement('div'));
-  wrap.className = 'sillyrpg-screen sillyrpg-phone-map-screen';
+export class MapScreen extends Screen {
+  readonly #props: PhoneCityMapScreenProps;
+  #canvas: HTMLCanvasElement | null = null;
+  #cleanup: null | (() => void) = null;
 
-  const canvas = document.createElement('canvas');
-  canvas.className = 'sillyrpg-babylon-canvas';
-  canvas.setAttribute('aria-label', 'City map phone UI');
-  wrap.appendChild(canvas);
+  constructor(props: PhoneCityMapScreenProps = {}) {
+    super();
+    this.#props = props;
+  }
 
-  let cleanup: null | (() => void) = null;
+  protected createRoot(): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'sillyrpg-screen sillyrpg-phone-map-screen';
 
-  wrap.__sillyOnMount = () => {
-    mountPhoneScene(canvas, {
-      onRegionOpen: typeof onRegionOpen === 'function' ? onRegionOpen : () => {}
+    this.#canvas = document.createElement('canvas');
+    this.#canvas.className = 'sillyrpg-babylon-canvas';
+    this.#canvas.setAttribute('aria-label', 'City map phone UI');
+    wrap.appendChild(this.#canvas);
+
+    return wrap;
+  }
+
+  override mount(): void {
+    if (!this.#canvas) return;
+
+    mountPhoneScene(this.#canvas, {
+      onRegionOpen: typeof this.#props.onRegionOpen === 'function' ? this.#props.onRegionOpen : () => {}
     })
       .then((dispose) => {
-        cleanup = dispose;
+        this.#cleanup = dispose;
       })
       .catch((error) => {
         console.error('[SillyRPG] Failed to mount Babylon phone UI.', error);
       });
-  };
+  }
 
-  wrap.__sillyOnUnmount = () => {
-    if (cleanup) {
-      cleanup();
-      cleanup = null;
+  override unmount(): void {
+    if (this.#cleanup) {
+      this.#cleanup();
+      this.#cleanup = null;
     }
-  };
+  }
 
-  return wrap;
+  override dispose(): void {
+    super.dispose();
+    this.#canvas = null;
+  }
 }
