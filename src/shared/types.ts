@@ -25,11 +25,24 @@ export interface NavigationStackEntry {
   contextId: ContextId | null;
 }
 
+export type MapLevelContext = NavigationStackEntry;
+
 export interface NavigationState {
   screen: ScreenId;
   level: MapLevelId;
   contextId: ContextId | null;
   navStack: NavigationStackEntry[];
+}
+
+export type NavigationStateSeed = Partial<NavigationState>;
+
+export interface NavigationStore {
+  getState(): NavigationState;
+  setScreen(screen: ScreenId): void;
+  setContextId(contextId: ContextId | null): void;
+  navigateToLevel(level: MapLevelId, contextId: ContextId | null): void;
+  navigateBackLevel(): boolean;
+  reset(seedState?: NavigationStateSeed): void;
 }
 
 export interface PhasePresentation {
@@ -60,14 +73,31 @@ export type WorldSeed = Record<string, unknown>;
 export type SeedLoader = (seedPath?: string) => Promise<WorldSeed>;
 
 export interface WorldStore {
-  getState(): any;
+  getState(): WorldStoreStateSnapshot;
   getTimePhase(): TimePhaseId | string;
-  getWorldClock(): { dayNumber?: number } | null;
+  getWorldClock(): WorldClockSnapshot | null;
   getPendingPhaseTransitions(): unknown[];
   consumeNextPhaseTransition(): unknown;
   save(storage: PersistenceStorage): void;
   load(storage: PersistenceStorage): boolean;
   reset(seed: WorldSeed): void;
+}
+
+export interface WorldClockSnapshot {
+  dayNumber?: number;
+}
+
+export interface WorldStoreStateSnapshot {
+  player: {
+    currentNodeId: ContextId;
+  };
+  maps: {
+    nodesById: {
+      [nodeId: string]: {
+        parentId?: ContextId | null;
+      };
+    };
+  };
 }
 
 export interface WorldStoreModule {
@@ -79,15 +109,26 @@ export interface SceneTransitionController {
   onMapPinClick(regionId: RegionId): void;
 }
 
+export interface SceneTransitionPayload {
+  regionId: RegionId;
+}
+
+export type EnterSceneHandler = (payload: SceneTransitionPayload) => void;
+
+export interface SceneTransitionControllerDeps {
+  onEnterScene: EnterSceneHandler;
+}
+
+export type StateChangeCallback = () => void;
+
+export type PhaseLabels = Readonly<Record<TimePhaseId, string>>;
+
+export interface AppControllerState {
+  seed: WorldSeed | null;
+}
+
 export interface AppController {
-  navigationStore: {
-    getState(): NavigationState;
-    setScreen(screen: ScreenId): void;
-    setContextId(contextId: ContextId | null): void;
-    navigateToLevel(level: MapLevelId, contextId: ContextId | null): void;
-    navigateBackLevel(): boolean;
-    reset(seedState?: Partial<NavigationState>): void;
-  };
+  navigationStore: NavigationStore;
   sceneTransitionController: SceneTransitionController;
   getStore(): WorldStore | null;
   getPhasePresentation(): PhasePresentation | null;
@@ -108,5 +149,5 @@ export interface AppControllerDeps {
   };
   loadSeed: SeedLoader;
   persistence: PersistenceContract;
-  onStateChange?: () => void;
+  onStateChange?: StateChangeCallback;
 }
