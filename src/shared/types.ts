@@ -1,3 +1,5 @@
+import type { GameState, GameStateSeed, WorldStoreContract as DomainWorldStore, WorldClockState, TimePhase, PhaseTransitionRecord, PersistenceStorage as WorldPersistenceStorage } from '../world/contracts.js';
+
 export type ScreenId = 'mainMenu' | 'map' | 'scene' | 'settings';
 
 export type TimePhaseId = 'morning' | 'day' | 'evening' | 'night';
@@ -52,9 +54,7 @@ export interface PhasePresentation {
   dayNumber: number;
 }
 
-export interface PersistenceStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
+export interface PersistenceStorage extends WorldPersistenceStorage {
   removeItem(key: string): void;
 }
 
@@ -68,24 +68,23 @@ export interface PersistenceContract {
   hasSaveData(): boolean;
 }
 
-export type WorldSeed = Record<string, unknown>;
+export type WorldSeed = GameStateSeed;
 
 export type SeedLoader = (seedPath?: string) => Promise<WorldSeed>;
 
-export interface WorldStore {
-  getState(): WorldStoreStateSnapshot;
-  getTimePhase(): TimePhaseId | string;
-  getWorldClock(): WorldClockSnapshot | null;
+export interface WorldStore extends DomainWorldStore {
+  getTimePhase(): TimePhaseId | TimePhase | string;
+  getWorldClock(): WorldClockState | null;
   getPendingPhaseTransitions(): unknown[];
   consumeNextPhaseTransition(): unknown;
-  save(storage: PersistenceStorage): void;
+  getState(): GameState;
+  save(storage: PersistenceStorage): boolean;
   load(storage: PersistenceStorage): boolean;
   reset(seed: WorldSeed): void;
 }
 
-export interface WorldClockSnapshot {
-  dayNumber?: number;
-}
+
+export type WorldClockSnapshot = WorldClockState;
 
 export interface WorldStoreStateSnapshot {
   player: {
@@ -99,7 +98,6 @@ export interface WorldStoreStateSnapshot {
     };
   };
 }
-
 export interface WorldStoreModule {
   get(): WorldStore | null;
   init(seed: WorldSeed): WorldStore;
