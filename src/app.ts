@@ -1,4 +1,6 @@
 import { hideRoot, mountContent, showRoot } from './ui/mount.js';
+import { asScreenNode, hasScreenMount, hasScreenUnmount } from './ui/screenContract.js';
+import type { ScreenNode } from './ui/screenContract.js';
 import { renderTopBar } from './ui/components/topBar.js';
 import { renderMainMenu, renderSettingsStub } from './ui/screens/mainMenu.js';
 import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionInterstitial.js';
@@ -10,23 +12,10 @@ import { createStandalonePersistence } from './platform/browser/localPersistence
 import { loadSeed } from './platform/browser/seedLoader.js';
 import type { AppController, RegionId } from './shared/types.js';
 
-type RenderLifecycleHook = () => void;
-
-interface MountableScreenNode extends HTMLElement {
-  __sillyOnMount?: RenderLifecycleHook;
-  __sillyOnUnmount?: RenderLifecycleHook;
-}
-
-type ActiveScreenUnmount = RenderLifecycleHook | null;
+type ActiveScreenUnmount = (() => void) | null;
 
 const APP_TITLE = 'SillyRPG';
 let activeScreenUnmount: ActiveScreenUnmount = null;
-
-function asMountableScreenNode(node: HTMLElement): MountableScreenNode {
-  // Screen renderers are plain JS modules that may attach optional lifecycle hooks at runtime.
-  // Keep the cast narrow at the startup boundary instead of propagating `unknown`/`any`.
-  return node as MountableScreenNode;
-}
 
 const appController: AppController = createAppController({
   worldStore,
@@ -49,18 +38,18 @@ function exit(): void {
   hideRoot();
 }
 
-function renderMapScreen(): MountableScreenNode {
-  return asMountableScreenNode(renderPhoneCityMapScreen({
+function renderMapScreen(): ScreenNode {
+  return asScreenNode(renderPhoneCityMapScreen({
     onRegionOpen: (regionId: RegionId) => appController.sceneTransitionController.onMapPinClick(regionId)
   }));
 }
 
-function renderScreenBody(): MountableScreenNode {
+function renderScreenBody(): ScreenNode {
   const nav = appController.navigationStore.getState();
-  if (nav.screen === 'settings') return asMountableScreenNode(renderSettingsStub({ onBack: back }));
+  if (nav.screen === 'settings') return asScreenNode(renderSettingsStub({ onBack: back }));
 
   if (nav.screen === 'scene') {
-    return asMountableScreenNode(renderSceneViewScreen({
+    return asScreenNode(renderSceneViewScreen({
       districtId: nav.contextId,
       onEncounterStart: ({ distanceToEnemy, interactionDistance }) => {
         console.log('[SillyRPG] Transitioning exploration mode into combat mode.', {
@@ -77,7 +66,7 @@ function renderScreenBody(): MountableScreenNode {
     if (store) {
       const transition = store.getPendingPhaseTransitions()[0];
       if (transition) {
-        return asMountableScreenNode(renderPhaseTransitionInterstitial({
+        return asScreenNode(renderPhaseTransitionInterstitial({
           transition,
           onContinue: () => {
             appController.consumePendingPhaseTransition();
@@ -89,7 +78,7 @@ function renderScreenBody(): MountableScreenNode {
     }
   }
 
-  return asMountableScreenNode(renderMainMenu({
+  return asScreenNode(renderMainMenu({
     onNewGame: () => appController.startNewGame(),
     onContinue: () => appController.loadAndResumeGame(),
     onLoadGame: () => appController.loadAndResumeGame(),
@@ -135,13 +124,13 @@ function render(): void {
   }
 
   content.appendChild(screenNode);
-  if (typeof screenNode.__sillyOnUnmount === 'function') {
+  if (hasScreenUnmount(screenNode)) {
     activeScreenUnmount = screenNode.__sillyOnUnmount;
   }
 
   mountContent(box);
 
-  if (typeof screenNode.__sillyOnMount === 'function') {
+  if (hasScreenMount(screenNode)) {
     screenNode.__sillyOnMount();
   }
 }

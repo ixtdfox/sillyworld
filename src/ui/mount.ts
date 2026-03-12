@@ -1,10 +1,22 @@
 const ROOT_ID = 'sillyrpg-root';
 const APP_HOST_SELECTOR = '#app';
 
-function getRootHost(): HTMLElement {
-  const host = document.querySelector<HTMLElement>(APP_HOST_SELECTOR);
-  return host ?? document.body;
+export interface RootHostLookupOptions {
+  hostSelector?: string;
+  fallbackHost?: HTMLElement;
 }
+
+export type RootHostLookup = (options?: RootHostLookupOptions) => HTMLElement;
+
+function getRootHostLookup(options: RootHostLookupOptions = {}): HTMLElement {
+  const { hostSelector = APP_HOST_SELECTOR, fallbackHost = document.body } = options;
+  const host = document.querySelector<HTMLElement>(hostSelector);
+  return host ?? fallbackHost;
+}
+
+export const getRootHost: RootHostLookup = (options) => getRootHostLookup(options);
+
+export type MountContent = (node: Node) => void;
 
 export function ensureRoot(): HTMLDivElement {
   const existingRoot = document.getElementById(ROOT_ID);
@@ -29,7 +41,7 @@ export function hideRoot(): void {
   root.hidden = true;
 }
 
-export function mountContent(node: Node): void {
+export const mountContent: MountContent = (node) => {
   const root = ensureRoot();
   root.replaceChildren(node);
-}
+};
