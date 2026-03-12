@@ -9,8 +9,6 @@ export const ACTION_TIME_COST_STEPS = Object.freeze({
   inventory: 0
 });
 
-type ActionType = keyof typeof ACTION_TIME_COST_STEPS;
-
 const TIME_OF_DAY_TO_PHASE: Readonly<Record<TimeOfDay, TimePhase>> = Object.freeze({
   Morning: TIME_PHASE.Morning,
   Day: TIME_PHASE.Day,
@@ -25,9 +23,17 @@ const PHASE_TO_TIME_OF_DAY: Readonly<Record<TimePhase, TimeOfDay>> = Object.free
   [TIME_PHASE.Night]: 'Night'
 });
 
+function isTimePhase(value: string): value is TimePhase {
+  return TIME_PHASE_ORDER.includes(value as TimePhase);
+}
+
+function isTimeOfDay(value: string): value is TimeOfDay {
+  return TIME_OF_DAY_ORDER.includes(value as TimeOfDay);
+}
+
 export function normalizeTimePhase(value: string | null | undefined, fallback: TimePhase | null = TIME_PHASE.Morning): TimePhase | null {
-  if (value && TIME_PHASE_ORDER.includes(value as TimePhase)) return value as TimePhase;
-  if (value && value in TIME_OF_DAY_TO_PHASE) return TIME_OF_DAY_TO_PHASE[value as TimeOfDay];
+  if (value && isTimePhase(value)) return value;
+  if (value && isTimeOfDay(value)) return TIME_OF_DAY_TO_PHASE[value];
   return fallback;
 }
 
@@ -59,7 +65,7 @@ export function setTimePhase(state: GameState, nextTimePhase: string): GameState
 }
 
 export function setTimeOfDay(state: GameState, nextTimeOfDay: string): GameState {
-  if (TIME_OF_DAY_ORDER.includes(nextTimeOfDay as TimeOfDay)) {
+  if (isTimeOfDay(nextTimeOfDay)) {
     return setTimePhase(state, normalizeTimePhase(nextTimeOfDay, TIME_PHASE.Morning) || TIME_PHASE.Morning);
   }
 
@@ -71,7 +77,7 @@ export function advanceTime(state: GameState, options: { trigger?: string } = {}
   const currentIndex = TIME_PHASE_ORDER.indexOf(current.phase);
   const nextIndex = (currentIndex + 1) % TIME_PHASE_ORDER.length;
   const wrapped = nextIndex === 0;
-  const nextPhase = TIME_PHASE_ORDER[nextIndex] as TimePhase;
+  const nextPhase = TIME_PHASE_ORDER[nextIndex] ?? TIME_PHASE.Morning;
 
   const nextState: GameState = {
     ...state,
@@ -136,7 +142,7 @@ export function advanceToTimePhase(
 
 export function getTimeCostForAction(actionType: string, fallback = 0): number {
   if (typeof actionType !== 'string' || !actionType) return fallback;
-  const configured = ACTION_TIME_COST_STEPS[actionType as ActionType];
+  const configured = (ACTION_TIME_COST_STEPS as Record<string, number>)[actionType];
   if (!Number.isFinite(configured)) return fallback;
   return Math.max(0, Math.floor(configured));
 }

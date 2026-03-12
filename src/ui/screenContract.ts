@@ -16,7 +16,7 @@ export type ScreenRenderer<TOptions = void> = [TOptions] extends [void]
   : (options: TOptions) => ScreenNode;
 
 export function asScreenNode(node: HTMLElement): ScreenNode {
-  return node as ScreenNode;
+  return node;
 }
 
 export function hasScreenMount(node: ScreenNode): node is ScreenNode & Required<Pick<ScreenNodeLifecycle, '__sillyOnMount'>> {

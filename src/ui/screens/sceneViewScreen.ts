@@ -104,7 +104,7 @@ export function renderSceneViewScreen({ districtId, onEncounterStart }: { distri
     __sillyOnUnmount?: () => void;
   };
   wrap.className = 'sillyrpg-screen sillyrpg-scene-view-screen';
-  wrap.dataset.mode = 'exploration';
+  wrap.dataset['mode'] = 'exploration';
 
   const canvas = document.createElement('canvas');
   canvas.className = 'sillyrpg-babylon-canvas sillyrpg-scene-canvas';
@@ -128,7 +128,7 @@ export function renderSceneViewScreen({ districtId, onEncounterStart }: { distri
     }
 
     combatStarted = true;
-    wrap.dataset.mode = 'combat';
+    wrap.dataset['mode'] = 'combat';
     wrap.classList.add('sillyrpg-scene-combat-mode');
     onEncounterStart?.(details);
   };
@@ -139,7 +139,7 @@ export function renderSceneViewScreen({ districtId, onEncounterStart }: { distri
     }
 
     const mode = debugState?.mode ?? 'loading';
-    wrap.dataset.mode = mode;
+    wrap.dataset['mode'] = mode;
     debugOverlay.textContent = buildDebugLines(debugState).join('\n');
   };
 

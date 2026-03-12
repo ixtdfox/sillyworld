@@ -93,7 +93,7 @@ function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>(`script[data-sillyrpg-src="${src}"]`);
     if (existing) {
-      if (existing.dataset.loaded === 'true') {
+      if (existing.dataset['loaded'] === 'true') {
         resolve();
         return;
       }
@@ -106,9 +106,9 @@ function loadScript(src: string) {
     const script = document.createElement('script');
     script.src = src;
     script.async = true;
-    script.dataset.sillyrpgSrc = src;
+    script.dataset['sillyrpgSrc'] = src;
     script.addEventListener('load', () => {
-      script.dataset.loaded = 'true';
+      script.dataset['loaded'] = 'true';
       resolve();
     }, { once: true });
     script.addEventListener('error', () => reject(new Error(`Failed to load script: ${src}`)), { once: true });

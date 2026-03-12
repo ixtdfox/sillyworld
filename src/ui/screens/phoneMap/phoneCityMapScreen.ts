@@ -6,7 +6,7 @@ import { ensureBabylonRuntime, createBabylonUiRuntime } from '../../rendering/ba
 import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.js';
 import { PHONE_DISPLAY_BOUNDS } from './phoneDisplayLayout.js';
 import { WORLD_MAP_REGIONS } from './worldMapRegions.js';
-import { createWorldMapViewport } from './worldMapViewport.js';
+import { createWorldMapViewport, type BabylonGuiLike, type GuiControlLike } from './worldMapViewport.js';
 import { createInventoryScreen } from './inventory/inventoryScreen.js';
 
 const SCREEN_SIZE = Object.freeze({ width: 1280, height: 920 });
@@ -20,7 +20,7 @@ interface PhoneScaler {
 }
 
 interface PhoneDisplayController {
-  displayArea: any;
+  displayArea: GuiControlLike;
   openMap: () => void;
   openInventory: () => void;
 }
@@ -42,7 +42,8 @@ export interface PhoneCityMapScreenProps {
   onRegionOpen?: (regionId: RegionId) => void;
 }
 
-interface BabylonGuiLike {
+
+interface PhoneGuiNamespace extends BabylonGuiLike {
   AdvancedDynamicTexture: {
     CreateFullscreenUI: (name: string, foreground: boolean, scene: unknown) => {
       idealWidth: number;
@@ -54,6 +55,7 @@ interface BabylonGuiLike {
     };
   };
 }
+
 
 function createPhoneScaler(phoneWidth: number, phoneHeight: number): PhoneScaler {
   const scaleX = phoneWidth / PHONE_SIZE.width;
@@ -67,7 +69,7 @@ function createPhoneScaler(phoneWidth: number, phoneHeight: number): PhoneScaler
   };
 }
 
-function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen }: { GUI: any; scale: PhoneScaler; mapTextureUrl: string; onRegionOpen: (regionId: RegionId) => void }): PhoneDisplayController {
+function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen }: { GUI: BabylonGuiLike; scale: PhoneScaler; mapTextureUrl: string; onRegionOpen: (regionId: RegionId) => void }): PhoneDisplayController {
   const displayArea = new GUI.Rectangle('phone-display-area');
   displayArea.width = `${scale.w(PHONE_DISPLAY_BOUNDS.width)}px`;
   displayArea.height = `${scale.h(PHONE_DISPLAY_BOUNDS.height)}px`;
@@ -133,7 +135,7 @@ function createButtonCallbacks({ phoneDisplay }: { phoneDisplay: PhoneDisplayCon
   };
 }
 
-function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }: { GUI: any; textureUrl: string; mapTextureUrl: string; onRegionOpen: (regionId: RegionId) => void }): any {
+function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }: { GUI: BabylonGuiLike; textureUrl: string; mapTextureUrl: string; onRegionOpen: (regionId: RegionId) => void }): unknown {
   const uiRoot = new GUI.Rectangle('phone-root');
   uiRoot.width = `${SCREEN_SIZE.width}px`;
   uiRoot.height = `${SCREEN_SIZE.height}px`;
@@ -263,7 +265,7 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }: { GUI: 
 async function mountPhoneScene(canvas: HTMLCanvasElement, { onRegionOpen }: MountPhoneSceneOptions): Promise<() => void> {
   await ensureBabylonRuntime();
   const runtime = createBabylonUiRuntime(canvas);
-  const GUI = runtime.BABYLON.GUI as BabylonGuiLike | undefined;
+  const GUI = runtime.BABYLON.GUI as PhoneGuiNamespace | undefined;
   if (!GUI) {
     throw new Error('Babylon GUI runtime is unavailable.');
   }

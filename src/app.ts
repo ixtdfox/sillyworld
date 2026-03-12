@@ -65,7 +65,7 @@ function renderScreenBody(): ScreenNode {
   if (nav.screen === 'map') {
     const store = appController.getStore();
     if (store) {
-      const transition = store.getPendingPhaseTransitions()[0] as PhaseTransitionRecord | undefined;
+      const [transition] = store.getPendingPhaseTransitions() as Array<PhaseTransitionRecord | undefined>;
       if (transition) {
         return asScreenNode(renderPhaseTransitionInterstitial({
           transition,

@@ -30,7 +30,7 @@ export interface WorldMapRegion {
 }
 
 export interface WorldMapViewportProps {
-  GUI: any;
+  GUI: BabylonGuiLike;
   mapTextureUrl: string;
   viewportWidth: number;
   viewportHeight: number;
@@ -56,7 +56,7 @@ function getClampBounds(viewportSize: number, contentSize: number): { min: numbe
 }
 
 interface RegionPinProps {
-  GUI: any;
+  GUI: BabylonGuiLike;
   region: WorldMapRegion;
   onRegionOpen: (regionId: RegionId, regionLabel: string) => void;
   suppressPinClickUntilRef: NumberRef;
@@ -71,7 +71,7 @@ function createRegionPin({
   suppressPinClickUntilRef,
   isDraggingRef,
   onSuppressionEnd
-}: RegionPinProps): any {
+}: RegionPinProps): GuiControlLike {
   const pin = new GUI.Ellipse(`map-pin-${region.regionId}`);
   pin.width = `${PIN_SIZE}px`;
   pin.height = `${PIN_SIZE}px`;
@@ -137,7 +137,7 @@ export function createWorldMapViewport({
   viewportHeight,
   regions,
   onRegionOpen
-}: WorldMapViewportProps): any {
+}: WorldMapViewportProps): GuiRectangleLike {
   const viewport = new GUI.Rectangle('phone-map-viewport');
   viewport.width = `${viewportWidth}px`;
   viewport.height = `${viewportHeight}px`;
@@ -276,6 +276,57 @@ export function createWorldMapViewport({
 
   viewport.addControl(mapLayer);
   return viewport;
+}
+
+interface GuiObservable<T = unknown> {
+  add: (callback: (payload: T) => void) => void;
+}
+
+export interface GuiControlLike {
+  width?: string;
+  height?: string;
+  thickness?: number;
+  color?: string;
+  background?: string;
+  horizontalAlignment?: number;
+  verticalAlignment?: number;
+  left?: string;
+  top?: string;
+  leftInPixels?: number;
+  topInPixels?: number;
+  isPointerBlocker?: boolean;
+  isHitTestVisible?: boolean;
+  isVisible?: boolean;
+  clipChildren?: boolean;
+  zIndex?: number;
+  stretch?: number;
+  fontSize?: number;
+  fontWeight?: string;
+  addControl: (control: GuiControlLike) => void;
+  onPointerDownObservable: GuiObservable<PointerInfo>;
+  onPointerMoveObservable: GuiObservable<PointerInfo>;
+  onPointerUpObservable: GuiObservable<PointerInfo>;
+  onPointerClickObservable: GuiObservable<PointerInfo>;
+  onPointerOutObservable?: GuiObservable<PointerInfo>;
+}
+
+export interface GuiRectangleLike extends GuiControlLike {}
+
+export interface BabylonGuiLike {
+  Control: {
+    HORIZONTAL_ALIGNMENT_LEFT: number;
+    HORIZONTAL_ALIGNMENT_TOP?: number;
+    HORIZONTAL_ALIGNMENT_CENTER: number;
+    VERTICAL_ALIGNMENT_TOP: number;
+    VERTICAL_ALIGNMENT_CENTER: number;
+  };
+  Image: {
+    new (name: string, url?: string): GuiControlLike;
+    STRETCH_FILL: number;
+  };
+  Rectangle: new (name: string) => GuiRectangleLike;
+  Ellipse: new (name: string) => GuiControlLike;
+  TextBlock: new (name: string, text?: string) => GuiControlLike;
 }
 
 //c: x:333, y:0 s: x:133, y:135
