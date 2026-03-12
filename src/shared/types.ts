@@ -126,7 +126,7 @@ export interface AppControllerState {
 }
 
 export interface AppController {
-  navigationStore: NavigationStore;
+  navigation: NavigationStore;
   sceneTransitionController: SceneTransitionController;
   getStore(): WorldStore | null;
   getPhasePresentation(): PhasePresentation | null;

@@ -1,0 +1,164 @@
+import { NavigationController } from '../navigation/NavigationController.js';
+import { SceneTransitionController } from '../navigation/SceneTransitionController.js';
+import type {
+  AppController as AppControllerContract,
+  AppControllerDeps,
+  MapLevelContext,
+  NavigationState,
+  PhaseLabels,
+  PhasePresentation,
+  TimePhaseId,
+  WorldClockSnapshot,
+  WorldSeed,
+  WorldStore,
+  WorldStoreStateSnapshot
+} from '../../shared/types.js';
+
+const PHASE_LABELS: PhaseLabels = Object.freeze({
+  morning: 'Morning',
+  day: 'Day',
+  evening: 'Evening',
+  night: 'Night'
+});
+
+const PHASE_HINTS: PhaseLabels = Object.freeze({
+  morning: 'Most civic services are open and people are easier to find.',
+  day: 'Public movement is busiest; daytime-only locations are active.',
+  evening: 'Some routines wind down while night-active contacts begin to appear.',
+  night: 'Night-only routes and contacts open up, while many daytime spots close.'
+});
+
+function buildMapNavState(state: WorldStoreStateSnapshot, mapLevel: AppControllerDeps['mapLevel']): NavigationState {
+  const currentNodeId = state.player.currentNodeId;
+  const districtId = state.maps.nodesById[currentNodeId]?.parentId ?? null;
+
+  const navStack: MapLevelContext[] = [
+    { level: mapLevel.City, contextId: 'city:larkspur' },
+    { level: mapLevel.District, contextId: districtId }
+  ].filter((entry): entry is MapLevelContext => Boolean(entry.contextId));
+
+  return {
+    screen: 'map',
+    level: mapLevel.Building,
+    contextId: currentNodeId,
+    navStack
+  };
+}
+
+export class AppController implements AppControllerContract {
+  readonly navigation: NavigationController;
+  readonly sceneTransitionController: SceneTransitionController;
+
+  readonly #worldStore: AppControllerDeps['worldStore'];
+  readonly #mapLevel: AppControllerDeps['mapLevel'];
+  readonly #loadSeed: AppControllerDeps['loadSeed'];
+  readonly #persistence: AppControllerDeps['persistence'];
+  readonly #onStateChange: NonNullable<AppControllerDeps['onStateChange']>;
+
+  #seed: WorldSeed | null = null;
+
+  constructor({ worldStore, mapLevel, loadSeed, persistence, onStateChange = () => {} }: AppControllerDeps) {
+    this.#worldStore = worldStore;
+    this.#mapLevel = mapLevel;
+    this.#loadSeed = loadSeed;
+    this.#persistence = persistence;
+    this.#onStateChange = onStateChange;
+    this.navigation = new NavigationController();
+
+    this.sceneTransitionController = new SceneTransitionController({
+      onEnterScene: ({ regionId }) => {
+        this.navigation.setContextId(regionId);
+        this.navigation.setScreen('scene');
+        this.requestRender();
+      }
+    });
+  }
+
+  getStore(): WorldStore | null {
+    return this.#worldStore.get();
+  }
+
+  getPhasePresentation(): PhasePresentation | null {
+    const store = this.getStore();
+    if (!store) return null;
+
+    const phaseKey = store.getTimePhase() as TimePhaseId;
+    const clock: WorldClockSnapshot | null = store.getWorldClock();
+
+    return {
+      key: phaseKey,
+      label: PHASE_LABELS[phaseKey] ?? phaseKey,
+      hint: PHASE_HINTS[phaseKey] ?? '',
+      dayNumber: clock?.dayNumber ?? 1
+    };
+  }
+
+  hasSaveData(): boolean {
+    return this.#persistence.hasSaveData();
+  }
+
+  back(): void {
+    const nav = this.navigation.getState();
+    if (nav.screen === 'settings') {
+      this.navigation.setScreen('mainMenu');
+      this.requestRender();
+      return;
+    }
+
+    if (nav.screen === 'scene') {
+      this.navigation.setScreen('map');
+      this.requestRender();
+      return;
+    }
+
+    if (nav.screen === 'map') {
+      const moved = this.navigation.navigateBackLevel();
+      if (moved) this.requestRender();
+    }
+  }
+
+  async startNewGame(): Promise<void> {
+    const seed = await this.loadSeedOnce();
+    const store = this.#worldStore.init(seed);
+    store.reset(seed);
+    const state = store.getState();
+    this.navigation.reset(buildMapNavState(state, this.#mapLevel));
+    store.save(this.#persistence.storage);
+    this.requestRender();
+  }
+
+  async loadAndResumeGame(): Promise<void> {
+    const seed = await this.loadSeedOnce();
+    const store = this.#worldStore.init(seed);
+    const loaded = store.load(this.#persistence.storage);
+    if (loaded) {
+      const state = store.getState();
+      this.navigation.reset(buildMapNavState(state, this.#mapLevel));
+    }
+    this.requestRender();
+  }
+
+  consumePendingPhaseTransition(): unknown {
+    const store = this.getStore();
+    if (!store) return null;
+    const transition = store.consumeNextPhaseTransition();
+    store.save(this.#persistence.storage);
+    this.requestRender();
+    return transition;
+  }
+
+  async initialize(): Promise<void> {
+    await this.loadSeedOnce();
+    this.requestRender();
+  }
+
+  private requestRender(): void {
+    this.#onStateChange();
+  }
+
+  private async loadSeedOnce() {
+    if (this.#seed) return this.#seed;
+    this.#seed = await this.#loadSeed();
+    return this.#seed;
+  }
+}

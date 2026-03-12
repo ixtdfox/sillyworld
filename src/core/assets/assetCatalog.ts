@@ -1,4 +1,19 @@
-const assetPaths = {
+interface AssetCatalog {
+  scenes: Record<string, string>;
+  scene?: Record<string, string>;
+  textures: Record<string, string>;
+  models: {
+    characters: Record<string, string>;
+  };
+  maps: {
+    city: Record<string, string>;
+    districts: Record<string, string>;
+  };
+  icons: Record<string, string>;
+  [key: string]: unknown;
+}
+
+const assetPaths: AssetCatalog = {
   scenes: {
     districtExploration: 'assets/scene_test.glb',
     combatPrototype: 'assets/combat.glb'
@@ -32,16 +47,21 @@ assetPaths.scene = assetPaths.scenes;
 
 export const ASSET_PATHS = Object.freeze(assetPaths);
 
-export function getAssetPath(pathKey) {
+export function getAssetPath(pathKey: string): string {
   if (typeof pathKey !== 'string' || pathKey.length === 0) {
     throw new Error('Asset key must be a non-empty string.');
   }
 
   const segments = pathKey.split('.');
-  let value = ASSET_PATHS;
+  let value: unknown = ASSET_PATHS;
 
   for (const segment of segments) {
-    value = value?.[segment];
+    if (typeof value !== 'object' || !value || !(segment in value)) {
+      value = undefined;
+      break;
+    }
+
+    value = (value as Record<string, unknown>)[segment];
   }
 
   if (typeof value !== 'string') {
