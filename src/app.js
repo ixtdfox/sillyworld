@@ -9,6 +9,9 @@ import { createAppController } from './core/app/createAppController.js';
 import { createStandalonePersistence } from './platform/browser/localPersistence.js';
 import { loadSeed } from './platform/browser/seedLoader.js';
 
+/** @typedef {import('./shared/types').RegionId} RegionId */
+/** @typedef {import('./shared/types').ScreenId} ScreenId */
+
 const APP_TITLE = 'SillyRPG';
 let activeScreenUnmount = null;
 
@@ -35,6 +38,7 @@ function exit() {
 
 function renderMapScreen() {
   return renderPhoneCityMapScreen({
+    /** @param {RegionId} regionId */
     onRegionOpen: (regionId) => appController.sceneTransitionController.onMapPinClick(regionId)
   });
 }
@@ -78,7 +82,7 @@ function renderScreenBody() {
     onContinue: () => appController.loadAndResumeGame(),
     onLoadGame: () => appController.loadAndResumeGame(),
     onSettings: () => {
-      appController.navigationStore.setScreen('settings');
+      appController.navigationStore.setScreen(/** @type {ScreenId} */ ('settings'));
       render();
     },
     onExit: exit,

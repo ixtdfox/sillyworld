@@ -1,3 +1,6 @@
+/** @typedef {import('../../shared/types').SeedLoader} SeedLoader */
+
+/** @type {SeedLoader} */
 export async function loadSeed(seedPath = '../../world/seed_world.json') {
   const url = new URL(seedPath, import.meta.url).toString();
   console.info('[SillyRPG] Loading world seed.', { url });

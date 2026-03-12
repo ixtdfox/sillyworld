@@ -1,6 +1,12 @@
 import { createNavigationStore } from '../navigation/navigationStore.js';
 import { createSceneTransitionController } from '../navigation/sceneTransitionController.js';
 
+/** @typedef {import('../../shared/types').AppController} AppController */
+/** @typedef {import('../../shared/types').AppControllerDeps} AppControllerDeps */
+/** @typedef {import('../../shared/types').MapLevelId} MapLevelId */
+/** @typedef {import('../../shared/types').NavigationState} NavigationState */
+/** @typedef {import('../../shared/types').PhasePresentation} PhasePresentation */
+
 const PHASE_LABELS = Object.freeze({
   morning: 'Morning',
   day: 'Day',
@@ -15,6 +21,7 @@ const PHASE_HINTS = Object.freeze({
   night: 'Night-only routes and contacts open up, while many daytime spots close.'
 });
 
+/** @param {import('../../shared/types').WorldStore | null} store @returns {PhasePresentation | null} */
 export function getPhasePresentation(store) {
   if (!store) return null;
   const phaseKey = store.getTimePhase();
@@ -28,6 +35,7 @@ export function getPhasePresentation(store) {
   };
 }
 
+/** @param {any} state @param {AppControllerDeps['mapLevel']} mapLevel @returns {NavigationState} */
 function buildMapNavState(state, mapLevel) {
   return {
     screen: 'map',
@@ -40,6 +48,7 @@ function buildMapNavState(state, mapLevel) {
   };
 }
 
+/** @param {AppControllerDeps} deps @returns {AppController} */
 export function createAppController({
   worldStore,
   mapLevel,
@@ -47,6 +56,7 @@ export function createAppController({
   persistence,
   onStateChange = () => {}
 }) {
+  /** @type {{ seed: import('../../shared/types').WorldSeed | null }} */
   const appState = { seed: null };
   const navigationStore = createNavigationStore();
 
