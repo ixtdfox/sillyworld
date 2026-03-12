@@ -1,4 +1,4 @@
-import { MAP_LEVEL } from '../../world/constants/types.js';
+import { MAP_LEVEL } from '../../world/constants/types.ts';
 import type {
   ContextId,
   MapLevelId,
@@ -6,7 +6,7 @@ import type {
   NavigationStateSeed,
   NavigationStore,
   ScreenId
-} from '../../shared/types.js';
+} from '../../shared/types.ts';
 
 export function createNavigationState(seed: NavigationStateSeed = {}): NavigationState {
   return {

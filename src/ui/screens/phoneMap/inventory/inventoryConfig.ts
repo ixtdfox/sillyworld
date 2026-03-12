@@ -1,4 +1,4 @@
-import { PHONE_DISPLAY_BOUNDS } from '../phoneDisplayLayout.js';
+import { PHONE_DISPLAY_BOUNDS } from '../phoneDisplayLayout.ts';
 
 interface PhoneScale {
   x: (value: number) => number;

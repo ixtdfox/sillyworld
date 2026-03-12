@@ -1,5 +1,5 @@
-import { loadAndNormalizeEntityCharacter } from './entityCharacterLoader.js';
-import { PLAYER_CHARACTER_ARCHETYPE } from './entityArchetypes.js';
+import { loadAndNormalizeEntityCharacter } from './entityCharacterLoader.ts';
+import { PLAYER_CHARACTER_ARCHETYPE } from './entityArchetypes.ts';
 
 export async function loadPlayerCharacter(runtime, options = {}) {
   const playerFile = options.playerFile ?? PLAYER_CHARACTER_ARCHETYPE.modelFile;

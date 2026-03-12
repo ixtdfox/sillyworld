@@ -1,4 +1,4 @@
-import { ASSET_PATHS } from '../../core/assets/assetCatalog.js';
+import { ASSET_PATHS } from '../../core/assets/assetCatalog.ts';
 
 const PLAYER_CHARACTER_FILE = ASSET_PATHS.models.characters.player;
 const HUMANOID_ENEMY_FILE = ASSET_PATHS.models.characters.enemyHumanoidRaider;

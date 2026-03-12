@@ -1,4 +1,4 @@
-import type { BabylonGuiLike, GuiControlLike, GuiSliderLike } from '../worldMapViewport.js';
+import type { BabylonGuiLike, GuiControlLike, GuiSliderLike } from '../worldMapViewport.ts';
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { loadEnemyCharacter } from '../src/ui/rendering/enemyCharacterLoader.js';
+import { loadEnemyCharacter } from '../src/ui/rendering/enemyCharacterLoader.ts';
 
 function createRootNode({ minY = 0, maxY = 2 } = {}) {
   return {

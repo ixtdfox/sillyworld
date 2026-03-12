@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { attachGroundClickInput } from '../src/ui/rendering/sceneGroundClickInput.js';
+import { attachGroundClickInput } from '../src/ui/rendering/sceneGroundClickInput.ts';
 
 function createRuntime({ pickResult }) {
   let observer = null;

@@ -1,7 +1,7 @@
-import { createAtlasImage } from '../../../components/interactiveAtlasButton.js';
-import type { BabylonGuiLike, GuiControlLike } from '../worldMapViewport.js';
-import { INVENTORY_LAYOUT, INVENTORY_SLOT_REGION, getInventoryLayoutMetrics } from './inventoryConfig.js';
-import { createInventoryScrollbar } from './inventoryScrollbar.js';
+import { createAtlasImage } from '../../../components/interactiveAtlasButton.ts';
+import type { BabylonGuiLike, GuiControlLike } from '../worldMapViewport.ts';
+import { INVENTORY_LAYOUT, INVENTORY_SLOT_REGION, getInventoryLayoutMetrics } from './inventoryConfig.ts';
+import { createInventoryScrollbar } from './inventoryScrollbar.ts';
 
 interface PhoneScale {
   x: (value: number) => number;

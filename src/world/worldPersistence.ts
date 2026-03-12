@@ -1,6 +1,6 @@
-import type { GameState, GameStateSeed, PersistenceStorage, SavePayload } from './contracts.js';
-import { migrateGameState } from './worldMigrations.js';
-import { PERSISTENCE_KEYS } from '../platform/browser/localPersistence.js';
+import type { GameState, GameStateSeed, PersistenceStorage, SavePayload } from './contracts.ts';
+import { migrateGameState } from './worldMigrations.ts';
+import { PERSISTENCE_KEYS } from '../platform/browser/localPersistence.ts';
 
 export const SAVE_KEY = PERSISTENCE_KEYS.worldSave;
 

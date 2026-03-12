@@ -1,17 +1,17 @@
-import { hideRoot, mountContent, showRoot } from './ui/mount.js';
-import { renderTopBar } from './ui/components/topBar.js';
-import { renderSettingsStub } from './ui/screens/mainMenu.js';
-import { MainMenuScreen } from './ui/screens/mainMenuScreen.js';
-import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionInterstitial.js';
-import { MapScreen } from './ui/screens/phoneMap/phoneCityMapScreen.js';
-import { SceneViewScreen } from './ui/screens/sceneViewScreen.js';
-import { ScreenManager } from './ui/screens/screenSystem.js';
-import { MAP_LEVEL, worldStore } from './world/index.js';
-import { createStandalonePersistence } from './platform/browser/localPersistence.js';
-import { loadSeed } from './platform/browser/seedLoader.js';
-import type { AppController as AppControllerContract, RegionId } from './shared/types.js';
-import type { PhaseTransitionRecord } from './world/contracts.js';
-import { AppController } from './core/app/AppController.js';
+import { hideRoot, mountContent, showRoot } from './ui/mount.ts';
+import { renderTopBar } from './ui/components/topBar.ts';
+import { renderSettingsStub } from './ui/screens/mainMenu.ts';
+import { MainMenuScreen } from './ui/screens/mainMenuScreen.ts';
+import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionInterstitial.ts';
+import { MapScreen } from './ui/screens/phoneMap/phoneCityMapScreen.ts';
+import { SceneViewScreen } from './ui/screens/sceneViewScreen.ts';
+import { ScreenManager } from './ui/screens/screenSystem.ts';
+import { MAP_LEVEL, worldStore } from './world/index.ts';
+import { createStandalonePersistence } from './platform/browser/localPersistence.ts';
+import { loadSeed } from './platform/browser/seedLoader.ts';
+import type { AppController as AppControllerContract, RegionId } from './shared/types.ts';
+import type { PhaseTransitionRecord } from './world/contracts.ts';
+import { AppController } from './core/app/AppController.ts';
 
 const APP_TITLE = 'SillyRPG';
 

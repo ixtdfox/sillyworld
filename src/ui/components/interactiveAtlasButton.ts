@@ -1,4 +1,4 @@
-import type { BabylonGuiLike, GuiControlLike } from '../screens/phoneMap/worldMapViewport.js';
+import type { BabylonGuiLike, GuiControlLike } from '../screens/phoneMap/worldMapViewport.ts';
 
 export interface AtlasRegion {
   x: number;

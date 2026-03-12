@@ -1,4 +1,4 @@
-import type { PhaseTransitionRecord } from '../../world/contracts.js';
+import type { PhaseTransitionRecord } from '../../world/contracts.ts';
 
 export interface PhaseTransitionInterstitialProps {
   transition: PhaseTransitionRecord;

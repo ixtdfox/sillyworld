@@ -1,4 +1,4 @@
-import { attachCombatTargetSelectionFlow } from './combatTargetSelectionFlow.js';
+import { attachCombatTargetSelectionFlow } from './combatTargetSelectionFlow.ts';
 
 function resolveTargetEntries(options = {}) {
   if (typeof options.getPotentialTargets === 'function') {

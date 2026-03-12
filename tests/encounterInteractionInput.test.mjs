@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   attachEncounterInteractionInput,
   ENCOUNTER_INTERACTION_DISTANCE
-} from '../src/ui/rendering/encounterInteractionInput.js';
+} from '../src/ui/rendering/encounterInteractionInput.ts';
 
 function createRuntime({ pickResult }) {
   let observer = null;

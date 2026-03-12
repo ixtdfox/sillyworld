@@ -1,4 +1,4 @@
-import { getAssetPath } from '../../core/assets/assetCatalog.js';
+import { getAssetPath } from '../../core/assets/assetCatalog.ts';
 
 export interface AssetPathResolver {
   resolveAssetPath(relPath: string): string;

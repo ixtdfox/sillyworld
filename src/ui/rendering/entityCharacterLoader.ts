@@ -1,8 +1,8 @@
-import { applyEntityNormalization, resolveEntityNormalizationConfig } from './entityNormalization.js';
+import { applyEntityNormalization, resolveEntityNormalizationConfig } from './entityNormalization.ts';
 import {
   applyEntityCollisionFromDimensions,
   createEntityGameplayDimensions
-} from './entityGameplayDimensions.js';
+} from './entityGameplayDimensions.ts';
 
 export function resolveImportedRootNode(result) {
   const firstTransformNode = result.transformNodes.find((node) => !node.parent);

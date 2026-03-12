@@ -10,7 +10,7 @@ import {
   resolveEnemyNormalizationConfigId,
   resolveEntityNormalizationConfig,
   resolvePlayerNormalizationConfigId
-} from '../src/ui/rendering/entityNormalization.js';
+} from '../src/ui/rendering/entityNormalization.ts';
 
 test('resolves configured normalization entries', () => {
   const player = resolveEntityNormalizationConfig(resolvePlayerNormalizationConfigId());

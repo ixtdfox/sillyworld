@@ -1,4 +1,4 @@
-import type { CharacterState, GameState, RelationshipState } from '../contracts.js';
+import type { CharacterState, GameState, RelationshipState } from '../contracts.ts';
 
 export const DEFAULT_RELATIONSHIP: Readonly<RelationshipState> = Object.freeze({
   level: 0,

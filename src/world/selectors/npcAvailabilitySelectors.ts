@@ -1,6 +1,6 @@
-import { TIME_PHASE } from '../constants/types.js';
-import type { GameState, MapNodeState, TimePhase } from '../contracts.js';
-import { getTimePhase } from './worldSelectors.js';
+import { TIME_PHASE } from '../constants/types.ts';
+import type { GameState, MapNodeState, TimePhase } from '../contracts.ts';
+import { getTimePhase } from './worldSelectors.ts';
 
 const ALL_PHASES = new Set<TimePhase>(Object.values(TIME_PHASE));
 

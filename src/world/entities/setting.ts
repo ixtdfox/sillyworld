@@ -1,4 +1,4 @@
-import { indexBy } from '../utils/object.js';
+import { indexBy } from '../utils/object.ts';
 
 const DEFAULT_DANGER_LEVEL = 'moderate';
 const DEFAULT_QUARANTINE_STATUS = 'clear';

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from '../src/ui/rendering/playerActionModeStateMachine.js';
+import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from '../src/ui/rendering/playerActionModeStateMachine.ts';
 
 test('defaults to idle mode and supports valid transitions', () => {
   const machine = createPlayerActionModeStateMachine();

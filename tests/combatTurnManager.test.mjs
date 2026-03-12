@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createCombatTurnManager } from '../src/ui/rendering/combatTurnManager.js';
+import { createCombatTurnManager } from '../src/ui/rendering/combatTurnManager.ts';
 
 function makeUnit(id, team, initiative) {
   return { id, team, initiative };

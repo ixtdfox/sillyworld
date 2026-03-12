@@ -1,5 +1,5 @@
-import { NavigationController } from '../navigation/NavigationController.js';
-import { SceneTransitionController } from '../navigation/SceneTransitionController.js';
+import { NavigationController } from '../navigation/NavigationController.ts';
+import { SceneTransitionController } from '../navigation/SceneTransitionController.ts';
 import type {
   AppController as AppControllerContract,
   AppControllerDeps,
@@ -12,7 +12,7 @@ import type {
   WorldSeed,
   WorldStore,
   WorldStoreStateSnapshot
-} from '../../shared/types.js';
+} from '../../shared/types.ts';
 
 const PHASE_LABELS: PhaseLabels = Object.freeze({
   morning: 'Morning',

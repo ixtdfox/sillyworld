@@ -1,13 +1,13 @@
-import { resolveCatalogAssetPath } from '../../../platform/browser/assetResolver.js';
-import type { RegionId } from '../../../shared/types.js';
-import { createAtlasImage, createInteractiveAtlasButton } from '../../components/interactiveAtlasButton.js';
-import { createBabylonUiRuntime, ensureBabylonRuntime } from '../../rendering/babylonRuntime.js';
-import { Screen } from '../screenSystem.js';
-import { PHONE_DISPLAY_BOUNDS } from './phoneDisplayLayout.js';
-import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.js';
-import { createInventoryScreen } from './inventory/inventoryScreen.js';
-import { type BabylonGuiLike, type GuiControlLike, createWorldMapViewport } from './worldMapViewport.js';
-import { WORLD_MAP_REGIONS } from './worldMapRegions.js';
+import { resolveCatalogAssetPath } from '../../../platform/browser/assetResolver.ts';
+import type { RegionId } from '../../../shared/types.ts';
+import { createAtlasImage, createInteractiveAtlasButton } from '../../components/interactiveAtlasButton.ts';
+import { createBabylonUiRuntime, ensureBabylonRuntime } from '../../rendering/babylonRuntime.ts';
+import { Screen } from '../screenSystem.ts';
+import { PHONE_DISPLAY_BOUNDS } from './phoneDisplayLayout.ts';
+import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.ts';
+import { createInventoryScreen } from './inventory/inventoryScreen.ts';
+import { type BabylonGuiLike, type GuiControlLike, createWorldMapViewport } from './worldMapViewport.ts';
+import { WORLD_MAP_REGIONS } from './worldMapRegions.ts';
 
 const SCREEN_SIZE = Object.freeze({ width: 1280, height: 920 });
 const PHONE_SIZE = Object.freeze({ width: 555, height: 918, scale: 0.78 });

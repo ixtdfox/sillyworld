@@ -1,4 +1,4 @@
-import { startApp } from './app.js';
+import { startApp } from './app.ts';
 
 function bootstrapStandalone(): void {
   console.info('[SillyRPG] Standalone bootstrap starting.');

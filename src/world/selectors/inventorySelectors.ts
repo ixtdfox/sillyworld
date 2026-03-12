@@ -1,4 +1,4 @@
-import type { GameState, ItemDefinitionState, ItemInstanceState } from '../contracts.js';
+import type { GameState, ItemDefinitionState, ItemInstanceState } from '../contracts.ts';
 
 export function getItemInstance(state: GameState, instanceId: string): ItemInstanceState | null {
   return state.items.instancesById[instanceId] || null;

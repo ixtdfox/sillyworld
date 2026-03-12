@@ -1,4 +1,4 @@
-import type { WorldMapRegion } from './worldMapViewport.js';
+import type { WorldMapRegion } from './worldMapViewport.ts';
 
 export const WORLD_MAP_REGIONS: readonly WorldMapRegion[] = Object.freeze([
   { regionId: 'northport', label: 'Northport', x: 348, y: 294 },

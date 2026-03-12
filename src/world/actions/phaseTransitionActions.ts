@@ -1,4 +1,4 @@
-import type { GameState, PhaseTransitionRecord, TimePhase, WorldState } from '../contracts.js';
+import type { GameState, PhaseTransitionRecord, TimePhase, WorldState } from '../contracts.ts';
 
 const DEFAULT_TRANSITION_TYPE = 'time.phase.changed';
 

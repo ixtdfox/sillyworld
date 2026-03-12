@@ -1,4 +1,4 @@
-import type { RegionId } from '../../../shared/types.js';
+import type { RegionId } from '../../../shared/types.ts';
 
 const MAP_NATIVE_SIZE = Object.freeze({ width: 1536, height: 1024 });
 const PIN_SIZE = 24;

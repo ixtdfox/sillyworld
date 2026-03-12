@@ -1,21 +1,21 @@
-export { SCHEMA_VERSION, TIME_PHASE, TIME_PHASE_ORDER, TIME_OF_DAY, TIME_OF_DAY_ORDER, MAP_LEVEL, EQUIPMENT_SLOT } from './constants/types.js';
-export * from './contracts.js';
-export * from './worldStore.js';
-export * from './worldState.js';
-export * from './worldPersistence.js';
+export { SCHEMA_VERSION, TIME_PHASE, TIME_PHASE_ORDER, TIME_OF_DAY, TIME_OF_DAY_ORDER, MAP_LEVEL, EQUIPMENT_SLOT } from './constants/types.ts';
+export * from './contracts.ts';
+export * from './worldStore.ts';
+export * from './worldState.ts';
+export * from './worldPersistence.ts';
 
-export * as timeActions from './actions/timeActions.js';
-export * as inventoryActions from './actions/inventoryActions.js';
-export * as relationshipActions from './actions/relationshipActions.js';
-export * as navigationActions from './actions/navigationActions.js';
-export * as restActions from './actions/restActions.js';
-export * as phaseTransitionActions from './actions/phaseTransitionActions.js';
+export * as timeActions from './actions/timeActions.ts';
+export * as inventoryActions from './actions/inventoryActions.ts';
+export * as relationshipActions from './actions/relationshipActions.ts';
+export * as navigationActions from './actions/navigationActions.ts';
+export * as restActions from './actions/restActions.ts';
+export * as phaseTransitionActions from './actions/phaseTransitionActions.ts';
 
-export * as worldSelectors from './selectors/worldSelectors.js';
-export * as mapSelectors from './selectors/mapSelectors.js';
-export * as inventorySelectors from './selectors/inventorySelectors.js';
-export * as relationshipSelectors from './selectors/relationshipSelectors.js';
+export * as worldSelectors from './selectors/worldSelectors.ts';
+export * as mapSelectors from './selectors/mapSelectors.ts';
+export * as inventorySelectors from './selectors/inventorySelectors.ts';
+export * as relationshipSelectors from './selectors/relationshipSelectors.ts';
 
-export * as settingSelectors from './selectors/settingSelectors.js';
-export * as locationAvailabilitySelectors from './selectors/locationAvailabilitySelectors.js';
-export * as npcAvailabilitySelectors from './selectors/npcAvailabilitySelectors.js';
+export * as settingSelectors from './selectors/settingSelectors.ts';
+export * as locationAvailabilitySelectors from './selectors/locationAvailabilitySelectors.ts';
+export * as npcAvailabilitySelectors from './selectors/npcAvailabilitySelectors.ts';

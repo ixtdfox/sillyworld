@@ -1,6 +1,6 @@
-import { TIME_OF_DAY_ORDER, TIME_PHASE, TIME_PHASE_ORDER } from '../constants/types.js';
-import type { GameState, TimeOfDay, TimePhase } from '../contracts.js';
-import { appendPhaseTransitions, createPhaseTransition } from './phaseTransitionActions.js';
+import { TIME_OF_DAY_ORDER, TIME_PHASE, TIME_PHASE_ORDER } from '../constants/types.ts';
+import type { GameState, TimeOfDay, TimePhase } from '../contracts.ts';
+import { appendPhaseTransitions, createPhaseTransition } from './phaseTransitionActions.ts';
 
 export const ACTION_TIME_COST_STEPS = Object.freeze({
   navigation: 1,
