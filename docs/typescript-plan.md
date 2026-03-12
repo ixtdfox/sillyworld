@@ -15,6 +15,21 @@ The repository is configured for **incremental migration**:
 - `strict: false` starts with a lenient baseline and avoids broad breakage early in migration.
 - `noEmit: true` keeps TypeScript as a checker only; Vite remains the build/runtime pipeline.
 
+## Browser adapter migration status
+
+The browser platform adapter layer has now been migrated to TypeScript:
+
+- `src/platform/browser/assetResolver.ts`
+- `src/platform/browser/localPersistence.ts`
+- `src/platform/browser/seedLoader.ts`
+
+Status highlights:
+
+- Added explicit adapter contracts for browser asset path resolution and preserved the existing URL fallback behavior.
+- Added typed persistence configuration, key contracts, and explicit localStorage-to-memory fallback resolution semantics.
+- Added typed seed-loading request/result helpers while keeping the public `loadSeed` runtime behavior unchanged.
+- Updated import sites (including tests) to consume the new `.ts` adapter modules directly.
+
 ## Recommended next steps
 
 1. Start converting leaf modules (utility/domain files with fewer dependencies) from `.js` to `.ts`.
