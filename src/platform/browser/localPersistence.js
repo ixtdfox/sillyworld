@@ -1,3 +1,8 @@
+/** @typedef {import('../../shared/types').PersistenceContract} PersistenceContract */
+/** @typedef {import('../../shared/types').PersistenceKeys} PersistenceKeys */
+/** @typedef {import('../../shared/types').PersistenceStorage} PersistenceStorage */
+
+/** @returns {PersistenceStorage} */
 function createInMemoryStorage() {
   const map = new Map();
   return {
@@ -27,10 +32,14 @@ function resolveBrowserStorage() {
   }
 }
 
+/** @type {PersistenceKeys} */
 export const PERSISTENCE_KEYS = Object.freeze({
   worldSave: 'sillyrpg.save.v4'
 });
 
+/** @param {{ keys?: PersistenceKeys, storage?: PersistenceStorage }} [options]
+ * @returns {PersistenceContract}
+ */
 export function createStandalonePersistence({
   keys = PERSISTENCE_KEYS,
   storage = resolveBrowserStorage()

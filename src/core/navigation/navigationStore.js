@@ -1,5 +1,10 @@
 import { MAP_LEVEL } from '../../world/constants/types.js';
 
+/** @typedef {import('../../shared/types').ContextId} ContextId */
+/** @typedef {import('../../shared/types').MapLevelId} MapLevelId */
+/** @typedef {import('../../shared/types').NavigationState} NavigationState */
+
+/** @returns {NavigationState} */
 export function createNavigationState(seed = {}) {
   return {
     screen: seed.screen || 'mainMenu',
@@ -10,18 +15,23 @@ export function createNavigationState(seed = {}) {
 }
 
 export function createNavigationStore(seed = {}) {
+  /** @type {NavigationState} */
   let state = createNavigationState(seed);
 
   return {
+    /** @returns {NavigationState} */
     getState() {
       return state;
     },
+    /** @param {import('../../shared/types').ScreenId} screen */
     setScreen(screen) {
       state = { ...state, screen };
     },
+    /** @param {ContextId | null} contextId */
     setContextId(contextId) {
       state = { ...state, contextId: contextId || null };
     },
+    /** @param {MapLevelId} level @param {ContextId | null} contextId */
     navigateToLevel(level, contextId) {
       state = {
         ...state,
@@ -41,6 +51,7 @@ export function createNavigationStore(seed = {}) {
       };
       return true;
     },
+    /** @param {Partial<NavigationState>} seedState */
     reset(seedState = {}) {
       state = createNavigationState(seedState);
     }
