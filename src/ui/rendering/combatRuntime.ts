@@ -1,7 +1,4 @@
 // @ts-nocheck
-import { loadWorldScene } from './worldSceneLoader.ts';
-import { loadPlayerCharacter } from './playerCharacterLoader.ts';
-import { loadEnemyCharacter } from './enemyCharacterLoader.ts';
 import { attachGameplayIsometricCamera } from './gameplayCameraController.ts';
 import { createCombatTurnManager } from './combatTurnManager.ts';
 import { createCombatGrid } from './combatGrid.ts';
@@ -10,7 +7,6 @@ import { createPlayerAnimationController } from './playerAnimationController.ts'
 import { attachCombatPlayerMovementController } from './combatPlayerMovementController.ts';
 import { createCombatActionResolver } from './combatActionResolver.ts';
 import { attachCombatAttackInputController } from './combatAttackInputController.ts';
-import { resolveOrCreateSceneCamera } from './babylonRuntime.ts';
 import { createCombatDebugHud } from './combatDebugHud.ts';
 import { resolveCombatGridConfig } from './combatGridConfig.ts';
 import { createCombatGridOverlayRenderer } from './combatGridOverlayRenderer.ts';
@@ -18,9 +14,6 @@ import { createCombatMovementRangeHighlighter } from './combatMovementRangeHighl
 import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from './playerActionModeStateMachine.ts';
 import { createCombatDebugShell } from './combatDebugShell.ts';
 import { mapCombatParticipantsFromWorldPositions } from './combatWorldPositionMapper.ts';
-import { ASSET_PATHS } from '../../core/assets/assetCatalog.ts';
-
-const COMBAT_SCENE_FILE = ASSET_PATHS.scenes.combatPrototype;
 const DEFAULT_PLAYER_SPAWN_CELL = Object.freeze({ x: -1, z: 1 });
 const DEFAULT_ENEMY_SPAWN_CELL = Object.freeze({ x: 1, z: -1 });
 const DEFAULT_AP_PER_TURN = 2;
@@ -181,46 +174,17 @@ function resolveEncounterParticipants(options = {}) {
 }
 
 export async function createCombatRuntime(runtime, options = {}) {
-  const isWorldCombatMode = options.worldCombatMode === true;
-  const combatScene = isWorldCombatMode
-    ? {
-        sceneContainer: options.sceneContainer ?? null,
-        cameras: Array.isArray(options.cameras) ? options.cameras : []
-      }
-    : await loadWorldScene(runtime, {
-        sceneFile: options.sceneFile ?? COMBAT_SCENE_FILE,
-        containerName: options.sceneContainerName ?? 'combatSceneRoot',
-        resolveAssetPath: options.resolveAssetPath
-      });
+  const combatScene = {
+    sceneContainer: options.sceneContainer ?? null,
+    cameras: Array.isArray(options.cameras) ? options.cameras : []
+  };
 
-  if (!isWorldCombatMode) {
-    const resolvedCombatCamera = resolveOrCreateSceneCamera(runtime, {
-      preferredCameras: combatScene.cameras,
-      fallbackCameraName: 'combatFallbackCamera',
-      fallbackPosition: options.fallbackCameraPosition ?? { x: 0, y: 11, z: -12 },
-      fallbackTarget: options.fallbackCameraTarget ?? { x: 0, y: 0, z: 0 }
-    });
+  const playerEntity = options.playerEntity;
+  const enemyEntity = options.enemyEntity;
 
-    if (!resolvedCombatCamera || resolvedCombatCamera.isDisposed?.() || runtime.scene.activeCamera !== resolvedCombatCamera) {
-      throw new Error('Combat scene initialization failed: unable to resolve an active camera.');
-    }
+  if (!playerEntity?.rootNode || !enemyEntity?.rootNode) {
+    throw new Error('World combat runtime requires active exploration entities.');
   }
-
-  const playerEntity = isWorldCombatMode
-    ? options.playerEntity
-    : await loadPlayerCharacter(runtime, {
-        playerFile: options.playerFile,
-        playerNormalizationId: options.playerNormalizationId,
-        resolveAssetPath: options.resolveAssetPath
-      });
-  const enemyEntity = isWorldCombatMode
-    ? options.enemyEntity
-    : await loadEnemyCharacter(runtime, {
-        enemyFile: options.enemyFile,
-        enemyNormalizationId: options.enemyNormalizationId,
-        enemyArchetypeId: options.enemyArchetypeId,
-        resolveAssetPath: options.resolveAssetPath
-      });
 
   const combatGridConfig = resolveCombatGridConfig(options);
 
@@ -268,43 +232,37 @@ export async function createCombatRuntime(runtime, options = {}) {
   let playerSpawnCell = normalizeCell(options.playerSpawnCell, DEFAULT_PLAYER_SPAWN_CELL);
   let enemySpawnCell = normalizeCell(options.enemySpawnCell, DEFAULT_ENEMY_SPAWN_CELL);
 
-  if (isWorldCombatMode) {
-    const mappedParticipants = mapCombatParticipantsFromWorldPositions({
-      participants: [participants.playerParticipant, ...participants.supportedEnemyParticipants],
-      gridMapper,
-      grid,
-      logger: console
-    });
-    const mappedPlayer = mappedParticipants.find((participant) => participant.id === participants.playerParticipant.id);
-    const mappedEnemy = mappedParticipants.find((participant) => participant.id === enemyUnit.id);
+  const mappedParticipants = mapCombatParticipantsFromWorldPositions({
+    participants: [participants.playerParticipant, ...participants.supportedEnemyParticipants],
+    gridMapper,
+    grid,
+    logger: console
+  });
+  const mappedPlayer = mappedParticipants.find((participant) => participant.id === participants.playerParticipant.id);
+  const mappedEnemy = mappedParticipants.find((participant) => participant.id === enemyUnit.id);
 
-    playerSpawnCell = normalizeCell(mappedPlayer?.initialCell, DEFAULT_PLAYER_SPAWN_CELL);
-    enemySpawnCell = normalizeCell(mappedEnemy?.initialCell, DEFAULT_ENEMY_SPAWN_CELL);
-  }
+  playerSpawnCell = normalizeCell(mappedPlayer?.initialCell, DEFAULT_PLAYER_SPAWN_CELL);
+  enemySpawnCell = normalizeCell(mappedEnemy?.initialCell, DEFAULT_ENEMY_SPAWN_CELL);
 
   if (enemySpawnCell.x === playerSpawnCell.x && enemySpawnCell.z === playerSpawnCell.z) {
     enemySpawnCell = { x: playerSpawnCell.x + 1, z: playerSpawnCell.z };
   }
 
-  if (isWorldCombatMode) {
-    playerUnit.gridCell = playerSpawnCell;
-    enemyUnit.gridCell = enemySpawnCell;
-    console.info('[SillyRPG] Combat initial cell assignment completed from world positions.', {
-      playerSpawnCell,
-      enemySpawnCell
-    });
-  } else {
-    placeUnitAtCell(runtime, playerUnit, gridMapper, playerSpawnCell, {
-      source: 'combat_spawn_player',
-      fallbackCell: DEFAULT_PLAYER_SPAWN_CELL,
-      fallbackY: options.playerSpawn?.y ?? 0
-    });
-    placeUnitAtCell(runtime, enemyUnit, gridMapper, enemySpawnCell, {
-      source: 'combat_spawn_enemy',
-      fallbackCell: DEFAULT_ENEMY_SPAWN_CELL,
-      fallbackY: options.enemySpawn?.y ?? 0
-    });
-  }
+  placeUnitAtCell(runtime, playerUnit, gridMapper, playerSpawnCell, {
+    source: 'combat_spawn_player',
+    fallbackCell: DEFAULT_PLAYER_SPAWN_CELL,
+    fallbackY: options.playerSpawn?.y ?? 0
+  });
+  placeUnitAtCell(runtime, enemyUnit, gridMapper, enemySpawnCell, {
+    source: 'combat_spawn_enemy',
+    fallbackCell: DEFAULT_ENEMY_SPAWN_CELL,
+    fallbackY: options.enemySpawn?.y ?? 0
+  });
+
+  console.info('[SillyRPG] Combat initial cell assignment completed from world positions.', {
+    playerSpawnCell,
+    enemySpawnCell
+  });
 
   grid.setOccupied(playerUnit.gridCell, playerUnit.id);
   grid.setOccupied(enemyUnit.gridCell, enemyUnit.id);
@@ -903,11 +861,6 @@ export async function createCombatRuntime(runtime, options = {}) {
     detachCombatMovementController?.();
     debugShell?.dispose?.();
     detachCamera?.();
-    if (!isWorldCombatMode) {
-      enemyEntity.rootNode?.dispose(false, true);
-      playerEntity.rootNode?.dispose(false, true);
-      combatScene.sceneContainer?.dispose(false, true);
-    }
     console.debug('[SillyRPG] Combat runtime cleanup complete');
   };
 
