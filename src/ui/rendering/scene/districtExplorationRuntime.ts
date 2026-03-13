@@ -6,6 +6,7 @@ import { spawnPlayerCharacter } from '../player/playerSpawn.ts';
 import { DEFAULT_ENEMY_PERCEPTION_SETTINGS } from '../../../world/enemy/enemyPerception.ts';
 import { createEnemyAmbientBehavior } from '../../../world/enemy/enemyAmbientBehavior.ts';
 import { createWorldGridMapper } from '../../../world/spatial/worldGrid.ts';
+import { snapActorToNearestValidGridCell } from '../shared/gridAlignment.ts';
 import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from '../shared/runtimeContracts.ts';
 
 const DEFAULT_ENEMY_SPAWN: Readonly<{ x: number; z: number }> = Object.freeze({ x: 2, z: 2 });
@@ -112,6 +113,23 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
   })) as EntityLike;
   spawnPlayerCharacter(runtime, playerEntity, { gridMapper });
 
+  const isWorldCellValid = (cell: { x: number; z: number }) => (
+    cell.x >= gridMapper.minX
+    && cell.x <= gridMapper.maxX
+    && cell.z >= gridMapper.minZ
+    && cell.z <= gridMapper.maxZ
+  );
+
+  snapActorToNearestValidGridCell({
+    runtime,
+    actor: playerEntity,
+    gridMapper,
+    isCellValid: isWorldCellValid,
+    resolveY: ({ x, z, fallbackY = 0 }) => resolveGroundY({ runtime, x, z, fallbackY }),
+    reason: 'exploration_init_player',
+    logger: console
+  });
+
   const enemyEntity = (await loadEnemyCharacter(runtime, {
     enemyFile: options.enemyFile,
     enemyNormalizationId: options.enemyNormalizationId,
@@ -119,6 +137,15 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     resolveAssetPath: options.resolveAssetPath
   })) as EntityLike;
   const enemyPosition = placeEnemyOnGround(runtime, enemyEntity, gridMapper, options.enemySpawn);
+  snapActorToNearestValidGridCell({
+    runtime,
+    actor: enemyEntity,
+    gridMapper,
+    isCellValid: isWorldCellValid,
+    resolveY: ({ x, z, fallbackY = 0 }) => resolveGroundY({ runtime, x, z, fallbackY }),
+    reason: 'exploration_init_enemy',
+    logger: console
+  });
   const patrolData = resolveEnemyPatrolData(runtime, gridMapper, options.enemySpawn, options.enemyPatrolPoints);
   const initialFacingDirection = options.enemyFacingDirection ?? { x: 0, y: 0, z: -1 };
   const enemyAmbientBehavior = createEnemyAmbientBehavior({
