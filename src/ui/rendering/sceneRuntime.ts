@@ -353,7 +353,7 @@ export class SceneRuntime {
     this.#attachExplorationControls();
     if (this.#options.debugEnabled) {
       this.#disposeExplorationDebugShell();
-      const debugShell = createCombatDebugShell(this.#runtime);
+      const debugShell = createCombatDebugShell(this.#runtime, { runtimeKey: '__sceneDebugShellController' });
       debugShell.registerPanel({
         id: 'enemy-vision-grid',
         label: 'Enemy Vision Grid',
@@ -493,19 +493,32 @@ export class SceneRuntime {
         rootNode: this.#explorationRuntime.playerMeshRoot
       };
 
-      const pipelineResult = evaluateEnemyPerceptionPipeline(enemyActor, playerActor, gridMapper, {
-        hasLineOfSight: ({ enemy, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
-          enemy,
-          targetPosition,
-          directionToPlayer,
-          distanceToPlayer
-        })
-      });
+      let pipelineResult;
+      try {
+        pipelineResult = evaluateEnemyPerceptionPipeline(enemyActor, playerActor, gridMapper, {
+          hasLineOfSight: ({ enemy, targetPosition, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
+            enemy,
+            targetPosition,
+            directionToPlayer,
+            distanceToPlayer
+          })
+        });
+      } catch (error) {
+        console.error('[SillyRPG] Enemy perception pipeline update failed.', {
+          error,
+          enemyPosition: enemyActor?.rootNode?.position ?? null,
+          playerPosition: playerActor?.rootNode?.position ?? null,
+          facingDirection: enemyActor?.facingDirection ?? null
+        });
+        return;
+      }
 
       this.#lastPerceptionResult = {
         ...pipelineResult.perceptionResult,
         canSeePlayer: pipelineResult.playerCellVisible
       };
+
+      const combatTriggerCalled = pipelineResult.playerCellVisible === true;
 
       console.debug('[SillyRPG] Enemy perception pipeline.', {
         enemyPosition: pipelineResult.enemyPosition,
@@ -517,10 +530,11 @@ export class SceneRuntime {
         playerCell: pipelineResult.playerCell,
         playerCellVisible: pipelineResult.playerCellVisible,
         perceptionReason: pipelineResult.perceptionResult.reason,
-        perceptionCanSeePlayer: pipelineResult.perceptionResult.canSeePlayer
+        perceptionCanSeePlayer: pipelineResult.perceptionResult.canSeePlayer,
+        combatTriggerCalled
       });
 
-      if (pipelineResult.playerCellVisible) {
+      if (combatTriggerCalled) {
         console.info('[SillyRPG] Enemy perception triggered combat.', {
           combatTriggerCalled: true,
           playerCell: pipelineResult.playerCell,
