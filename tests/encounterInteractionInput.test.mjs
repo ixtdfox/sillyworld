@@ -36,8 +36,8 @@ function createRuntime({ pickResult }) {
         }
       }
     },
-    triggerPointerDown: () => {
-      const pointerInfo = { type: 1, skipOnPointerObservable: false };
+    triggerPointerDown: ({ button = 0 } = {}) => {
+      const pointerInfo = { type: 1, event: { button }, skipOnPointerObservable: false };
       observer?.(pointerInfo);
       return pointerInfo;
     }
@@ -123,4 +123,30 @@ test('prevents double encounter start when enemy is clicked repeatedly', () => {
   runtime.triggerPointerDown();
 
   assert.equal(encounterCount, 1);
+});
+
+
+test('ignores right-click enemy picks for encounter interaction', () => {
+  const enemyRoot = createNode('enemyRoot', { x: 1, y: 0, z: 0 });
+  const playerRoot = createNode('playerRoot', { x: 0, y: 0, z: 0 });
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedMesh: enemyRoot
+    }
+  });
+
+  let encounterCount = 0;
+  attachSceneEncounterInteractionInput(runtime, {
+    playerRoot,
+    enemyRoot,
+    onEncounterStart: () => {
+      encounterCount += 1;
+    }
+  });
+
+  const pointerInfo = runtime.triggerPointerDown({ button: 2 });
+
+  assert.equal(pointerInfo.skipOnPointerObservable, false);
+  assert.equal(encounterCount, 0);
 });

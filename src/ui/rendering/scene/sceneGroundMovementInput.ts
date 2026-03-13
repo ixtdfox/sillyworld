@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { resolveGroundClickTarget } from '../../../world/input/groundClickPolicy.ts';
+import { isCameraOrbiting, isPrimaryPointerAction } from '../shared/pointerInputGuards.ts';
 import type { RuntimeDispose } from '../shared/runtimeContracts.ts';
 
 interface Vector3Like {
@@ -57,6 +58,10 @@ export class SceneGroundMovementInput {
 
     this.#observer = this.#runtime.scene.onPointerObservable.add((pointerInfo) => {
       if (pointerInfo.type !== this.#runtime.BABYLON.PointerEventTypes.POINTERDOWN) {
+        return;
+      }
+
+      if (!isPrimaryPointerAction(pointerInfo) || isCameraOrbiting(this.#runtime)) {
         return;
       }
 

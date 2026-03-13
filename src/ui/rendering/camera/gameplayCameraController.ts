@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { isSecondaryPointerAction, setCameraOrbiting } from '../shared/pointerInputGuards.ts';
+
 const DEFAULT_CAMERA_CONFIG = {
   distance: 14,
   elevationDegrees: 55,
@@ -90,18 +92,19 @@ export function attachGameplayIsometricCamera(runtime, followTarget, options = {
 
   const pointerObserver = runtime.scene.onPointerObservable.add((pointerInfo) => {
     const event = pointerInfo?.event;
-    const button = event?.button;
 
-    if (pointerInfo?.type === pointerDownType && button === 2) {
+    if (pointerInfo?.type === pointerDownType && isSecondaryPointerAction(pointerInfo)) {
       isOrbiting = true;
+      setCameraOrbiting(runtime, true);
       lastClientX = typeof event?.clientX === 'number' ? event.clientX : null;
       lastClientY = typeof event?.clientY === 'number' ? event.clientY : null;
       pointerInfo.skipOnPointerObservable = true;
       return;
     }
 
-    if (pointerInfo?.type === pointerUpType && button === 2) {
+    if (pointerInfo?.type === pointerUpType && isSecondaryPointerAction(pointerInfo)) {
       isOrbiting = false;
+      setCameraOrbiting(runtime, false);
       lastClientX = null;
       lastClientY = null;
       pointerInfo.skipOnPointerObservable = true;
@@ -141,6 +144,7 @@ export function attachGameplayIsometricCamera(runtime, followTarget, options = {
   });
 
   return () => {
+    setCameraOrbiting(runtime, false);
     runtime.scene.onPointerObservable.remove(pointerObserver);
     runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
     if (canvas) {

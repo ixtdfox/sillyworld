@@ -25,8 +25,8 @@ function createRuntime({ pickResult }) {
         }
       }
     },
-    triggerPointerDown: () => {
-      observer?.({ type: 1 });
+    triggerPointerDown: ({ button = 0 } = {}) => {
+      observer?.({ type: 1, event: { button } });
     },
     hasObserver: () => Boolean(observer)
   };
@@ -151,4 +151,44 @@ test('rejects no-hit picks and clears stale movement target', () => {
 
   assert.equal(movementTargetState.getTarget(), null);
   assert.equal(movementTargetState.getClearCount(), 1);
+});
+
+
+test('ignores right-click while orbiting camera controls are active', () => {
+  const point = { x: 4, y: 0, z: 6, clone: () => ({ x: 4, y: 0, z: 6 }) };
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedMesh: { name: 'Ground', parent: null },
+      pickedPoint: point
+    }
+  });
+  runtime.inputState = { camera: { isOrbiting: true } };
+
+  const movementTargetState = createMovementTargetState();
+
+  attachSceneGroundMovementInput(runtime, movementTargetState);
+  runtime.triggerPointerDown({ button: 2 });
+
+  assert.equal(movementTargetState.getTarget(), null);
+  assert.equal(movementTargetState.getClearCount(), 0);
+});
+
+test('ignores right-click ground picks even when camera is not orbiting', () => {
+  const point = { x: 4, y: 0, z: 6, clone: () => ({ x: 4, y: 0, z: 6 }) };
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedMesh: { name: 'Ground', parent: null },
+      pickedPoint: point
+    }
+  });
+
+  const movementTargetState = createMovementTargetState();
+
+  attachSceneGroundMovementInput(runtime, movementTargetState);
+  runtime.triggerPointerDown({ button: 2 });
+
+  assert.equal(movementTargetState.getTarget(), null);
+  assert.equal(movementTargetState.getClearCount(), 0);
 });

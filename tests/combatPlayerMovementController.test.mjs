@@ -79,7 +79,7 @@ function createRuntime({ pickResult }) {
       onBeforeRenderObservable: beforeRender
     },
     tick: () => beforeRender.emit(),
-    click: (payload = {}) => pointer.emit({ type: 1, ...payload }),
+    click: (payload = {}) => pointer.emit({ type: 1, event: { button: 0 }, ...payload }),
     pointerUp: (payload = {}) => pointer.emit({ type: 2, ...payload })
   };
 }
@@ -515,5 +515,99 @@ test('clears queued movement when movement reset version changes', () => {
 
   assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
   assert.equal(playerUnit.mp, 6);
+  detach();
+});
+
+
+test('ignores right-click pointer input for movement selection', () => {
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedPoint: { x: 2, y: 0, z: 0 },
+      pickedMesh: { name: 'Ground', parent: null }
+    }
+  });
+
+  const playerUnit = {
+    id: 'player_1',
+    isAlive: true,
+    mp: 6,
+    rootNode: { position: new Vector3(0, 0, 0) },
+    gridCell: { x: 0, z: 0 }
+  };
+
+  let moved = false;
+  const detach = attachCombatPlayerMovementController(runtime, {
+    combatState: {
+      status: 'active',
+      getActiveUnit: () => playerUnit
+    },
+    playerUnit,
+    gridMapper: {
+      worldToGridCell: () => ({ x: 2, z: 0 }),
+      gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
+    },
+    grid: {
+      findPath: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+      moveOccupant: () => {
+        moved = true;
+      }
+    },
+    resolveGroundY: () => 0
+  });
+
+  runtime.click({ event: { button: 2 } });
+  runtime.tick();
+
+  assert.equal(moved, false);
+  assert.equal(playerUnit.mp, 6);
+  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  detach();
+});
+
+test('ignores left-click movement selection while camera orbit drag is active', () => {
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedPoint: { x: 2, y: 0, z: 0 },
+      pickedMesh: { name: 'Ground', parent: null }
+    }
+  });
+  runtime.inputState = { camera: { isOrbiting: true } };
+
+  const playerUnit = {
+    id: 'player_1',
+    isAlive: true,
+    mp: 6,
+    rootNode: { position: new Vector3(0, 0, 0) },
+    gridCell: { x: 0, z: 0 }
+  };
+
+  let moved = false;
+  const detach = attachCombatPlayerMovementController(runtime, {
+    combatState: {
+      status: 'active',
+      getActiveUnit: () => playerUnit
+    },
+    playerUnit,
+    gridMapper: {
+      worldToGridCell: () => ({ x: 2, z: 0 }),
+      gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
+    },
+    grid: {
+      findPath: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+      moveOccupant: () => {
+        moved = true;
+      }
+    },
+    resolveGroundY: () => 0
+  });
+
+  runtime.click({ event: { button: 0 } });
+  runtime.tick();
+
+  assert.equal(moved, false);
+  assert.equal(playerUnit.mp, 6);
+  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
   detach();
 });

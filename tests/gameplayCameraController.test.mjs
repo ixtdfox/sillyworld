@@ -140,6 +140,7 @@ test('orbits on RMB drag, keeps follow behavior, and stops orbit on RMB release'
 
   const pointerDownInfo = { type: 1, event: { button: 2, clientX: 100, clientY: 100 }, skipOnPointerObservable: false };
   pointerObservable.emit(pointerDownInfo);
+  assert.equal(runtime.inputState.camera.isOrbiting, true);
   pointerObservable.emit({ type: 3, event: { movementX: 30, movementY: 15, clientX: 130, clientY: 115 }, skipOnPointerObservable: false });
   beforeRenderObservable.emit();
   const afterOrbitPosition = runtime.scene.activeCamera.position.clone();
@@ -156,6 +157,7 @@ test('orbits on RMB drag, keeps follow behavior, and stops orbit on RMB release'
 
   const releaseInfo = { type: 2, event: { button: 2, clientX: 130, clientY: 115 }, skipOnPointerObservable: false };
   pointerObservable.emit(releaseInfo);
+  assert.equal(runtime.inputState.camera.isOrbiting, false);
   const frozenPosition = runtime.scene.activeCamera.position.clone();
   pointerObservable.emit({ type: 3, event: { movementX: 80, movementY: -50, clientX: 210, clientY: 65 } });
   beforeRenderObservable.emit();
@@ -165,5 +167,6 @@ test('orbits on RMB drag, keeps follow behavior, and stops orbit on RMB release'
   assert.equal(canvas.hasEvent('contextmenu'), true);
 
   detach();
+  assert.equal(runtime.inputState.camera.isOrbiting, false);
   assert.equal(canvas.hasEvent('contextmenu'), false);
 });
