@@ -7,12 +7,8 @@ export function createMovementTargetState() {
 
   return {
     getTarget: () => targetCell,
-    getTargetCell: () => targetCell,
     hasTarget: () => Boolean(targetCell),
     setTarget: (nextTargetCell) => {
-      targetCell = normalizeGridCell(nextTargetCell);
-    },
-    setTargetCell: (nextTargetCell) => {
       targetCell = normalizeGridCell(nextTargetCell);
     },
     clearTarget: () => {

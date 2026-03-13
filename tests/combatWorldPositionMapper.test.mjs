@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createCombatGridMapper } from '../src/world/combat/combatGridMapper.ts';
+import { createWorldGridMapper } from '../src/world/spatial/worldGrid.ts';
 import { createCombatGrid } from '../src/world/combat/combatGrid.ts';
 import { mapCombatParticipantsFromWorldPositions, mapWorldPositionToCombatCell } from '../src/world/combat/combatWorldPositionMapper.ts';
 
 test('maps a world position to a valid tactical cell', () => {
-  const mapper = createCombatGridMapper({ cellSize: 2, originWorldX: 0, originWorldZ: 0 });
+  const mapper = createWorldGridMapper({ cellSize: 2, originWorldX: 0, originWorldZ: 0 });
   const grid = createCombatGrid({ minX: -2, maxX: 2, minZ: -2, maxZ: 2 });
 
   const result = mapWorldPositionToCombatCell({
@@ -20,14 +20,13 @@ test('maps a world position to a valid tactical cell', () => {
   assert.deepEqual(result, {
     cell: { x: 0, z: -1 },
     mappedCell: { x: 0, z: -1 },
-    usedFallback: false,
     isWalkable: true,
     expectedSnappedWorld: { x: 1, y: 0, z: -1 }
   });
 });
 
 test('keeps mapped cell and flags non-walkable when mapped cell is blocked', () => {
-  const mapper = createCombatGridMapper({ cellSize: 1, originWorldX: 0, originWorldZ: 0 });
+  const mapper = createWorldGridMapper({ cellSize: 1, originWorldX: 0, originWorldZ: 0 });
   const grid = createCombatGrid({
     minX: -1,
     maxX: 1,
@@ -45,13 +44,12 @@ test('keeps mapped cell and flags non-walkable when mapped cell is blocked', () 
   });
 
   assert.deepEqual(result.mappedCell, { x: 0, z: 0 });
-  assert.equal(result.usedFallback, false);
   assert.deepEqual(result.cell, { x: 0, z: 0 });
   assert.equal(result.isWalkable, false);
 });
 
 test('registers participants with mapped initial cells', () => {
-  const mapper = createCombatGridMapper({ cellSize: 1, originWorldX: 0, originWorldZ: 0 });
+  const mapper = createWorldGridMapper({ cellSize: 1, originWorldX: 0, originWorldZ: 0 });
   const grid = createCombatGrid({ minX: -4, maxX: 4, minZ: -4, maxZ: 4 });
   const participants = mapCombatParticipantsFromWorldPositions({
     participants: [

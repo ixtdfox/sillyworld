@@ -2,7 +2,7 @@
 import { attachGameplayIsometricCamera } from '../camera/gameplayCameraController.ts';
 import { createCombatTurnManager } from '../../../world/combat/combatTurnManager.ts';
 import { createCombatGrid } from '../../../world/combat/combatGrid.ts';
-import { createCombatGridMapper } from '../../../world/combat/combatGridMapper.ts';
+import { createWorldGridMapper } from '../../../world/spatial/worldGrid.ts';
 import { createPlayerAnimationController } from '../player/playerAnimationController.ts';
 import { attachCombatPlayerMovementController } from './combatPlayerMovementController.ts';
 import { createCombatActionResolver } from '../../../world/combat/combatActionResolver.ts';
@@ -119,6 +119,32 @@ function createCombatUnit(id, team, entity, initiative = 0, displayName = id) {
   };
 }
 
+
+function resolveDistinctSpawnCell({ originCell, blockedCell, grid }) {
+  if (!originCell || !blockedCell) {
+    return originCell;
+  }
+
+  if (originCell.x !== blockedCell.x || originCell.z !== blockedCell.z) {
+    return originCell;
+  }
+
+  const candidates = [
+    { x: originCell.x + 1, z: originCell.z },
+    { x: originCell.x - 1, z: originCell.z },
+    { x: originCell.x, z: originCell.z + 1 },
+    { x: originCell.x, z: originCell.z - 1 }
+  ];
+
+  for (const candidate of candidates) {
+    if (grid?.isCellWalkable?.(candidate)) {
+      return candidate;
+    }
+  }
+
+  return originCell;
+}
+
 function createCombatState({ combatScene, playerUnit, enemyUnit, turnManager }) {
   const turnState = turnManager.getState();
 
@@ -193,7 +219,7 @@ export async function createCombatRuntime(runtime, options = {}) {
 
   const combatGridConfig = resolveCombatGridConfig(options);
 
-  const gridMapper = createCombatGridMapper({
+  const gridMapper = createWorldGridMapper({
     cellSize: combatGridConfig.cellSize,
     originWorldX: combatGridConfig.originWorldX,
     originWorldZ: combatGridConfig.originWorldZ
@@ -287,9 +313,11 @@ export async function createCombatRuntime(runtime, options = {}) {
     }
   });
 
-  if (enemySpawnCell.x === playerSpawnCell.x && enemySpawnCell.z === playerSpawnCell.z) {
-    enemySpawnCell = { x: playerSpawnCell.x + 1, z: playerSpawnCell.z };
-  }
+  enemySpawnCell = resolveDistinctSpawnCell({
+    originCell: enemySpawnCell,
+    blockedCell: playerSpawnCell,
+    grid
+  });
 
   placeUnitAtCell(runtime, playerUnit, gridMapper, playerSpawnCell, {
     source: 'combat_spawn_player',

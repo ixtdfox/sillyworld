@@ -74,7 +74,7 @@ function createMovementTargetState(initialTarget = null) {
 
   return {
     hasTarget: () => Boolean(target),
-    getTargetCell: () => target,
+    getTarget: () => target,
     clearTarget: () => {
       target = null;
     },
