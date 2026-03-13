@@ -3,6 +3,9 @@ const DEFAULT_CAMERA_CONFIG = {
   distance: 14,
   elevationDegrees: 55,
   yawDegrees: -45,
+  minPitchDegrees: 20,
+  maxPitchDegrees: 80,
+  rotationSensitivity: 0.2,
   targetHeight: 1.2,
   positionLerpFactor: 0.12,
   targetLerpFactor: 0.2
@@ -35,8 +38,27 @@ export function attachGameplayIsometricCamera(runtime, followTarget, options = {
     ...options
   };
 
-  const cameraOffset = createOffsetVector(BABYLON, config.distance, config.elevationDegrees, config.yawDegrees);
   const lookAtOffset = new BABYLON.Vector3(0, config.targetHeight, 0);
+  const pointerEventTypes = BABYLON.PointerEventTypes ?? {};
+  const pointerDownType = pointerEventTypes.POINTERDOWN ?? 1;
+  const pointerUpType = pointerEventTypes.POINTERUP ?? 2;
+  const pointerMoveType = pointerEventTypes.POINTERMOVE ?? 4;
+  let yawDegrees = config.yawDegrees;
+  let pitchDegrees = Math.min(config.maxPitchDegrees, Math.max(config.minPitchDegrees, config.elevationDegrees));
+  let isOrbiting = false;
+  let lastClientX = null;
+  let lastClientY = null;
+
+  const resolveCameraOffset = () => createOffsetVector(BABYLON, config.distance, pitchDegrees, yawDegrees);
+  const canvas = runtime.engine?.getRenderingCanvas?.() ?? runtime.scene?.getEngine?.()?.getRenderingCanvas?.() ?? null;
+
+  const onContextMenu = (event) => {
+    event.preventDefault();
+  };
+
+  if (canvas) {
+    canvas.addEventListener('contextmenu', onContextMenu);
+  }
 
   console.log('[SillyRPG] Gameplay camera setup start', {
     mode: 'isometric-follow',
@@ -44,7 +66,7 @@ export function attachGameplayIsometricCamera(runtime, followTarget, options = {
   });
 
   const initialTarget = followTarget.position.add(lookAtOffset);
-  const initialPosition = initialTarget.add(cameraOffset);
+  const initialPosition = initialTarget.add(resolveCameraOffset());
 
   const camera = new BABYLON.FreeCamera('gameplayCamera', initialPosition, runtime.scene);
   camera.setTarget(initialTarget);
@@ -66,9 +88,50 @@ export function attachGameplayIsometricCamera(runtime, followTarget, options = {
   let smoothedPosition = initialPosition.clone();
   let smoothedTarget = initialTarget.clone();
 
+  const pointerObserver = runtime.scene.onPointerObservable.add((pointerInfo) => {
+    const event = pointerInfo?.event;
+    const button = event?.button;
+
+    if (pointerInfo?.type === pointerDownType && button === 2) {
+      isOrbiting = true;
+      lastClientX = typeof event?.clientX === 'number' ? event.clientX : null;
+      lastClientY = typeof event?.clientY === 'number' ? event.clientY : null;
+      pointerInfo.skipOnPointerObservable = true;
+      return;
+    }
+
+    if (pointerInfo?.type === pointerUpType && button === 2) {
+      isOrbiting = false;
+      lastClientX = null;
+      lastClientY = null;
+      pointerInfo.skipOnPointerObservable = true;
+      return;
+    }
+
+    if (!isOrbiting || pointerInfo?.type !== pointerMoveType) {
+      return;
+    }
+
+    const hasMovementDeltas = typeof event?.movementX === 'number' && typeof event?.movementY === 'number';
+    const deltaX = hasMovementDeltas
+      ? event.movementX
+      : (typeof event?.clientX === 'number' && typeof lastClientX === 'number' ? event.clientX - lastClientX : 0);
+    const deltaY = hasMovementDeltas
+      ? event.movementY
+      : (typeof event?.clientY === 'number' && typeof lastClientY === 'number' ? event.clientY - lastClientY : 0);
+
+    yawDegrees -= deltaX * config.rotationSensitivity;
+    const nextPitch = pitchDegrees - deltaY * config.rotationSensitivity;
+    pitchDegrees = Math.min(config.maxPitchDegrees, Math.max(config.minPitchDegrees, nextPitch));
+
+    lastClientX = typeof event?.clientX === 'number' ? event.clientX : lastClientX;
+    lastClientY = typeof event?.clientY === 'number' ? event.clientY : lastClientY;
+    pointerInfo.skipOnPointerObservable = true;
+  });
+
   const beforeRenderObserver = runtime.scene.onBeforeRenderObservable.add(() => {
     const desiredTarget = followTarget.position.add(lookAtOffset);
-    const desiredPosition = desiredTarget.add(cameraOffset);
+    const desiredPosition = desiredTarget.add(resolveCameraOffset());
 
     smoothedTarget = BABYLON.Vector3.Lerp(smoothedTarget, desiredTarget, config.targetLerpFactor);
     smoothedPosition = BABYLON.Vector3.Lerp(smoothedPosition, desiredPosition, config.positionLerpFactor);
@@ -78,7 +141,11 @@ export function attachGameplayIsometricCamera(runtime, followTarget, options = {
   });
 
   return () => {
+    runtime.scene.onPointerObservable.remove(pointerObserver);
     runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
+    if (canvas) {
+      canvas.removeEventListener('contextmenu', onContextMenu);
+    }
     const detachedCameraWasActive = runtime.scene.activeCamera === camera;
     const detachedCameraPosition = camera.position?.clone?.();
     if (!camera.isDisposed()) {
