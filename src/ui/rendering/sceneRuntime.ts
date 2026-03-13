@@ -7,11 +7,12 @@ import { SceneGroundClickInput } from './sceneGroundClickInput.ts';
 import { attachGameplayIsometricCamera } from './gameplayCameraController.ts';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.ts';
 import { ENCOUNTER_INTERACTION_DISTANCE } from './encounterInteractionInput.ts';
-import { updateEnemyPerception } from './enemyPerception.ts';
+import { evaluateEnemyPerceptionPipeline } from './enemyPerception.ts';
 import { updateEnemyAmbientBehavior } from './enemyAmbientBehavior.ts';
 import { createCombatRuntime } from './combatRuntime.ts';
 import { createCombatDebugShell } from './combatDebugShell.ts';
 import { createEnemyVisionGridDebugOverlay } from './enemyVisionGridDebugOverlay.ts';
+import { createCombatGridMapper } from './combatGridMapper.ts';
 import type {
   CombatStateLike,
   EncounterStartPayload,
@@ -411,6 +412,9 @@ export class SceneRuntime {
       if (mesh === this.#explorationRuntime?.enemyMeshRoot || mesh === this.#explorationRuntime?.playerMeshRoot) {
         return false;
       }
+      if (mesh?.metadata?.isEnemyVisionDebugOverlay === true) {
+        return false;
+      }
       return true;
     });
 
@@ -427,6 +431,8 @@ export class SceneRuntime {
 
   #attachEnemyPerceptionObserver(): void {
     this.#detachPerceptionObserver();
+
+    const gridMapper = createCombatGridMapper();
 
     this.#perceptionObserver = this.#runtime.scene.onBeforeRenderObservable.add(() => {
       if (!this.#explorationRuntime?.enemyMeshRoot || !this.#explorationRuntime?.playerMeshRoot) {
@@ -473,7 +479,7 @@ export class SceneRuntime {
         rootNode: this.#explorationRuntime.playerMeshRoot
       };
 
-      const perceptionResult = updateEnemyPerception(enemyActor, playerActor, {
+      const pipelineResult = evaluateEnemyPerceptionPipeline(enemyActor, playerActor, gridMapper, {
         hasLineOfSight: ({ enemy, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
           enemy,
           directionToPlayer,
@@ -481,15 +487,45 @@ export class SceneRuntime {
         })
       });
 
-      this.#lastPerceptionResult = perceptionResult;
-      if (perceptionResult.canSeePlayer) {
+      this.#lastPerceptionResult = {
+        ...pipelineResult.perceptionResult,
+        canSeePlayer: pipelineResult.playerCellVisible
+      };
+
+      console.debug('[SillyRPG] Enemy perception pipeline.', {
+        enemyPosition: pipelineResult.enemyPosition,
+        enemyFacingDirection: pipelineResult.facingDirection,
+        enemyCell: pipelineResult.enemyCell,
+        visibleCellsCount: pipelineResult.visibleCells.length,
+        blockedCellsCount: pipelineResult.blockedCells.length,
+        playerPosition: pipelineResult.playerPosition,
+        playerCell: pipelineResult.playerCell,
+        playerCellVisible: pipelineResult.playerCellVisible,
+        perceptionReason: pipelineResult.perceptionResult.reason,
+        perceptionCanSeePlayer: pipelineResult.perceptionResult.canSeePlayer
+      });
+
+      if (pipelineResult.playerCellVisible) {
+        console.info('[SillyRPG] Enemy perception triggered combat.', {
+          combatTriggerCalled: true,
+          playerCell: pipelineResult.playerCell,
+          enemyCell: pipelineResult.enemyCell,
+          visibleCellsCount: pipelineResult.visibleCells.length
+        });
+
         this.enterCombatMode({
           playerRoot: this.#explorationRuntime.playerMeshRoot,
           enemyRoot: this.#explorationRuntime.enemyMeshRoot,
-          distanceToEnemy: perceptionResult.distanceToPlayer,
+          distanceToEnemy: pipelineResult.perceptionResult.distanceToPlayer,
           interactionDistance: this.#interactionDistance
         }).catch((error) => {
           console.error('[SillyRPG] Failed to enter world combat mode after enemy perception detection.', error);
+        });
+      } else {
+        console.debug('[SillyRPG] Enemy perception did not trigger combat.', {
+          combatTriggerCalled: false,
+          playerCell: pipelineResult.playerCell,
+          visibleCellsCount: pipelineResult.visibleCells.length
         });
       }
     });

@@ -28,6 +28,11 @@ function createCellMesh(runtime, mapper, cell, y, name) {
   mesh.position.x = world.x;
   mesh.position.y = world.y + 0.045;
   mesh.position.z = world.z;
+  mesh.isPickable = false;
+  mesh.metadata = {
+    ...(mesh.metadata ?? {}),
+    isEnemyVisionDebugOverlay: true
+  };
   return mesh;
 }
 
