@@ -29,7 +29,6 @@ interface PlayerCharacterLike {
 
 interface MovementTargetStateLike {
   hasTarget(): boolean;
-  getTargetCell?(): { x: number; z: number } | null;
   getTarget(): { x: number; z: number } | null;
   clearTarget(): void;
 }
@@ -113,7 +112,7 @@ export class PlayerMovementController {
   }
 
   #tick(): void {
-    const targetCell = this.#movementTargetState.getTargetCell?.() ?? this.#movementTargetState.getTarget?.();
+    const targetCell = this.#movementTargetState.getTarget();
     if (!this.#movementTargetState.hasTarget() || !targetCell) {
       this.#clearPath();
       this.#setMoving(false);

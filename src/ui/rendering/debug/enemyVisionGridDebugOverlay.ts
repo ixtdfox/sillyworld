@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createCombatGridMapper } from '../../../world/combat/combatGridMapper.ts';
+import { createWorldGridMapper } from '../../../world/spatial/worldGrid.ts';
 import { getEnemyVisionCoverage } from '../../../world/enemy/enemyPerception.ts';
 
 function keyForCell(cell) {
@@ -48,7 +48,7 @@ export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
     playerDetectedCellColor = '#ff4565'
   } = options;
 
-  const mapper = createCombatGridMapper();
+  const mapper = createWorldGridMapper();
   const visibleMeshes = new Map();
   const blockedMeshes = new Map();
   let playerDetectedMesh = null;

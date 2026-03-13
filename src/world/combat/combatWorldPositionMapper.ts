@@ -16,7 +16,7 @@ export function mapWorldPositionToCombatCell({ unitId, worldPosition, gridMapper
       unitId: unitId ?? null,
       worldPosition: worldPosition ?? null
     });
-    return { cell: null, mappedCell: null, usedFallback: false };
+    return { cell: null, mappedCell: null };
   }
 
   const mappedCell = toCell(gridMapper.worldToGridCell(worldPosition));
@@ -36,7 +36,7 @@ export function mapWorldPositionToCombatCell({ unitId, worldPosition, gridMapper
   });
 
   if (!grid) {
-    return { cell: mappedCell, mappedCell, expectedSnappedWorld, usedFallback: false, isWalkable: true };
+    return { cell: mappedCell, mappedCell, expectedSnappedWorld, isWalkable: true };
   }
 
   const isWalkable = grid.isCellWalkable(mappedCell);
@@ -62,7 +62,6 @@ export function mapWorldPositionToCombatCell({ unitId, worldPosition, gridMapper
     cell: mappedCell,
     mappedCell,
     expectedSnappedWorld,
-    usedFallback: false,
     isWalkable
   };
 }
@@ -84,7 +83,6 @@ export function mapCombatParticipantsFromWorldPositions({ participants = [], gri
         ...participant,
         mappedCell: normalizedCanonicalCell,
         initialCell: normalizedCanonicalCell,
-        usedFallbackCell: false,
         usedCanonicalGridCell: true
       };
     }
@@ -111,15 +109,13 @@ export function mapCombatParticipantsFromWorldPositions({ participants = [], gri
       mappedCell: mapping.mappedCell,
       assignedCell: mapping.cell,
       expectedSnappedCellCenter: mapping.expectedSnappedWorld,
-      isWalkable: mapping.isWalkable,
-      usedFallbackCell: mapping.usedFallback
+      isWalkable: mapping.isWalkable
     });
 
     return {
       ...participant,
       mappedCell: mapping.mappedCell,
-      initialCell: mapping.cell,
-      usedFallbackCell: mapping.usedFallback
+      initialCell: mapping.cell
     };
   });
 }
