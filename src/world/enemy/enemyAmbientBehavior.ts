@@ -125,31 +125,30 @@ export function updateEnemyAmbientBehavior(params: {
     return behavior;
   }
 
+  if (behavior.state === 'patrol' && params.gridMapper) {
+    const patrolCells = behavior.patrolCells.length > 0
+      ? behavior.patrolCells
+      : behavior.patrolPoints.map((point) => params.gridMapper!.worldToGridCell(point));
 
-  if (behavior.state === 'patrol' && behavior.patrolPoints.length > 0 && !params.gridMapper) {
-    const target = behavior.patrolPoints[behavior.currentPatrolIndex % behavior.patrolPoints.length];
-    const toTarget = {
-      x: target.x - enemyRootNode.position.x,
-      y: 0,
-      z: target.z - enemyRootNode.position.z
-    };
-    const distance = Math.sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
-    if (distance <= 0.25) {
-      behavior.currentPatrolIndex = (behavior.currentPatrolIndex + 1) % behavior.patrolPoints.length;
+    if (patrolCells.length <= 0) {
       enterState(behavior, 'lookAround');
       return behavior;
     }
 
-    const direction = normalize(toTarget);
-    const step = Math.min(distance, 1.15 * deltaSeconds);
-    enemyRootNode.position.x += direction.x * step;
-    enemyRootNode.position.z += direction.z * step;
-    behavior.facingDirection = direction;
-    setRootYaw(enemyRootNode, yawFromDirection(direction));
-    return behavior;
-  }
+    if (behavior.patrolCells.length <= 0) {
+      behavior.patrolCells = patrolCells;
+    }
 
-  if (behavior.state === 'patrol' && behavior.patrolCells.length > 0 && params.gridMapper) {
+    const currentCell = enemyRootNode.gridCell ?? params.gridMapper.worldToGridCell(enemyRootNode.position);
+    const centeredCurrentWorld = params.gridMapper.gridCellToWorld(currentCell, {
+      resolveY: ({ x, z }) => params.resolveGroundY?.({ x, z, fallbackY: enemyRootNode.position.y }) ?? enemyRootNode.position.y
+    });
+
+    enemyRootNode.position.x = centeredCurrentWorld.x;
+    enemyRootNode.position.y = centeredCurrentWorld.y;
+    enemyRootNode.position.z = centeredCurrentWorld.z;
+    enemyRootNode.gridCell = currentCell;
+
     behavior.patrolStepAccumulatorSeconds += deltaSeconds;
     if (behavior.patrolStepAccumulatorSeconds < behavior.patrolStepIntervalSeconds) {
       return behavior;
@@ -157,11 +156,10 @@ export function updateEnemyAmbientBehavior(params: {
 
     behavior.patrolStepAccumulatorSeconds = 0;
 
-    const currentCell = enemyRootNode.gridCell ?? params.gridMapper.worldToGridCell(enemyRootNode.position);
-    const targetCell = behavior.patrolCells[behavior.currentPatrolIndex % behavior.patrolCells.length];
+    const targetCell = patrolCells[behavior.currentPatrolIndex % patrolCells.length];
 
     if (currentCell.x === targetCell.x && currentCell.z === targetCell.z) {
-      behavior.currentPatrolIndex = (behavior.currentPatrolIndex + 1) % behavior.patrolCells.length;
+      behavior.currentPatrolIndex = (behavior.currentPatrolIndex + 1) % patrolCells.length;
       enterState(behavior, 'lookAround');
       return behavior;
     }
