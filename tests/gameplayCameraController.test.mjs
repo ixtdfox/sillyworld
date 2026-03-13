@@ -34,15 +34,20 @@ class Vector3 {
 
 function createObservable() {
   let callback = null;
+  let addCount = 0;
+  let removeCount = 0;
   return {
     add: (nextCallback) => {
+      addCount += 1;
       callback = nextCallback;
       return nextCallback;
     },
     remove: () => {
+      removeCount += 1;
       callback = null;
     },
-    emit: (payload) => callback?.(payload)
+    emit: (payload) => callback?.(payload),
+    getCounts: () => ({ addCount, removeCount })
   };
 }
 
@@ -169,4 +174,44 @@ test('orbits on RMB drag, keeps follow behavior, and stops orbit on RMB release'
   detach();
   assert.equal(runtime.inputState.camera.isOrbiting, false);
   assert.equal(canvas.hasEvent('contextmenu'), false);
+});
+
+
+test('re-attaching gameplay camera does not leave duplicate controllers attached', () => {
+  const { runtime, pointerObservable, beforeRenderObservable } = createRuntime();
+  const followTarget = {
+    name: 'playerRoot',
+    position: new Vector3(0, 0, 0)
+  };
+
+  const firstDetach = attachGameplayIsometricCamera(runtime, followTarget, {
+    positionLerpFactor: 1,
+    targetLerpFactor: 1
+  });
+
+  const firstCamera = runtime.scene.activeCamera;
+  const secondDetach = attachGameplayIsometricCamera(runtime, followTarget, {
+    positionLerpFactor: 1,
+    targetLerpFactor: 1
+  });
+
+  assert.equal(firstCamera.isDisposed(), true);
+  const pointerCountsAfterReattach = pointerObservable.getCounts();
+  const renderCountsAfterReattach = beforeRenderObservable.getCounts();
+  assert.equal(pointerCountsAfterReattach.addCount, 2);
+  assert.equal(pointerCountsAfterReattach.removeCount, 1);
+  assert.equal(renderCountsAfterReattach.addCount, 2);
+  assert.equal(renderCountsAfterReattach.removeCount, 1);
+
+  firstDetach();
+  const pointerCountsAfterFirstManualDetach = pointerObservable.getCounts();
+  const renderCountsAfterFirstManualDetach = beforeRenderObservable.getCounts();
+  assert.equal(pointerCountsAfterFirstManualDetach.removeCount, 1);
+  assert.equal(renderCountsAfterFirstManualDetach.removeCount, 1);
+
+  secondDetach();
+  const pointerCountsAfterSecondDetach = pointerObservable.getCounts();
+  const renderCountsAfterSecondDetach = beforeRenderObservable.getCounts();
+  assert.equal(pointerCountsAfterSecondDetach.removeCount, 2);
+  assert.equal(renderCountsAfterSecondDetach.removeCount, 2);
 });
