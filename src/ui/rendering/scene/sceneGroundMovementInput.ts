@@ -11,7 +11,7 @@ interface Vector3Like {
 
 interface MovementTargetStateLike {
   clearTarget(): void;
-  setTarget(nextTarget: Vector3Like): void;
+  setTarget(nextTargetCell: { x: number; z: number }): void;
 }
 
 interface BabylonRuntimeSubset {
@@ -30,11 +30,17 @@ interface BabylonRuntimeSubset {
 export class SceneGroundMovementInput {
   readonly #runtime: BabylonRuntimeSubset;
   readonly #movementTargetState: MovementTargetStateLike;
+  readonly #gridMapper: { worldToGridCell: (worldPosition: { x: number; z: number }) => { x: number; z: number } };
   #observer: unknown | null = null;
 
-  constructor(runtime: BabylonRuntimeSubset, movementTargetState: MovementTargetStateLike) {
+  constructor(
+    runtime: BabylonRuntimeSubset,
+    movementTargetState: MovementTargetStateLike,
+    gridMapper?: { worldToGridCell: (worldPosition: { x: number; z: number }) => { x: number; z: number } }
+  ) {
     this.#runtime = runtime;
     this.#movementTargetState = movementTargetState;
+    this.#gridMapper = gridMapper ?? { worldToGridCell: (worldPosition) => worldPosition };
   }
 
   public attach(): RuntimeDispose {
@@ -52,22 +58,11 @@ export class SceneGroundMovementInput {
 
       if (!resolution.accepted || !resolution.target) {
         this.#movementTargetState.clearTarget();
-        console.log('[SillyRPG] Scene click rejected:', {
-          reason: resolution.reason,
-          pickedMeshName: resolution.pickedMeshName,
-          accepted: false
-        });
         return;
       }
 
-      this.#movementTargetState.setTarget(resolution.target);
-      console.log('[SillyRPG] Scene click accepted:', {
-        accepted: true,
-        pickedMeshName: resolution.pickedMeshName,
-        x: resolution.target.x,
-        y: resolution.target.y,
-        z: resolution.target.z
-      });
+      const targetCell = this.#gridMapper.worldToGridCell(resolution.target);
+      this.#movementTargetState.setTarget(targetCell);
     });
 
     return () => this.dispose();
@@ -81,7 +76,11 @@ export class SceneGroundMovementInput {
   }
 }
 
-export function attachSceneGroundMovementInput(runtime: BabylonRuntimeSubset, movementTargetState: MovementTargetStateLike): RuntimeDispose {
-  const input = new SceneGroundMovementInput(runtime, movementTargetState);
+export function attachSceneGroundMovementInput(
+  runtime: BabylonRuntimeSubset,
+  movementTargetState: MovementTargetStateLike,
+  gridMapper?: { worldToGridCell: (worldPosition: { x: number; z: number }) => { x: number; z: number } }
+): RuntimeDispose {
+  const input = new SceneGroundMovementInput(runtime, movementTargetState, gridMapper);
   return input.attach();
 }

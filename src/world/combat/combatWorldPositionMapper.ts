@@ -85,6 +85,26 @@ export function mapWorldPositionToCombatCell({ unitId, worldPosition, gridMapper
 
 export function mapCombatParticipantsFromWorldPositions({ participants = [], gridMapper, grid, logger = console }) {
   return participants.map((participant) => {
+    const canonicalGridCell = participant?.entity?.gridCell;
+    if (canonicalGridCell && Number.isFinite(canonicalGridCell.x) && Number.isFinite(canonicalGridCell.z)) {
+      const normalizedCanonicalCell = toCell(canonicalGridCell);
+
+      logger.info?.('[SillyRPG] Combat participant registered from canonical grid cell.', {
+        participantId: participant?.id ?? null,
+        role: participant?.role ?? null,
+        team: participant?.team ?? null,
+        canonicalGridCell: normalizedCanonicalCell
+      });
+
+      return {
+        ...participant,
+        mappedCell: normalizedCanonicalCell,
+        initialCell: normalizedCanonicalCell,
+        usedFallbackCell: false,
+        usedCanonicalGridCell: true
+      };
+    }
+
     const mapping = mapWorldPositionToCombatCell({
       unitId: participant?.id,
       worldPosition: participant?.entity?.rootNode?.position,

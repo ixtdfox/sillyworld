@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { createWorldGridMapper } from '../../../world/spatial/worldGrid.ts';
+
 const DEFAULT_PLAYER_SPAWN = { x: 0, y: 0, z: 0 };
 const SPAWN_MARKER_NAMES = ['PlayerSpawn', 'player_spawn', 'spawn_player'];
 
@@ -21,29 +23,31 @@ function resolveGroundY({ scene, BABYLON, x, z, fallbackY }) {
   return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 }
 
-function resolveSpawnPosition({ scene, BABYLON }) {
+function resolveSpawnPosition({ scene, BABYLON, gridMapper }) {
   const markerPosition = findSpawnMarker(scene);
   const x = markerPosition?.x ?? DEFAULT_PLAYER_SPAWN.x;
   const z = markerPosition?.z ?? DEFAULT_PLAYER_SPAWN.z;
   const fallbackY = markerPosition?.y ?? DEFAULT_PLAYER_SPAWN.y;
-  const y = resolveGroundY({ scene, BABYLON, x, z, fallbackY });
+  const spawnCell = gridMapper.worldToGridCell({ x, z });
+  const centered = gridMapper.gridCellToWorld(spawnCell, {
+    resolveY: ({ x: worldX, z: worldZ }) => resolveGroundY({ scene, BABYLON, x: worldX, z: worldZ, fallbackY })
+  });
 
-  return new BABYLON.Vector3(x, y, z);
+  return {
+    spawnCell,
+    spawnPosition: new BABYLON.Vector3(centered.x, centered.y, centered.z)
+  };
 }
 
-export function spawnPlayerCharacter(runtime, playerCharacter) {
+export function spawnPlayerCharacter(runtime, playerCharacter, options = {}) {
   if (!playerCharacter?.rootNode) {
     throw new Error('Cannot spawn player character without a root node.');
   }
 
-  const spawnPosition = resolveSpawnPosition(runtime);
+  const gridMapper = options.gridMapper ?? createWorldGridMapper();
+  const { spawnCell, spawnPosition } = resolveSpawnPosition({ ...runtime, gridMapper });
   playerCharacter.rootNode.position.copyFrom(spawnPosition);
-
-  console.log('[SillyRPG] Player spawn position:', {
-    x: spawnPosition.x,
-    y: spawnPosition.y,
-    z: spawnPosition.z
-  });
+  playerCharacter.gridCell = spawnCell;
 
   return spawnPosition;
 }

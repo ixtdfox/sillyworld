@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { evaluateEnemyPerceptionPipeline } from '../../../world/enemy/enemyPerception.ts';
 import { updateEnemyAmbientBehavior } from '../../../world/enemy/enemyAmbientBehavior.ts';
-import { createCombatGridMapper } from '../../../world/combat/combatGridMapper.ts';
+import { createWorldGridMapper } from '../../../world/spatial/worldGrid.ts';
 
 export function createPerceptionObserverBinder(runtime, options: {
   getExplorationRuntime: () => any;
@@ -12,7 +12,7 @@ export function createPerceptionObserverBinder(runtime, options: {
   onCombatTriggered: (payload: any) => void;
 }) {
   let observer = null;
-  const gridMapper = createCombatGridMapper();
+  const fallbackGridMapper = createWorldGridMapper();
 
   const detach = () => {
     if (observer) {
@@ -33,6 +33,7 @@ export function createPerceptionObserverBinder(runtime, options: {
         return;
       }
 
+      const gridMapper = explorationRuntime.worldGridMapper ?? fallbackGridMapper;
       const deltaMs = runtime.engine?.getDeltaTime?.() ?? 16;
       const deltaSeconds = Math.max(0, deltaMs / 1000);
 
@@ -41,7 +42,8 @@ export function createPerceptionObserverBinder(runtime, options: {
             enemyRootNode: explorationRuntime.enemyMeshRoot,
             behavior: explorationRuntime.enemyAmbientBehavior,
             deltaSeconds,
-            logger: console
+            gridMapper,
+            resolveGroundY: explorationRuntime.resolveGroundY
           })
         : null;
 
@@ -70,12 +72,6 @@ export function createPerceptionObserverBinder(runtime, options: {
           hasLineOfSight: options.hasLineOfSight
         });
       } catch (error) {
-        console.error('[SillyRPG] Enemy perception pipeline update failed.', {
-          error,
-          enemyPosition: enemyActor?.rootNode?.position ?? null,
-          playerPosition: playerActor?.rootNode?.position ?? null,
-          facingDirection: enemyActor?.facingDirection ?? null
-        });
         return;
       }
 
@@ -86,13 +82,6 @@ export function createPerceptionObserverBinder(runtime, options: {
       options.onPerceptionUpdated(perceptionResult);
 
       if (pipelineResult.playerCellVisible === true) {
-        console.info('[SillyRPG] Enemy perception triggered combat.', {
-          combatTriggerCalled: true,
-          playerCell: pipelineResult.playerCell,
-          enemyCell: pipelineResult.enemyCell,
-          visibleCellsCount: pipelineResult.visibleCells.length
-        });
-
         options.onCombatTriggered({
           distanceToEnemy: pipelineResult.perceptionResult.distanceToPlayer
         });
