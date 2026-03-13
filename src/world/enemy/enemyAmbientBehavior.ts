@@ -1,5 +1,10 @@
 // @ts-nocheck
 import type { PositionLike, PositionNodeLike } from '../spatial/types.ts';
+import {
+  areCellsEqual,
+  resolveWorldPositionFromCell,
+  stepCellTowardsTarget
+} from '../movement/gridMovement.ts';
 
 const DEFAULT_FACING_DIRECTION = Object.freeze({ x: 0, y: 0, z: -1 });
 
@@ -140,8 +145,11 @@ export function updateEnemyAmbientBehavior(params: {
     }
 
     const currentCell = enemyRootNode.gridCell ?? params.gridMapper.worldToGridCell(enemyRootNode.position);
-    const centeredCurrentWorld = params.gridMapper.gridCellToWorld(currentCell, {
-      resolveY: ({ x, z }) => params.resolveGroundY?.({ x, z, fallbackY: enemyRootNode.position.y }) ?? enemyRootNode.position.y
+    const centeredCurrentWorld = resolveWorldPositionFromCell({
+      cell: currentCell,
+      gridMapper: params.gridMapper,
+      resolveGroundY: params.resolveGroundY,
+      fallbackY: enemyRootNode.position.y
     });
 
     enemyRootNode.position.x = centeredCurrentWorld.x;
@@ -158,26 +166,20 @@ export function updateEnemyAmbientBehavior(params: {
 
     const targetCell = patrolCells[behavior.currentPatrolIndex % patrolCells.length];
 
-    if (currentCell.x === targetCell.x && currentCell.z === targetCell.z) {
+    if (areCellsEqual(currentCell, targetCell)) {
       behavior.currentPatrolIndex = (behavior.currentPatrolIndex + 1) % patrolCells.length;
       enterState(behavior, 'lookAround');
       return behavior;
     }
 
-    const nextCell = {
-      x: currentCell.x,
-      z: currentCell.z
-    };
-
-    if (targetCell.x !== currentCell.x) {
-      nextCell.x += Math.sign(targetCell.x - currentCell.x);
-    } else if (targetCell.z !== currentCell.z) {
-      nextCell.z += Math.sign(targetCell.z - currentCell.z);
-    }
+    const nextCell = stepCellTowardsTarget(currentCell, targetCell) ?? currentCell;
 
     const toDirection = normalize({ x: nextCell.x - currentCell.x, y: 0, z: nextCell.z - currentCell.z });
-    const world = params.gridMapper.gridCellToWorld(nextCell, {
-      resolveY: ({ x, z }) => params.resolveGroundY?.({ x, z, fallbackY: enemyRootNode.position.y }) ?? enemyRootNode.position.y
+    const world = resolveWorldPositionFromCell({
+      cell: nextCell,
+      gridMapper: params.gridMapper,
+      resolveGroundY: params.resolveGroundY,
+      fallbackY: enemyRootNode.position.y
     });
 
     enemyRootNode.position.x = world.x;

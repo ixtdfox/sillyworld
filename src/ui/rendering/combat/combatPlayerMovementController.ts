@@ -1,5 +1,11 @@
 // @ts-nocheck
 import { pickCombatCellAtPointer } from './combatCellPointer.ts';
+import {
+  advancePositionAlongWaypoints,
+  buildWorldWaypointPath,
+  isCellPathTraversalComplete,
+  resolveCellPath
+} from '../../../world/movement/gridMovement.ts';
 
 const DEFAULT_MOVE_SPEED = 3;
 const DEFAULT_STOP_DISTANCE = 0.05;
@@ -155,9 +161,14 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    const path = movementAttempt?.path ?? grid.findPath(playerUnit.gridCell, destinationCell, {
-      allowOccupiedByUnitId: playerUnit.id,
-      movementCost
+    const path = movementAttempt?.path ?? resolveCellPath({
+      startCell: playerUnit.gridCell,
+      destinationCell,
+      grid,
+      findPathOptions: {
+        allowOccupiedByUnitId: playerUnit.id,
+        movementCost
+      }
     });
 
     if (!path || path.length <= 1) {
@@ -171,10 +182,12 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    const waypoints = path.slice(1).map((cell) => {
-      const world = gridMapper.gridCellToWorld(cell, { resolveY: ({ x, z }) => resolveGroundY({ x, z }) });
-      return new runtime.BABYLON.Vector3(world.x, world.y, world.z);
-    });
+    const waypoints = buildWorldWaypointPath({
+      pathCells: path,
+      gridMapper,
+      resolveGroundY,
+      fallbackY: playerUnit.rootNode.position.y
+    }).map((world) => new runtime.BABYLON.Vector3(world.x, world.y, world.z));
 
     activePath = {
       cells: path,
@@ -199,55 +212,57 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    if (!activePath || activeWaypointIndex >= activePath.waypoints.length) {
+    if (!activePath || isCellPathTraversalComplete({ activeWaypointIndex, waypoints: activePath.waypoints })) {
       return;
     }
 
     const currentPosition = playerUnit.rootNode.position;
-    const targetPosition = activePath.waypoints[activeWaypointIndex];
-    const toTarget = targetPosition.subtract(currentPosition);
-    const distanceToTarget = toTarget.length();
+    const deltaTimeSeconds = runtime.engine.getDeltaTime() / 1000;
+    const advanceResult = advancePositionAlongWaypoints({
+      position: currentPosition,
+      waypoints: activePath.waypoints,
+      activeWaypointIndex,
+      moveSpeed,
+      deltaTimeSeconds,
+      stopDistance
+    });
 
-    if (distanceToTarget <= stopDistance) {
-      currentPosition.copyFrom(targetPosition);
-      activeWaypointIndex += 1;
-
-      if (activeWaypointIndex >= activePath.waypoints.length) {
-        debugLog('[combat-move] reached destination waypoint', {
-          destinationCell: activePath.destinationCell,
-          pathCost: pendingPathCost
-        });
-
-        if (typeof combatState.completeUnitMovement === 'function') {
-          combatState.completeUnitMovement({
-            unitId: playerUnit.id,
-            destinationCell: activePath.destinationCell,
-            pathCost: pendingPathCost,
-            source: 'world_pointer'
-          });
-        } else {
-          const fromCell = playerUnit.gridCell;
-          const toCell = activePath.destinationCell;
-          grid.moveOccupant(fromCell, toCell, playerUnit.id);
-          playerUnit.gridCell = toCell;
-          playerUnit.rootNode.gridCell = toCell;
-          if (playerUnit.entity) {
-            playerUnit.entity.gridCell = toCell;
-          }
-          playerUnit.mp -= pendingPathCost;
-        }
-
-        combatState.resetPendingMovementInput?.('movement_complete');
-        syncResetVersion();
-      }
-
+    if (!advanceResult.reachedWaypoint) {
       return;
     }
 
-    const deltaTimeSeconds = runtime.engine.getDeltaTime() / 1000;
-    const stepDistance = moveSpeed * deltaTimeSeconds;
-    const moveVector = toTarget.normalize().scale(Math.min(stepDistance, distanceToTarget));
-    currentPosition.addInPlace(moveVector);
+    activeWaypointIndex = advanceResult.activeWaypointIndex;
+
+    if (!isCellPathTraversalComplete({ activeWaypointIndex, waypoints: activePath.waypoints })) {
+      return;
+    }
+
+    debugLog('[combat-move] reached destination waypoint', {
+      destinationCell: activePath.destinationCell,
+      pathCost: pendingPathCost
+    });
+
+    if (typeof combatState.completeUnitMovement === 'function') {
+      combatState.completeUnitMovement({
+        unitId: playerUnit.id,
+        destinationCell: activePath.destinationCell,
+        pathCost: pendingPathCost,
+        source: 'world_pointer'
+      });
+    } else {
+      const fromCell = playerUnit.gridCell;
+      const toCell = activePath.destinationCell;
+      grid.moveOccupant(fromCell, toCell, playerUnit.id);
+      playerUnit.gridCell = toCell;
+      playerUnit.rootNode.gridCell = toCell;
+      if (playerUnit.entity) {
+        playerUnit.entity.gridCell = toCell;
+      }
+      playerUnit.mp -= pendingPathCost;
+    }
+
+    combatState.resetPendingMovementInput?.('movement_complete');
+    syncResetVersion();
   });
 
   return () => {

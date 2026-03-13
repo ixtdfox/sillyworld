@@ -1,5 +1,14 @@
 // @ts-nocheck
 import type { RuntimeDispose } from '../shared/runtimeContracts.ts';
+import {
+  advancePositionAlongWaypoints,
+  areCellsEqual,
+  buildWorldWaypointPath,
+  createPathSignature,
+  isCellPathTraversalComplete,
+  resolveCellPath,
+  resolveWorldPositionFromCell
+} from '../../../world/movement/gridMovement.ts';
 
 const DEFAULT_CELLS_PER_SECOND = 4;
 
@@ -114,7 +123,7 @@ export class PlayerMovementController {
     const currentCell = this.#playerCharacter.gridCell ?? this.#gridMapper.worldToGridCell(this.#playerCharacter.rootNode.position);
     this.#playerCharacter.gridCell = currentCell;
 
-    if (currentCell.x === targetCell.x && currentCell.z === targetCell.z) {
+    if (areCellsEqual(currentCell, targetCell)) {
       this.#movementTargetState.clearTarget();
       this.#clearPath();
       this.#setMoving(false);
@@ -129,7 +138,7 @@ export class PlayerMovementController {
       return;
     }
 
-    if (!this.#activePath || this.#activeWaypointIndex >= this.#activePath.waypoints.length) {
+    if (!this.#activePath || isCellPathTraversalComplete({ activeWaypointIndex: this.#activeWaypointIndex, waypoints: this.#activePath.waypoints })) {
       this.#clearPath();
       this.#setMoving(false);
       return;
@@ -140,7 +149,7 @@ export class PlayerMovementController {
   }
 
   #ensurePath(currentCell: { x: number; z: number }, targetCell: { x: number; z: number }): boolean {
-    const nextPathSignature = `${currentCell.x},${currentCell.z}>${targetCell.x},${targetCell.z}`;
+    const nextPathSignature = createPathSignature(currentCell, targetCell);
     if (this.#activePath && this.#pathSignature === nextPathSignature) {
       return true;
     }
@@ -150,12 +159,12 @@ export class PlayerMovementController {
       return false;
     }
 
-    const waypoints = pathCells.slice(1).map((cell) => {
-      const world = this.#gridMapper.gridCellToWorld(cell, {
-        resolveY: ({ x, z }) => this.#resolveGroundY({ x, z, fallbackY: this.#playerCharacter.rootNode.position.y })
-      });
-      return new this.#BABYLON.Vector3(world.x, world.y, world.z);
-    });
+    const waypoints = buildWorldWaypointPath({
+      pathCells,
+      gridMapper: this.#gridMapper,
+      resolveGroundY: this.#resolveGroundY,
+      fallbackY: this.#playerCharacter.rootNode.position.y
+    }).map((world) => new this.#BABYLON.Vector3(world.x, world.y, world.z));
 
     this.#activePath = {
       cells: pathCells,
@@ -168,15 +177,11 @@ export class PlayerMovementController {
   }
 
   #resolvePath(currentCell: { x: number; z: number }, targetCell: { x: number; z: number }): Array<{ x: number; z: number }> | null {
-    if (this.#grid?.isCellWalkable && !this.#grid.isCellWalkable(targetCell)) {
-      return null;
-    }
-
-    if (typeof this.#grid?.findPath === 'function') {
-      return this.#grid.findPath(currentCell, targetCell);
-    }
-
-    return [currentCell, targetCell];
+    return resolveCellPath({
+      startCell: currentCell,
+      destinationCell: targetCell,
+      grid: this.#grid
+    });
   }
 
   #followPath(): void {
@@ -185,39 +190,47 @@ export class PlayerMovementController {
     }
 
     const currentPosition = this.#playerCharacter.rootNode.position;
-    const targetPosition = this.#activePath.waypoints[this.#activeWaypointIndex];
-    const toTarget = targetPosition.subtract(currentPosition);
-    const distanceToTarget = toTarget.length();
+    const deltaTimeSeconds = (this.#runtime.engine.getDeltaTime?.() ?? 16) / 1000;
+    const advanceResult = advancePositionAlongWaypoints({
+      position: currentPosition,
+      waypoints: this.#activePath.waypoints,
+      activeWaypointIndex: this.#activeWaypointIndex,
+      moveSpeed: this.#cellsPerSecond,
+      deltaTimeSeconds,
+      stopDistance: this.#stopDistance
+    });
 
-    if (distanceToTarget <= this.#stopDistance) {
-      currentPosition.copyFrom(targetPosition);
-      const reachedCell = this.#activePath.cells[this.#activeWaypointIndex + 1];
-      if (reachedCell) {
-        this.#playerCharacter.gridCell = reachedCell;
-      }
-      this.#activeWaypointIndex += 1;
-
-      if (this.#activeWaypointIndex >= this.#activePath.waypoints.length) {
-        const destinationCell = this.#activePath.destinationCell;
-        this.#playerCharacter.gridCell = destinationCell;
-        this.#movementTargetState.clearTarget();
-        this.#applyGridCellToTransform(destinationCell);
-        this.#clearPath();
-        this.#setMoving(false);
-      }
-
+    if (!advanceResult.reachedWaypoint) {
       return;
     }
 
-    const deltaTimeSeconds = (this.#runtime.engine.getDeltaTime?.() ?? 16) / 1000;
-    const stepDistance = this.#cellsPerSecond * deltaTimeSeconds;
-    const moveVector = toTarget.normalize().scale(Math.min(stepDistance, distanceToTarget));
-    currentPosition.addInPlace(moveVector);
+    this.#activeWaypointIndex = advanceResult.activeWaypointIndex;
+    const reachedCell = this.#activePath.cells[this.#activeWaypointIndex];
+    if (reachedCell) {
+      this.#playerCharacter.gridCell = reachedCell;
+    }
+
+    if (!isCellPathTraversalComplete({
+      activeWaypointIndex: this.#activeWaypointIndex,
+      waypoints: this.#activePath.waypoints
+    })) {
+      return;
+    }
+
+    const destinationCell = this.#activePath.destinationCell;
+    this.#playerCharacter.gridCell = destinationCell;
+    this.#movementTargetState.clearTarget();
+    this.#applyGridCellToTransform(destinationCell);
+    this.#clearPath();
+    this.#setMoving(false);
   }
 
   #applyGridCellToTransform(cell: { x: number; z: number }): void {
-    const world = this.#gridMapper.gridCellToWorld(cell, {
-      resolveY: ({ x, z }) => this.#resolveGroundY({ x, z, fallbackY: this.#playerCharacter.rootNode.position.y })
+    const world = resolveWorldPositionFromCell({
+      cell,
+      gridMapper: this.#gridMapper,
+      resolveGroundY: this.#resolveGroundY,
+      fallbackY: this.#playerCharacter.rootNode.position.y
     });
 
     this.#playerCharacter.rootNode.position.copyFrom(new this.#BABYLON.Vector3(world.x, world.y, world.z));
