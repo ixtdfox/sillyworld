@@ -125,6 +125,17 @@ export interface AppControllerState {
   seed: WorldSeed | null;
 }
 
+
+export interface SceneLaunchOptions {
+  autoStartCombat?: boolean;
+  playerSpawn?: { x: number; z: number };
+  enemySpawn?: { x: number; z: number };
+  playerFacingDirection?: { x: number; y: number; z: number };
+  enemyFacingDirection?: { x: number; y: number; z: number };
+  skipEnemyPatrol?: boolean;
+}
+
+
 export interface AppController {
   navigation: NavigationStore;
   sceneTransitionController: SceneTransitionController;
@@ -133,9 +144,11 @@ export interface AppController {
   hasSaveData(): boolean;
   back(): void;
   startNewGame(): Promise<void>;
+  startCombatTest(): Promise<void>;
   loadAndResumeGame(): Promise<void>;
   consumePendingPhaseTransition(): unknown;
   initialize(): Promise<void>;
+  getSceneLaunchOptions(): SceneLaunchOptions | null;
 }
 
 export interface AppControllerDeps {

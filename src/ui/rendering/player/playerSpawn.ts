@@ -23,10 +23,10 @@ function resolveGroundY({ scene, BABYLON, x, z, fallbackY }) {
   return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 }
 
-function resolveSpawnPosition({ scene, BABYLON, gridMapper }) {
+function resolveSpawnPosition({ scene, BABYLON, gridMapper, forcedSpawn }) {
   const markerPosition = findSpawnMarker(scene);
-  const x = markerPosition?.x ?? DEFAULT_PLAYER_SPAWN.x;
-  const z = markerPosition?.z ?? DEFAULT_PLAYER_SPAWN.z;
+  const x = forcedSpawn?.x ?? markerPosition?.x ?? DEFAULT_PLAYER_SPAWN.x;
+  const z = forcedSpawn?.z ?? markerPosition?.z ?? DEFAULT_PLAYER_SPAWN.z;
   const fallbackY = markerPosition?.y ?? DEFAULT_PLAYER_SPAWN.y;
   const spawnCell = gridMapper.worldToGridCell({ x, z });
   const centered = gridMapper.gridCellToWorld(spawnCell, {
@@ -45,7 +45,7 @@ export function spawnPlayerCharacter(runtime, playerCharacter, options = {}) {
   }
 
   const gridMapper = options.gridMapper ?? createWorldGridMapper();
-  const { spawnCell, spawnPosition } = resolveSpawnPosition({ ...runtime, gridMapper });
+  const { spawnCell, spawnPosition } = resolveSpawnPosition({ ...runtime, gridMapper, forcedSpawn: options.spawn });
   playerCharacter.rootNode.position.copyFrom(spawnPosition);
   playerCharacter.gridCell = spawnCell;
 

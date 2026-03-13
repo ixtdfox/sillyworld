@@ -41,15 +41,32 @@ interface DistrictExplorationOptions {
   sceneContainerName?: string;
   playerFile?: string;
   enemyFile?: string;
+  playerSpawn?: { x: number; z: number };
   enemySpawn?: { x: number; z: number };
   playerNormalizationId?: string;
   enemyNormalizationId?: string;
   enemyArchetypeId?: string;
   enemyVisionAngleDegrees?: number;
   enemyVisionDistance?: number;
+  playerFacingDirection?: { x: number; y: number; z: number };
   enemyFacingDirection?: { x: number; y: number; z: number };
   enemyPatrolPoints?: { x: number; y?: number; z: number }[];
+  skipEnemyPatrol?: boolean;
   resolveAssetPath?: AssetResolver;
+}
+
+
+function yawFromDirection(direction: { x: number; z: number }): number {
+  return Math.atan2(direction.x, direction.z);
+}
+
+function setRootYaw(rootNode: PositionNodeLike | undefined, yaw: number): void {
+  if (!rootNode || !Number.isFinite(yaw)) return;
+  if (rootNode.rotationQuaternion !== undefined) {
+    rootNode.rotationQuaternion = null;
+  }
+  rootNode.rotation = rootNode.rotation ?? { x: 0, y: 0, z: 0 };
+  rootNode.rotation.y = yaw;
 }
 
 const resolveGroundY = ({ runtime, x, z, fallbackY = 0 }: { runtime: BabylonRuntimeSubset; x: number; z: number; fallbackY?: number }) => {
@@ -111,7 +128,7 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     playerNormalizationId: options.playerNormalizationId,
     resolveAssetPath: options.resolveAssetPath
   })) as EntityLike;
-  spawnPlayerCharacter(runtime, playerEntity, { gridMapper });
+  spawnPlayerCharacter(runtime, playerEntity, { gridMapper, spawn: options.playerSpawn });
 
   const isWorldCellValid = (cell: { x: number; z: number }) => (
     cell.x >= gridMapper.minX
@@ -136,7 +153,7 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     enemyArchetypeId: options.enemyArchetypeId,
     resolveAssetPath: options.resolveAssetPath
   })) as EntityLike;
-  const enemyPosition = placeEnemyOnGround(runtime, enemyEntity, gridMapper, options.enemySpawn);
+  placeEnemyOnGround(runtime, enemyEntity, gridMapper, options.enemySpawn);
   snapActorToNearestValidGridCell({
     runtime,
     actor: enemyEntity,
@@ -146,8 +163,18 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     reason: 'exploration_init_enemy',
     logger: console
   });
-  const patrolData = resolveEnemyPatrolData(runtime, gridMapper, options.enemySpawn, options.enemyPatrolPoints);
+
   const initialFacingDirection = options.enemyFacingDirection ?? { x: 0, y: 0, z: -1 };
+
+  if (options.playerFacingDirection) {
+    setRootYaw(playerEntity.rootNode, yawFromDirection(options.playerFacingDirection));
+  }
+
+  setRootYaw(enemyEntity.rootNode, yawFromDirection(initialFacingDirection));
+
+  const patrolData = options.skipEnemyPatrol
+    ? { patrolCells: [], patrolPointsWorld: [] }
+    : resolveEnemyPatrolData(runtime, gridMapper, options.enemySpawn, options.enemyPatrolPoints);
   const enemyAmbientBehavior = createEnemyAmbientBehavior({
     facingDirection: initialFacingDirection,
     patrolPoints: patrolData.patrolPointsWorld,

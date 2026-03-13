@@ -102,14 +102,18 @@ export interface SceneRuntimeMountOptions {
   sceneFile?: string;
   playerFile?: string;
   enemyFile?: string;
+  playerSpawn?: { x: number; z: number };
   enemySpawn?: { x: number; z: number };
   playerNormalizationId?: string;
   enemyNormalizationId?: string;
   enemyArchetypeId?: string;
   enemyVisionAngleDegrees?: number;
   enemyVisionDistance?: number;
+  playerFacingDirection?: { x: number; y: number; z: number };
   enemyFacingDirection?: { x: number; y: number; z: number };
   enemyPatrolPoints?: { x: number; y?: number; z: number }[];
+  skipEnemyPatrol?: boolean;
+  autoStartCombat?: boolean;
   resolveAssetPath?: AssetResolver;
   onEncounterStart?: (payload: EncounterStartPayload) => void;
   onDebugStateChange?: (state: RuntimeDebugState) => void;

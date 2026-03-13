@@ -3,6 +3,7 @@ export interface MainMenuProps {
   onContinue: () => void;
   onLoadGame: () => void;
   onSettings: () => void;
+  onTestCombat: () => void;
   onExit: () => void;
   hasSave: boolean;
 }
@@ -14,7 +15,7 @@ interface MainMenuButtonConfig {
   disabled?: boolean;
 }
 
-export function renderMainMenu({ onNewGame, onContinue, onLoadGame, onSettings, onExit, hasSave }: MainMenuProps): HTMLDivElement {
+export function renderMainMenu({ onNewGame, onContinue, onLoadGame, onSettings, onTestCombat, onExit, hasSave }: MainMenuProps): HTMLDivElement {
   const wrap = document.createElement('div');
   wrap.className = 'sillyrpg-menu';
 
@@ -28,6 +29,7 @@ export function renderMainMenu({ onNewGame, onContinue, onLoadGame, onSettings, 
     { label: 'Continue', onClick: onContinue, hidden: !hasSave },
     { label: hasSave ? 'Load Game' : 'Load Game (No saves yet)', onClick: onLoadGame, disabled: !hasSave },
     { label: 'Settings', onClick: onSettings },
+    { label: 'Test Combat', onClick: onTestCombat },
     { label: 'Exit', onClick: onExit }
   ];
 
