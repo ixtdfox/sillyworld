@@ -378,8 +378,9 @@ export class SceneRuntime {
             ? { id: 'scene_player', rootNode: this.#explorationRuntime.playerMeshRoot }
             : null,
           resolveY: (position: PositionLike) => position?.y ?? 0,
-          hasLineOfSight: ({ enemy, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
+          hasLineOfSight: ({ enemy, targetPosition, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
             enemy,
+            targetPosition,
             directionToPlayer,
             distanceToPlayer
           })
@@ -398,13 +399,25 @@ export class SceneRuntime {
     };
   }
 
-  #hasLineOfSight({ enemy, directionToPlayer, distanceToPlayer }): boolean {
-    const origin = enemy?.rootNode?.position;
-    if (!origin || !Number.isFinite(distanceToPlayer) || distanceToPlayer <= 0) {
+  #hasLineOfSight({ enemy, targetPosition, directionToPlayer, distanceToPlayer }): boolean {
+    const enemyPosition = enemy?.rootNode?.position;
+    if (!enemyPosition || !Number.isFinite(distanceToPlayer) || distanceToPlayer <= 0) {
       return false;
     }
 
-    const ray = new this.#runtime.BABYLON.Ray(origin, directionToPlayer, distanceToPlayer);
+    const eyeHeight = 1.15;
+    const origin = new this.#runtime.BABYLON.Vector3(enemyPosition.x, enemyPosition.y + eyeHeight, enemyPosition.z);
+    const resolvedTarget = targetPosition ?? {
+      x: enemyPosition.x + directionToPlayer.x * distanceToPlayer,
+      y: enemyPosition.y + directionToPlayer.y * distanceToPlayer,
+      z: enemyPosition.z + directionToPlayer.z * distanceToPlayer
+    };
+    const target = new this.#runtime.BABYLON.Vector3(resolvedTarget.x, (resolvedTarget.y ?? enemyPosition.y) + eyeHeight, resolvedTarget.z);
+    const toTarget = target.subtract(origin);
+    const rayLength = Math.max(0.01, toTarget.length());
+    const rayDirection = toTarget.normalize();
+    const ray = new this.#runtime.BABYLON.Ray(origin, rayDirection, rayLength);
+
     const hit = this.#runtime.scene.pickWithRay(ray, (mesh) => {
       if (!mesh?.isEnabled?.() || mesh?.isVisible === false) {
         return false;
@@ -420,6 +433,7 @@ export class SceneRuntime {
 
     return !(hit?.hit === true);
   }
+
 
 
   #detachPerceptionObserver(): void {
@@ -482,6 +496,7 @@ export class SceneRuntime {
       const pipelineResult = evaluateEnemyPerceptionPipeline(enemyActor, playerActor, gridMapper, {
         hasLineOfSight: ({ enemy, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
           enemy,
+          targetPosition,
           directionToPlayer,
           distanceToPlayer
         })
