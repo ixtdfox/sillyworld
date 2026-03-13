@@ -4,6 +4,7 @@ import { loadPlayerCharacter } from './playerCharacterLoader.ts';
 import { loadEnemyCharacter } from './enemyCharacterLoader.ts';
 import { spawnPlayerCharacter } from './playerSpawn.ts';
 import { DEFAULT_ENEMY_PERCEPTION_SETTINGS } from './enemyPerception.ts';
+import { createEnemyAmbientBehavior } from './enemyAmbientBehavior.ts';
 import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from './runtimeContracts.ts';
 
 const DEFAULT_ENEMY_SPAWN: Readonly<{ x: number; z: number }> = Object.freeze({ x: 2, z: 2 });
@@ -43,6 +44,7 @@ interface DistrictExplorationOptions {
   enemyVisionAngleDegrees?: number;
   enemyVisionDistance?: number;
   enemyFacingDirection?: { x: number; y: number; z: number };
+  enemyPatrolPoints?: { x: number; y?: number; z: number }[];
   resolveAssetPath?: AssetResolver;
 }
 
@@ -68,6 +70,25 @@ function placeEnemyOnGround(runtime: BabylonRuntimeSubset, enemyEntity: EntityLi
   return enemyEntity.rootNode.position;
 }
 
+function resolveEnemyPatrolPoints(runtime: BabylonRuntimeSubset, spawnPreset = DEFAULT_ENEMY_SPAWN, patrolPoints?: { x: number; y?: number; z: number }[]) {
+  if (Array.isArray(patrolPoints) && patrolPoints.length > 0) {
+    return patrolPoints.map((point) => ({
+      x: point.x,
+      y: Number.isFinite(point.y) ? point.y : resolveGroundY({ runtime, x: point.x, z: point.z, fallbackY: 0 }),
+      z: point.z
+    }));
+  }
+
+  const route = [
+    { x: spawnPreset.x + 1.75, z: spawnPreset.z + 0.5 },
+    { x: spawnPreset.x + 1, z: spawnPreset.z + 2.25 },
+    { x: spawnPreset.x - 1.5, z: spawnPreset.z + 1.25 },
+    { x: spawnPreset.x - 0.75, z: spawnPreset.z - 1 }
+  ];
+
+  return route.map((point) => ({ x: point.x, y: resolveGroundY({ runtime, x: point.x, z: point.z, fallbackY: 0 }), z: point.z }));
+}
+
 export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSubset, options: DistrictExplorationOptions = {}) {
   const districtScene = await loadWorldScene(runtime, {
     sceneFile: options.sceneFile,
@@ -88,7 +109,18 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     enemyArchetypeId: options.enemyArchetypeId,
     resolveAssetPath: options.resolveAssetPath
   })) as EntityLike;
-  placeEnemyOnGround(runtime, enemyEntity, options.enemySpawn);
+  const enemyPosition = placeEnemyOnGround(runtime, enemyEntity, options.enemySpawn);
+  const patrolPoints = resolveEnemyPatrolPoints(runtime, options.enemySpawn, options.enemyPatrolPoints);
+  const initialFacingDirection = options.enemyFacingDirection ?? { x: 0, y: 0, z: -1 };
+  const enemyAmbientBehavior = createEnemyAmbientBehavior({
+    facingDirection: initialFacingDirection,
+    patrolPoints
+  });
+
+  console.debug('[SillyRPG] Enemy ambient behavior initialized.', {
+    spawnPosition: { x: enemyPosition.x, y: enemyPosition.y, z: enemyPosition.z },
+    patrolPoints
+  });
 
   const dispose: RuntimeDispose = () => {
     enemyEntity.rootNode?.dispose?.(false, true);
@@ -111,8 +143,9 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
       visionDistance: Number.isFinite(options.enemyVisionDistance)
         ? Math.max(0, options.enemyVisionDistance)
         : DEFAULT_ENEMY_PERCEPTION_SETTINGS.visionDistance,
-      facingDirection: options.enemyFacingDirection ?? { x: 0, y: 0, z: -1 }
+      facingDirection: { ...enemyAmbientBehavior.facingDirection }
     },
+    enemyAmbientBehavior,
     dispose
   };
 }
