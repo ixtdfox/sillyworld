@@ -1,11 +1,11 @@
-import { SCHEMA_VERSION } from './constants/types.ts';
+import { SCHEMA_VERSION } from './constant/types.ts';
 import type { CharacterState, GameState, GameStateSeed } from './contracts.ts';
-import { createDefaultWorld } from './entities/world.ts';
-import { createDefaultPlayer } from './entities/player.ts';
-import { createDefaultItems } from './entities/items.ts';
-import { createDefaultCharacters } from './entities/characters.ts';
-import { createDefaultMaps } from './entities/maps.ts';
-import { createDefaultSetting } from './entities/setting.ts';
+import { createDefaultWorld } from './entity/world.ts';
+import { createDefaultPlayer } from './player/player.ts';
+import { createDefaultItems } from './inventory/items.ts';
+import { createDefaultCharacters } from './character/characters.ts';
+import { createDefaultMaps } from './map/maps.ts';
+import { createDefaultSetting } from './map/setting.ts';
 
 export function createGameState(seed: GameStateSeed = {}): GameState {
   const maps = createDefaultMaps(seed.maps);

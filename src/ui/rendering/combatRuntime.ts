@@ -183,7 +183,7 @@ export async function createCombatRuntime(runtime, options = {}) {
   const enemyEntity = options.enemyEntity;
 
   if (!playerEntity?.rootNode || !enemyEntity?.rootNode) {
-    throw new Error('World combat runtime requires active exploration entities.');
+    throw new Error('World combat runtime requires active exploration entity.');
   }
 
   const combatGridConfig = resolveCombatGridConfig(options);

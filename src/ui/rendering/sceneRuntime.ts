@@ -406,32 +406,57 @@ export class SceneRuntime {
     }
 
     const eyeHeight = 1.15;
-    const origin = new this.#runtime.BABYLON.Vector3(enemyPosition.x, enemyPosition.y + eyeHeight, enemyPosition.z);
+    const origin = new this.#runtime.BABYLON.Vector3(
+        enemyPosition.x,
+        enemyPosition.y + eyeHeight,
+        enemyPosition.z
+    );
+
     const resolvedTarget = targetPosition ?? {
       x: enemyPosition.x + directionToPlayer.x * distanceToPlayer,
       y: enemyPosition.y + directionToPlayer.y * distanceToPlayer,
       z: enemyPosition.z + directionToPlayer.z * distanceToPlayer
     };
-    const target = new this.#runtime.BABYLON.Vector3(resolvedTarget.x, (resolvedTarget.y ?? enemyPosition.y) + eyeHeight, resolvedTarget.z);
+
+    const target = new this.#runtime.BABYLON.Vector3(
+        resolvedTarget.x,
+        (resolvedTarget.y ?? enemyPosition.y) + eyeHeight,
+        resolvedTarget.z
+    );
+
     const toTarget = target.subtract(origin);
     const rayLength = Math.max(0.01, toTarget.length());
     const rayDirection = toTarget.normalize();
     const ray = new this.#runtime.BABYLON.Ray(origin, rayDirection, rayLength);
 
+    const enemyRoot = this.#explorationRuntime?.enemyMeshRoot;
+    const playerRoot = this.#explorationRuntime?.playerMeshRoot;
+
     const hit = this.#runtime.scene.pickWithRay(ray, (mesh) => {
       if (!mesh?.isEnabled?.() || mesh?.isVisible === false) {
         return false;
       }
-      if (mesh === this.#explorationRuntime?.enemyMeshRoot || mesh === this.#explorationRuntime?.playerMeshRoot) {
-        return false;
-      }
+
       if (mesh?.metadata?.isEnemyVisionDebugOverlay === true) {
         return false;
       }
+
+      if (isSameNodeOrDescendant(mesh, enemyRoot)) {
+        return false;
+      }
+
       return true;
     });
 
-    return !(hit?.hit === true);
+    if (!hit?.hit || !hit.pickedMesh) {
+      return true;
+    }
+
+    if (isSameNodeOrDescendant(hit.pickedMesh, playerRoot)) {
+      return true;
+    }
+
+    return false;
   }
 
 
@@ -520,7 +545,7 @@ export class SceneRuntime {
 
       const combatTriggerCalled = pipelineResult.playerCellVisible === true;
 
-      console.debug('[SillyRPG] Enemy perception pipeline.', {
+    /*  console.debug('[SillyRPG] Enemy perception pipeline.', {
         enemyPosition: pipelineResult.enemyPosition,
         enemyFacingDirection: pipelineResult.facingDirection,
         enemyCell: pipelineResult.enemyCell,
@@ -532,7 +557,7 @@ export class SceneRuntime {
         perceptionReason: pipelineResult.perceptionResult.reason,
         perceptionCanSeePlayer: pipelineResult.perceptionResult.canSeePlayer,
         combatTriggerCalled
-      });
+      });*/
 
       if (combatTriggerCalled) {
         console.info('[SillyRPG] Enemy perception triggered combat.', {
@@ -551,11 +576,11 @@ export class SceneRuntime {
           console.error('[SillyRPG] Failed to enter world combat mode after enemy perception detection.', error);
         });
       } else {
-        console.debug('[SillyRPG] Enemy perception did not trigger combat.', {
+       /* console.debug('[SillyRPG] Enemy perception did not trigger combat.', {
           combatTriggerCalled: false,
           playerCell: pipelineResult.playerCell,
           visibleCellsCount: pipelineResult.visibleCells.length
-        });
+        });*/
       }
     });
   }
@@ -595,7 +620,7 @@ export class SceneRuntime {
     }
 
     if (!this.#explorationRuntime?.playerEntity || !this.#explorationRuntime?.enemyEntity) {
-      throw new Error('Cannot enter combat mode without active exploration entities.');
+      throw new Error('Cannot enter combat mode without active exploration entity.');
     }
 
     this.#modeController.enterTransitionMode();
@@ -685,6 +710,26 @@ export class SceneRuntime {
 
     this.#attachExplorationControls?.();
   }
+}
+
+function isSameNodeOrDescendant(mesh: any, root: any): boolean {
+  if (!mesh || !root) {
+    return false;
+  }
+
+  if (mesh === root) {
+    return true;
+  }
+
+  let current = mesh.parent;
+  while (current) {
+    if (current === root) {
+      return true;
+    }
+    current = current.parent;
+  }
+
+  return false;
 }
 
 export const mountSceneRuntime: SceneRuntimeMount = async (

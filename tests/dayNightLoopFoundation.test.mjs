@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 import { createWorldStore } from '../src/world/worldStore.ts';
-import { TIME_OF_DAY, TIME_PHASE, TIME_PHASE_ORDER } from '../src/world/constants/types.ts';
+import { TIME_OF_DAY, TIME_PHASE, TIME_PHASE_ORDER } from '../src/world/constant/types.ts';
 import { createGameState } from '../src/world/worldState.ts';
 import {
   advanceTime,
@@ -13,10 +13,10 @@ import {
   normalizeTimePhase,
   setTimeOfDay,
   setTimePhase
-} from '../src/world/actions/timeActions.ts';
-import { consumeNextPhaseTransition } from '../src/world/actions/phaseTransitionActions.ts';
-import { evaluateLocationAvailability, getLocationAvailability } from '../src/world/selectors/locationAvailabilitySelectors.ts';
-import { evaluateNpcAvailability, getNpcAvailability, getNpcsForLocation } from '../src/world/selectors/npcAvailabilitySelectors.ts';
+} from '../src/world/time/timeActions.ts';
+import { consumeNextPhaseTransition } from '../src/world/map/phaseTransitionActions.ts';
+import { evaluateLocationAvailability, getLocationAvailability } from '../src/world/map/locationAvailabilitySelectors.ts';
+import { evaluateNpcAvailability, getNpcAvailability, getNpcsForLocation } from '../src/world/character/npcAvailabilitySelectors.ts';
 
 const seed = JSON.parse(fs.readFileSync(new URL('../src/world/seed_world.json', import.meta.url), 'utf8'));
 
@@ -172,7 +172,7 @@ test('npc availability by phase: schedule rules and location ties stay enforceab
   assert.equal(unknown.reason, 'Unknown contact.');
 });
 
-test('skip/rest baseline behavior: targeted skip and rest actions always move time forward', () => {
+test('skip/rest baseline behavior: targeted skip and rest time always move time forward', () => {
   const store = createWorldStore(seed);
   store.setTimePhase(TIME_PHASE.Morning);
 

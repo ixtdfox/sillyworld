@@ -1,5 +1,5 @@
-import { advanceTimeBySteps, getTimeCostForAction } from './timeActions.ts';
-import { getLocationAvailability } from '../selectors/locationAvailabilitySelectors.ts';
+import { advanceTimeBySteps, getTimeCostForAction } from '../time/timeActions.ts';
+import { getLocationAvailability } from './locationAvailabilitySelectors.ts';
 import type { GameState, MapLevel, PhaseTransitionRecord } from '../contracts.ts';
 
 const NAVIGABLE_LEVELS = new Set<MapLevel>(['district', 'building', 'room']);

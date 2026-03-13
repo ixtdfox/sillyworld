@@ -1,5 +1,5 @@
 import type { GameState, TimeOfDay, TimePhase, WorldClockState } from '../contracts.ts';
-import { normalizeTimePhase } from '../actions/timeActions.ts';
+import { normalizeTimePhase } from './timeActions.ts';
 
 export function getTimePhase(state: GameState): TimePhase {
   return normalizeTimePhase(state.world?.timePhase, normalizeTimePhase(state.world?.timeOfDay)) ?? 'morning';

@@ -1,5 +1,5 @@
 import type { EquipmentSlot, GameState } from '../contracts.ts';
-import { canTakeItem } from '../selectors/inventorySelectors.ts';
+import { canTakeItem } from './inventorySelectors.ts';
 
 interface InventoryActionResult {
   state: GameState;
