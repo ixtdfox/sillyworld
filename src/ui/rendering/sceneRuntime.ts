@@ -1,14 +1,14 @@
 // @ts-nocheck
 import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.ts';
-import { createMovementTargetState } from './movementTargetState.ts';
+import { createMovementTargetState } from '../../world/movement/movementTargetState.ts';
 import { createPlayerAnimationController } from './playerAnimationController.ts';
 import { PlayerMovementController } from './playerMovementController.ts';
 import { SceneGroundClickInput } from './sceneGroundClickInput.ts';
 import { attachGameplayIsometricCamera } from './gameplayCameraController.ts';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.ts';
 import { ENCOUNTER_INTERACTION_DISTANCE } from './encounterInteractionInput.ts';
-import { evaluateEnemyPerceptionPipeline } from './enemyPerception.ts';
-import { updateEnemyAmbientBehavior } from './enemyAmbientBehavior.ts';
+import { evaluateEnemyPerceptionPipeline } from '../../world/enemy/enemyPerception.ts';
+import { updateEnemyAmbientBehavior } from '../../world/enemy/enemyAmbientBehavior.ts';
 import { createCombatRuntime } from './combatRuntime.ts';
 import { createCombatDebugShell } from './combatDebugShell.ts';
 import { createEnemyVisionGridDebugOverlay } from './enemyVisionGridDebugOverlay.ts';

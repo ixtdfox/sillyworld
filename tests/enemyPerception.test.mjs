@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { canEnemySeePlayer, evaluateEnemyPerceptionPipeline, getEnemyVisionCoverage, updateEnemyPerception } from '../src/ui/rendering/enemyPerception.ts';
+import { canEnemySeePlayer, evaluateEnemyPerceptionPipeline, getEnemyVisionCoverage, updateEnemyPerception } from '../src/world/enemy/enemyPerception.ts';
 
 function actor({ x, y = 0, z, perception, facingDirection } = {}) {
   return {

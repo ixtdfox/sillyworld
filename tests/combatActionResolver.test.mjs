@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createCombatActionResolver } from '../src/ui/rendering/combatActionResolver.ts';
+import { createCombatActionResolver } from '../src/world/combat/combatActionResolver.ts';
 
 function makeUnit(overrides = {}) {
   return {
