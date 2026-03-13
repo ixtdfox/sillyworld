@@ -1,10 +1,9 @@
 // @ts-nocheck
 
+import { normalizeGridCell } from '../movement/gridMovement.ts';
+
 function toCell(cell) {
-  return {
-    x: Math.trunc(cell.x),
-    z: Math.trunc(cell.z)
-  };
+  return normalizeGridCell(cell);
 }
 
 function getCellDistance(a, b) {

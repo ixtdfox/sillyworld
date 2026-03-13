@@ -1,15 +1,6 @@
 // @ts-nocheck
 
-function normalizeCell(cell) {
-  if (!cell || !Number.isFinite(cell.x) || !Number.isFinite(cell.z)) {
-    return null;
-  }
-
-  return {
-    x: Math.trunc(cell.x),
-    z: Math.trunc(cell.z)
-  };
-}
+import { normalizeGridCell } from './gridMovement.ts';
 
 export function createMovementTargetState() {
   let targetCell = null;
@@ -19,10 +10,10 @@ export function createMovementTargetState() {
     getTargetCell: () => targetCell,
     hasTarget: () => Boolean(targetCell),
     setTarget: (nextTargetCell) => {
-      targetCell = normalizeCell(nextTargetCell);
+      targetCell = normalizeGridCell(nextTargetCell);
     },
     setTargetCell: (nextTargetCell) => {
-      targetCell = normalizeCell(nextTargetCell);
+      targetCell = normalizeGridCell(nextTargetCell);
     },
     clearTarget: () => {
       targetCell = null;
