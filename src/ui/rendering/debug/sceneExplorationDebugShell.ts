@@ -1,8 +1,8 @@
 // @ts-nocheck
-import { createCombatDebugShell } from '../debug/combatDebugShell.ts';
-import { createEnemyVisionGridDebugOverlay } from '../debug/enemyVisionGridDebugOverlay.ts';
+import { createCombatDebugShell } from './combatDebugShell.ts';
+import { createEnemyVisionGridDebugOverlay } from './enemyVisionGridDebugOverlay.ts';
 
-export function setupExplorationDebugShell(runtime, options: {
+export function setupSceneExplorationDebugShell(runtime, options: {
   getExplorationRuntime: () => any;
   hasLineOfSight: (args: any) => boolean;
 }) {

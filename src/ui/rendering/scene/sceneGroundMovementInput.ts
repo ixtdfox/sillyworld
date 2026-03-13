@@ -27,7 +27,7 @@ interface BabylonRuntimeSubset {
   };
 }
 
-export class SceneGroundClickInput {
+export class SceneGroundMovementInput {
   readonly #runtime: BabylonRuntimeSubset;
   readonly #movementTargetState: MovementTargetStateLike;
   #observer: unknown | null = null;
@@ -81,7 +81,7 @@ export class SceneGroundClickInput {
   }
 }
 
-export function attachGroundClickInput(runtime: BabylonRuntimeSubset, movementTargetState: MovementTargetStateLike): RuntimeDispose {
-  const input = new SceneGroundClickInput(runtime, movementTargetState);
+export function attachSceneGroundMovementInput(runtime: BabylonRuntimeSubset, movementTargetState: MovementTargetStateLike): RuntimeDispose {
+  const input = new SceneGroundMovementInput(runtime, movementTargetState);
   return input.attach();
 }

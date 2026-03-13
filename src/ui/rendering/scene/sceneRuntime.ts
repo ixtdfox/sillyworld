@@ -6,14 +6,14 @@ import { createCombatRuntime } from '../combat/combatRuntime.ts';
 import { EncounterCoordinator } from './encounterCoordinator.ts';
 import { SceneModeController } from './sceneModeController.ts';
 import {
-  RuntimeDebugStateEmitter,
+  SceneRuntimeDebugStateEmitter,
   type CombatRuntimeLike,
   type ExplorationRuntimeLike
-} from './runtimeDebugStateEmitter.ts';
+} from '../debug/sceneRuntimeDebugStateEmitter.ts';
 import { createExplorationControlsBinder, type ExplorationControlsBinder } from './explorationControlsBinder.ts';
 import { createBabylonLineOfSightAdapter } from './babylonLineOfSightAdapter.ts';
 import { createPerceptionObserverBinder } from './perceptionObserverBinder.ts';
-import { setupExplorationDebugShell } from './explorationDebugShellSetup.ts';
+import { setupSceneExplorationDebugShell } from '../debug/sceneExplorationDebugShell.ts';
 import type {
   CombatStateLike,
   EncounterStartPayload,
@@ -40,7 +40,7 @@ class SceneMountSession {
 export class SceneRuntime {
   readonly #runtime: ReturnType<typeof createBabylonWorldRuntime>;
   readonly #options: SceneRuntimeMountOptions;
-  readonly #debugState: RuntimeDebugStateEmitter;
+  readonly #debugState: SceneRuntimeDebugStateEmitter;
   readonly #mountSession = new SceneMountSession();
   readonly #encounterCoordinator: EncounterCoordinator;
   readonly #modeController = new SceneModeController();
@@ -59,7 +59,7 @@ export class SceneRuntime {
   constructor(canvas: HTMLCanvasElement, options: SceneRuntimeMountOptions = {}) {
     this.#runtime = createBabylonWorldRuntime(canvas);
     this.#options = options;
-    this.#debugState = new RuntimeDebugStateEmitter(this.#runtime, this.#options);
+    this.#debugState = new SceneRuntimeDebugStateEmitter(this.#runtime, this.#options);
     this.#encounterCoordinator = new EncounterCoordinator(this.#options.onEncounterStart);
     this.#interactionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
     this.#hasLineOfSight = createBabylonLineOfSightAdapter(this.#runtime, () => ({
@@ -171,7 +171,7 @@ export class SceneRuntime {
 
     if (this.#options.debugEnabled) {
       this.#disposeExplorationDebugShell();
-      this.#explorationDebugShell = setupExplorationDebugShell(this.#runtime, {
+      this.#explorationDebugShell = setupSceneExplorationDebugShell(this.#runtime, {
         getExplorationRuntime: () => this.#explorationRuntime,
         hasLineOfSight: this.#hasLineOfSight
       });

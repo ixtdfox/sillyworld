@@ -46,7 +46,7 @@ function isEnemyPick({ pickedMesh, enemyRoot }: { pickedMesh: unknown; enemyRoot
   return pickedMesh === enemyRoot || isDescendantOf(pickedMesh as { parent?: unknown }, enemyRoot);
 }
 
-export class EncounterInteractionInput {
+export class SceneEncounterInteractionInput {
   readonly #runtime: BabylonRuntimeSubset;
   readonly #playerRoot: PositionNodeLike;
   readonly #enemyRoot: PositionNodeLike;
@@ -130,7 +130,7 @@ export class EncounterInteractionInput {
   }
 }
 
-export function attachEncounterInteractionInput(runtime: BabylonRuntimeSubset, options: EncounterInputOptions = {}): RuntimeDispose {
-  const input = new EncounterInteractionInput(runtime, options);
+export function attachSceneEncounterInteractionInput(runtime: BabylonRuntimeSubset, options: EncounterInputOptions = {}): RuntimeDispose {
+  const input = new SceneEncounterInteractionInput(runtime, options);
   return input.attach();
 }
