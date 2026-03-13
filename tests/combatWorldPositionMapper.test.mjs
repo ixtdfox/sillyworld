@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createCombatGridMapper } from '../src/ui/rendering/combat/combatGridMapper.ts';
+import { createCombatGridMapper } from '../src/world/combat/combatGridMapper.ts';
 import { createCombatGrid } from '../src/world/combat/combatGrid.ts';
 import { mapCombatParticipantsFromWorldPositions, mapWorldPositionToCombatCell } from '../src/world/combat/combatWorldPositionMapper.ts';
 

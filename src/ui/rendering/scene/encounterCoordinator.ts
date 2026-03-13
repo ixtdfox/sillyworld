@@ -1,7 +1,7 @@
 import type { EncounterStartPayload } from '../shared/runtimeContracts.ts';
 
 export class EncounterCoordinator {
-  readonly #onEncounterStart?: (payload: EncounterStartPayload) => void;
+  readonly #onEncounterStart: ((payload: EncounterStartPayload) => void) | undefined;
   #started = false;
 
   constructor(onEncounterStart?: (payload: EncounterStartPayload) => void) {
