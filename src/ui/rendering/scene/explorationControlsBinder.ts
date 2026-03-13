@@ -5,7 +5,6 @@ import { createCombatGrid } from '../../../world/combat/combatGrid.ts';
 import { createPlayerAnimationController } from '../player/playerAnimationController.ts';
 import { PlayerMovementController } from '../player/playerMovementController.ts';
 import { SceneGroundMovementInput } from './sceneGroundMovementInput.ts';
-import { attachGameplayIsometricCamera } from '../camera/gameplayCameraController.ts';
 import type { PositionLike, PositionNodeLike, RuntimeDispose } from '../shared/runtimeContracts.ts';
 
 export interface ExplorationControlsBinder {
@@ -65,7 +64,6 @@ export function createExplorationControlsBinder(
       attached = true;
       const detachGroundInput = groundClickInput.attach();
       const detachMovement = movementController.attach();
-      const detachCamera = attachGameplayIsometricCamera(runtime, explorationRuntime.playerMeshRoot);
 
       detach = () => {
         if (!attached) {
@@ -74,7 +72,6 @@ export function createExplorationControlsBinder(
         attached = false;
         detachGroundInput();
         detachMovement();
-        detachCamera();
         detach = () => {};
       };
     },
