@@ -14,6 +14,7 @@ import { createCombatMovementRangeHighlighter } from './combatMovementRangeHighl
 import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from '../../../world/combat/playerActionModeStateMachine.ts';
 import { createCombatDebugShell } from '../debug/combatDebugShell.ts';
 import { mapCombatParticipantsFromWorldPositions } from '../../../world/combat/combatWorldPositionMapper.ts';
+import { snapActorToNearestValidGridCell } from '../shared/gridAlignment.ts';
 const DEFAULT_PLAYER_SPAWN_CELL = Object.freeze({ x: -1, z: 1 });
 const DEFAULT_ENEMY_SPAWN_CELL = Object.freeze({ x: 1, z: -1 });
 const DEFAULT_AP_PER_TURN = 2;
@@ -204,6 +205,29 @@ export async function createCombatRuntime(runtime, options = {}) {
     minZ: combatGridConfig.minZ,
     maxZ: combatGridConfig.maxZ,
     blockedCells: combatGridConfig.blockedCells
+  });
+
+  const isCombatCellValid = (cell) => grid.isWithinBounds(cell) && !grid.isBlocked(cell);
+  const resolveGroundYForGridAlignment = ({ x, z, fallbackY = 0 }) => resolveGroundY({ runtime, x, z, fallbackY });
+
+  snapActorToNearestValidGridCell({
+    runtime,
+    actor: playerEntity,
+    gridMapper,
+    isCellValid: isCombatCellValid,
+    resolveY: resolveGroundYForGridAlignment,
+    reason: 'combat_entry_player',
+    logger: console
+  });
+
+  snapActorToNearestValidGridCell({
+    runtime,
+    actor: enemyEntity,
+    gridMapper,
+    isCellValid: isCombatCellValid,
+    resolveY: resolveGroundYForGridAlignment,
+    reason: 'combat_entry_enemy',
+    logger: console
   });
 
   const participants = resolveEncounterParticipants({
