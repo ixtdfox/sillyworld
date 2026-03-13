@@ -22,7 +22,7 @@ export interface EnemyPerceptionActor {
 }
 
 export interface EnemyPerceptionWorld {
-  hasLineOfSight?: (params: { enemy: EnemyPerceptionActor; player: EnemyPerceptionActor; directionToPlayer: PositionLike; distanceToPlayer: number }) => boolean;
+  hasLineOfSight?: (params: { enemy: EnemyPerceptionActor; player?: EnemyPerceptionActor; targetPosition?: PositionLike; directionToPlayer: PositionLike; distanceToPlayer: number }) => boolean;
   logger?: Pick<Console, 'debug' | 'info'>;
 }
 
@@ -33,6 +33,23 @@ export interface EnemyPerceptionResult {
   angleToPlayerDegrees: number;
   maxVisionDistance: number;
   visionAngleDegrees: number;
+}
+
+export interface EnemyPerceptionGridMapper {
+  cellSize?: number;
+  worldToGridCell: (position: PositionLike) => { x: number; z: number };
+  gridCellToWorld: (cell: { x: number; z: number }, transform?: { fallbackY?: number }) => PositionLike;
+}
+
+export interface EnemyVisionCoverageCell {
+  x: number;
+  z: number;
+}
+
+export interface EnemyVisionCoverage {
+  enemyCell: EnemyVisionCoverageCell | null;
+  visibleCells: EnemyVisionCoverageCell[];
+  blockedCells: EnemyVisionCoverageCell[];
 }
 
 function resolveLogger(world?: EnemyPerceptionWorld): Pick<Console, 'debug' | 'info'> {
@@ -83,6 +100,79 @@ function resolveFacingDirection(enemy: EnemyPerceptionActor): PositionLike {
   return DEFAULT_FACING_DIRECTION;
 }
 
+function evaluateEnemyVisionTarget(
+  enemy: EnemyPerceptionActor,
+  targetPosition: PositionLike,
+  world: EnemyPerceptionWorld = {},
+  player?: EnemyPerceptionActor
+): EnemyPerceptionResult {
+  const settings = resolvePerceptionSettings(enemy);
+  const enemyPosition = enemy?.rootNode?.position;
+  if (!enemyPosition || !targetPosition) {
+    return {
+      canSeePlayer: false,
+      reason: 'missing-position',
+      distanceToPlayer: Number.POSITIVE_INFINITY,
+      angleToPlayerDegrees: Number.POSITIVE_INFINITY,
+      maxVisionDistance: settings.visionDistance,
+      visionAngleDegrees: settings.visionAngleDegrees
+    };
+  }
+
+  const toPlayer = toVector(enemyPosition, targetPosition);
+  const distanceToPlayer = vectorLength(toPlayer);
+  if (distanceToPlayer > settings.visionDistance) {
+    return {
+      canSeePlayer: false,
+      reason: 'out-of-range',
+      distanceToPlayer,
+      angleToPlayerDegrees: Number.POSITIVE_INFINITY,
+      maxVisionDistance: settings.visionDistance,
+      visionAngleDegrees: settings.visionAngleDegrees
+    };
+  }
+
+  const directionToPlayer = normalize(toPlayer);
+  const facingDirection = resolveFacingDirection(enemy);
+  const dotValue = clamp(dot(facingDirection, directionToPlayer), -1, 1);
+  const angleToPlayerDegrees = (Math.acos(dotValue) * 180) / Math.PI;
+  const halfFov = settings.visionAngleDegrees * 0.5;
+
+  if (angleToPlayerDegrees > halfFov) {
+    return {
+      canSeePlayer: false,
+      reason: 'outside-fov',
+      distanceToPlayer,
+      angleToPlayerDegrees,
+      maxVisionDistance: settings.visionDistance,
+      visionAngleDegrees: settings.visionAngleDegrees
+    };
+  }
+
+  const hasLineOfSight = world?.hasLineOfSight
+    ? world.hasLineOfSight({ enemy, player, targetPosition, directionToPlayer, distanceToPlayer })
+    : true;
+  if (!hasLineOfSight) {
+    return {
+      canSeePlayer: false,
+      reason: 'blocked-line-of-sight',
+      distanceToPlayer,
+      angleToPlayerDegrees,
+      maxVisionDistance: settings.visionDistance,
+      visionAngleDegrees: settings.visionAngleDegrees
+    };
+  }
+
+  return {
+    canSeePlayer: true,
+    reason: 'detected',
+    distanceToPlayer,
+    angleToPlayerDegrees,
+    maxVisionDistance: settings.visionDistance,
+    visionAngleDegrees: settings.visionAngleDegrees
+  };
+}
+
 export function canEnemySeePlayer(
   enemy: EnemyPerceptionActor,
   player: EnemyPerceptionActor,
@@ -108,76 +198,67 @@ export function canEnemySeePlayer(
     };
   }
 
-  const toPlayer = toVector(enemyPosition, playerPosition);
-  const distanceToPlayer = vectorLength(toPlayer);
-  if (distanceToPlayer > settings.visionDistance) {
+  const result = evaluateEnemyVisionTarget(enemy, playerPosition, world, player);
+  if (result.reason === 'out-of-range') {
     logger.debug('[SillyRPG] Enemy perception failed: player is out of range.', {
       enemyId: enemy?.id ?? null,
       playerId: player?.id ?? null,
-      distanceToPlayer,
+      distanceToPlayer: result.distanceToPlayer,
       visionDistance: settings.visionDistance
     });
-    return {
-      canSeePlayer: false,
-      reason: 'out-of-range',
-      distanceToPlayer,
-      angleToPlayerDegrees: Number.POSITIVE_INFINITY,
-      maxVisionDistance: settings.visionDistance,
-      visionAngleDegrees: settings.visionAngleDegrees
-    };
-  }
-
-  const directionToPlayer = normalize(toPlayer);
-  const facingDirection = resolveFacingDirection(enemy);
-  const dotValue = clamp(dot(facingDirection, directionToPlayer), -1, 1);
-  const angleToPlayerDegrees = (Math.acos(dotValue) * 180) / Math.PI;
-  const halfFov = settings.visionAngleDegrees * 0.5;
-
-  if (angleToPlayerDegrees > halfFov) {
+  } else if (result.reason === 'outside-fov') {
     logger.debug('[SillyRPG] Enemy perception failed: player is outside FOV.', {
       enemyId: enemy?.id ?? null,
       playerId: player?.id ?? null,
-      angleToPlayerDegrees,
-      halfFov,
+      angleToPlayerDegrees: result.angleToPlayerDegrees,
+      halfFov: settings.visionAngleDegrees * 0.5,
       visionAngleDegrees: settings.visionAngleDegrees
     });
-    return {
-      canSeePlayer: false,
-      reason: 'outside-fov',
-      distanceToPlayer,
-      angleToPlayerDegrees,
-      maxVisionDistance: settings.visionDistance,
-      visionAngleDegrees: settings.visionAngleDegrees
-    };
-  }
-
-  const hasLineOfSight = world?.hasLineOfSight
-    ? world.hasLineOfSight({ enemy, player, directionToPlayer, distanceToPlayer })
-    : true;
-  if (!hasLineOfSight) {
+  } else if (result.reason === 'blocked-line-of-sight') {
     logger.debug('[SillyRPG] Enemy perception failed: line of sight is blocked.', {
       enemyId: enemy?.id ?? null,
       playerId: player?.id ?? null,
-      distanceToPlayer,
-      angleToPlayerDegrees
+      distanceToPlayer: result.distanceToPlayer,
+      angleToPlayerDegrees: result.angleToPlayerDegrees
     });
-    return {
-      canSeePlayer: false,
-      reason: 'blocked-line-of-sight',
-      distanceToPlayer,
-      angleToPlayerDegrees,
-      maxVisionDistance: settings.visionDistance,
-      visionAngleDegrees: settings.visionAngleDegrees
-    };
+  }
+
+  return result;
+}
+
+export function getEnemyVisionCoverage(
+  enemy: EnemyPerceptionActor,
+  gridMapper: EnemyPerceptionGridMapper,
+  world: EnemyPerceptionWorld = {}
+): EnemyVisionCoverage {
+  const enemyPosition = enemy?.rootNode?.position;
+  if (!enemyPosition || !gridMapper) {
+    return { enemyCell: null, visibleCells: [], blockedCells: [] };
+  }
+
+  const enemyCell = gridMapper.worldToGridCell(enemyPosition);
+  const settings = resolvePerceptionSettings(enemy);
+  const cellSize = Math.max(EPSILON, gridMapper.cellSize ?? 1);
+  const radiusCells = Math.max(1, Math.ceil(settings.visionDistance / cellSize));
+  const visibleCells: EnemyVisionCoverageCell[] = [];
+  const blockedCells: EnemyVisionCoverageCell[] = [];
+
+  for (let x = enemyCell.x - radiusCells; x <= enemyCell.x + radiusCells; x += 1) {
+    for (let z = enemyCell.z - radiusCells; z <= enemyCell.z + radiusCells; z += 1) {
+      const targetPosition = gridMapper.gridCellToWorld({ x, z }, { fallbackY: enemyPosition.y });
+      const result = evaluateEnemyVisionTarget(enemy, targetPosition, world);
+      if (result.reason === 'detected') {
+        visibleCells.push({ x, z });
+      } else if (result.reason === 'blocked-line-of-sight') {
+        blockedCells.push({ x, z });
+      }
+    }
   }
 
   return {
-    canSeePlayer: true,
-    reason: 'detected',
-    distanceToPlayer,
-    angleToPlayerDegrees,
-    maxVisionDistance: settings.visionDistance,
-    visionAngleDegrees: settings.visionAngleDegrees
+    enemyCell,
+    visibleCells,
+    blockedCells
   };
 }
 

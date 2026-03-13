@@ -10,6 +10,8 @@ import { ENCOUNTER_INTERACTION_DISTANCE } from './encounterInteractionInput.ts';
 import { updateEnemyPerception } from './enemyPerception.ts';
 import { updateEnemyAmbientBehavior } from './enemyAmbientBehavior.ts';
 import { createCombatRuntime } from './combatRuntime.ts';
+import { createCombatDebugShell } from './combatDebugShell.ts';
+import { createEnemyVisionGridDebugOverlay } from './enemyVisionGridDebugOverlay.ts';
 import type {
   CombatStateLike,
   EncounterStartPayload,
@@ -206,6 +208,7 @@ export class SceneRuntime {
   #explorationControlsAttached = false;
   #perceptionObserver: unknown | null = null;
   #lastPerceptionResult: { canSeePlayer?: boolean; reason?: string | null; distanceToPlayer?: number; angleToPlayerDegrees?: number } | null = null;
+  #explorationDebugShell: { dispose?: RuntimeDispose } | null = null;
 
   constructor(canvas: HTMLCanvasElement, options: SceneRuntimeMountOptions = {}) {
     this.#runtime = createBabylonWorldRuntime(canvas);
@@ -271,6 +274,11 @@ export class SceneRuntime {
   #disposeExplorationControls(): void {
     this.#detachExplorationInputs?.();
     this.#detachExplorationInputs = () => {};
+  }
+
+  #disposeExplorationDebugShell(): void {
+    this.#explorationDebugShell?.dispose?.();
+    this.#explorationDebugShell = null;
   }
 
   async #setupExplorationRuntime(): Promise<void> {
@@ -341,14 +349,71 @@ export class SceneRuntime {
     };
 
     this.#attachExplorationControls();
+    if (this.#options.debugEnabled) {
+      this.#disposeExplorationDebugShell();
+      const debugShell = createCombatDebugShell(this.#runtime);
+      debugShell.registerPanel({
+        id: 'enemy-vision-grid',
+        label: 'Enemy Vision Grid',
+        initialVisible: true,
+        createPanel: () => createEnemyVisionGridDebugOverlay(this.#runtime, {
+          getEnemyActor: () => {
+            if (!this.#explorationRuntime?.enemyMeshRoot) {
+              return null;
+            }
+
+            return {
+              id: 'scene_enemy',
+              rootNode: this.#explorationRuntime.enemyMeshRoot,
+              perception: {
+                visionAngleDegrees: this.#explorationRuntime.enemyPerception?.visionAngleDegrees,
+                visionDistance: this.#explorationRuntime.enemyPerception?.visionDistance
+              },
+              facingDirection: this.#explorationRuntime.enemyPerception?.facingDirection
+            };
+          },
+          getPlayerActor: () => this.#explorationRuntime?.playerMeshRoot
+            ? { id: 'scene_player', rootNode: this.#explorationRuntime.playerMeshRoot }
+            : null,
+          resolveY: (position: PositionLike) => position?.y ?? 0,
+          hasLineOfSight: ({ enemy, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
+            enemy,
+            directionToPlayer,
+            distanceToPlayer
+          })
+        })
+      });
+      this.#explorationDebugShell = debugShell;
+    }
     this.#attachEnemyPerceptionObserver();
 
     const previousDispose = explorationRuntime.dispose;
     explorationRuntime.dispose = () => {
       this.#detachPerceptionObserver();
       this.#disposeExplorationControls();
+      this.#disposeExplorationDebugShell();
       previousDispose?.();
     };
+  }
+
+  #hasLineOfSight({ enemy, directionToPlayer, distanceToPlayer }): boolean {
+    const origin = enemy?.rootNode?.position;
+    if (!origin || !Number.isFinite(distanceToPlayer) || distanceToPlayer <= 0) {
+      return false;
+    }
+
+    const ray = new this.#runtime.BABYLON.Ray(origin, directionToPlayer, distanceToPlayer);
+    const hit = this.#runtime.scene.pickWithRay(ray, (mesh) => {
+      if (!mesh?.isEnabled?.() || mesh?.isVisible === false) {
+        return false;
+      }
+      if (mesh === this.#explorationRuntime?.enemyMeshRoot || mesh === this.#explorationRuntime?.playerMeshRoot) {
+        return false;
+      }
+      return true;
+    });
+
+    return !(hit?.hit === true);
   }
 
 
@@ -405,25 +470,11 @@ export class SceneRuntime {
       };
 
       const perceptionResult = updateEnemyPerception(enemyActor, playerActor, {
-        hasLineOfSight: ({ enemy, directionToPlayer, distanceToPlayer }) => {
-          const origin = enemy?.rootNode?.position;
-          if (!origin || !Number.isFinite(distanceToPlayer) || distanceToPlayer <= 0) {
-            return false;
-          }
-
-          const ray = new this.#runtime.BABYLON.Ray(origin, directionToPlayer, distanceToPlayer);
-          const hit = this.#runtime.scene.pickWithRay(ray, (mesh) => {
-            if (!mesh?.isEnabled?.() || mesh?.isVisible === false) {
-              return false;
-            }
-            if (mesh === this.#explorationRuntime.enemyMeshRoot || mesh === this.#explorationRuntime.playerMeshRoot) {
-              return false;
-            }
-            return true;
-          });
-
-          return !(hit?.hit === true);
-        }
+        hasLineOfSight: ({ enemy, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
+          enemy,
+          directionToPlayer,
+          distanceToPlayer
+        })
       });
 
       this.#lastPerceptionResult = perceptionResult;
