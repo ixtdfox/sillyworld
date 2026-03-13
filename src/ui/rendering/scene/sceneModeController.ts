@@ -7,15 +7,25 @@ export class SceneModeController {
     return this.#mode;
   }
 
+  #setMode(nextMode: RuntimeMode): void {
+    const previousMode = this.#mode;
+    if (previousMode === nextMode) {
+      return;
+    }
+
+    this.#mode = nextMode;
+    console.debug('[SillyRPG] Scene mode transition', { previousMode, nextMode });
+  }
+
   public enterExplorationMode(): void {
-    this.#mode = 'exploration';
+    this.#setMode('exploration');
   }
 
   public enterCombatMode(): void {
-    this.#mode = 'combat';
+    this.#setMode('combat');
   }
 
   public enterTransitionMode(): void {
-    this.#mode = 'transitioning';
+    this.#setMode('transitioning');
   }
 }

@@ -13,6 +13,8 @@ const DEFAULT_CAMERA_CONFIG = {
   targetLerpFactor: 0.2
 };
 
+const activeGameplayCameraDetachByRuntime = new WeakMap();
+
 function toRadians(degrees) {
   return (degrees * Math.PI) / 180;
 }
@@ -32,6 +34,12 @@ function createOffsetVector(BABYLON, distance, elevationDegrees, yawDegrees) {
 export function attachGameplayIsometricCamera(runtime, followTarget, options = {}) {
   if (!followTarget?.position) {
     throw new Error('Cannot attach gameplay camera without a follow target node.');
+  }
+
+  const existingDetach = activeGameplayCameraDetachByRuntime.get(runtime);
+  if (typeof existingDetach === 'function') {
+    console.debug('[SillyRPG] Replacing existing gameplay camera controller with a fresh attachment.');
+    existingDetach({ skipFallback: true, reason: 'reattach' });
   }
 
   const BABYLON = runtime.BABYLON;
@@ -143,20 +151,31 @@ export function attachGameplayIsometricCamera(runtime, followTarget, options = {
     camera.setTarget(smoothedTarget);
   });
 
-  return () => {
+  let detached = false;
+  const detach = ({ skipFallback = false, reason = 'manual' } = {}) => {
+    if (detached) {
+      return;
+    }
+
+    detached = true;
     setCameraOrbiting(runtime, false);
     runtime.scene.onPointerObservable.remove(pointerObserver);
     runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
     if (canvas) {
       canvas.removeEventListener('contextmenu', onContextMenu);
     }
+
+    if (activeGameplayCameraDetachByRuntime.get(runtime) === detach) {
+      activeGameplayCameraDetachByRuntime.delete(runtime);
+    }
+
     const detachedCameraWasActive = runtime.scene.activeCamera === camera;
     const detachedCameraPosition = camera.position?.clone?.();
     if (!camera.isDisposed()) {
       camera.dispose();
     }
 
-    if (detachedCameraWasActive) {
+    if (detachedCameraWasActive && !skipFallback) {
       const fallbackCamera = new BABYLON.FreeCamera(
         'gameplayCameraDetachedFallback',
         detachedCameraPosition ?? new BABYLON.Vector3(0, 8, -10),
@@ -169,5 +188,15 @@ export function attachGameplayIsometricCamera(runtime, followTarget, options = {
       runtime.camera = fallbackCamera;
       console.debug('[SillyRPG] Gameplay camera detached; fallback camera activated.');
     }
+
+    console.debug('[SillyRPG] Gameplay camera detached.', {
+      reason,
+      detachedCameraWasActive,
+      fallbackActivated: detachedCameraWasActive && !skipFallback
+    });
   };
+
+  activeGameplayCameraDetachByRuntime.set(runtime, detach);
+
+  return detach;
 }

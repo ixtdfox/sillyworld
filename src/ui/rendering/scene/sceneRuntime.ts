@@ -194,6 +194,9 @@ export class SceneRuntime {
 
     this.#detachGameplayCamera();
     this.#detachGameplayCamera = attachGameplayIsometricCamera(this.#runtime, explorationRuntime.playerMeshRoot);
+    console.info('[SillyRPG] Persistent gameplay camera attached to exploration player root.', {
+      targetName: explorationRuntime.playerMeshRoot.name ?? 'unnamed-node'
+    });
 
     this.#explorationControls.attach();
 
@@ -281,7 +284,6 @@ export class SceneRuntime {
     try {
       combatRuntime = await createCombatRuntime(this.#runtime, {
         sceneContainer: this.#explorationRuntime.districtScene?.sceneContainer,
-        cameras: this.#explorationRuntime.districtScene?.cameras,
         playerEntity: this.#explorationRuntime.playerEntity,
         enemyEntity: this.#explorationRuntime.enemyEntity,
         enemyArchetypeId: this.#options.enemyArchetypeId,

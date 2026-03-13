@@ -205,8 +205,7 @@ function resolveEncounterParticipants(options = {}) {
 
 export async function createCombatRuntime(runtime, options = {}) {
   const combatScene = {
-    sceneContainer: options.sceneContainer ?? null,
-    cameras: Array.isArray(options.cameras) ? options.cameras : []
+    sceneContainer: options.sceneContainer ?? null
   };
 
   const playerEntity = options.playerEntity;
