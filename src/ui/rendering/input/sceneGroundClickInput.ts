@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { RuntimeDispose } from './runtimeContracts.ts';
+import type { RuntimeDispose } from '../shared/runtimeContracts.ts';
 
 const GROUND_MESH_NAME = 'Ground';
 

@@ -1,10 +1,10 @@
 // @ts-nocheck
 import { applyEntityNormalization } from './entityNormalization.ts';
-import { resolveEntityNormalizationConfig } from '../../world/entity/entityNormalization.ts';
+import { resolveEntityNormalizationConfig } from '../../../world/entity/entityNormalization.ts';
 import {
   applyEntityCollisionFromDimensions
 } from './entityGameplayDimensions.ts';
-import { createEntityGameplayDimensions } from '../../world/entity/entityGameplayDimensions.ts';
+import { createEntityGameplayDimensions } from '../../../world/entity/entityGameplayDimensions.ts';
 
 export function resolveImportedRootNode(result) {
   const firstTransformNode = result.transformNodes.find((node) => !node.parent);

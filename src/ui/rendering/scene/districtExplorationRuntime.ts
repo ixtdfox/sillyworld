@@ -1,11 +1,11 @@
 // @ts-nocheck
 import { loadWorldScene } from './worldSceneLoader.ts';
-import { loadPlayerCharacter } from './playerCharacterLoader.ts';
-import { loadEnemyCharacter } from './enemyCharacterLoader.ts';
-import { spawnPlayerCharacter } from './playerSpawn.ts';
-import { DEFAULT_ENEMY_PERCEPTION_SETTINGS } from '../../world/enemy/enemyPerception.ts';
-import { createEnemyAmbientBehavior } from '../../world/enemy/enemyAmbientBehavior.ts';
-import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from './runtimeContracts.ts';
+import { loadPlayerCharacter } from '../player/playerCharacterLoader.ts';
+import { loadEnemyCharacter } from '../enemy/enemyCharacterLoader.ts';
+import { spawnPlayerCharacter } from '../player/playerSpawn.ts';
+import { DEFAULT_ENEMY_PERCEPTION_SETTINGS } from '../../../world/enemy/enemyPerception.ts';
+import { createEnemyAmbientBehavior } from '../../../world/enemy/enemyAmbientBehavior.ts';
+import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from '../shared/runtimeContracts.ts';
 
 const DEFAULT_ENEMY_SPAWN: Readonly<{ x: number; z: number }> = Object.freeze({ x: 2, z: 2 });
 

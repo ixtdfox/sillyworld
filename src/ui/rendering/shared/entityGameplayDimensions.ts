@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createEntityGameplayDimensions } from '../../world/entity/entityGameplayDimensions.ts';
+import { createEntityGameplayDimensions } from '../../../world/entity/entityGameplayDimensions.ts';
 
 export { createEntityGameplayDimensions };
 

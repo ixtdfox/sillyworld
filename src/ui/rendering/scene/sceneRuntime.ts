@@ -1,18 +1,18 @@
 // @ts-nocheck
 import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.ts';
-import { createMovementTargetState } from '../../world/movement/movementTargetState.ts';
-import { createPlayerAnimationController } from './playerAnimationController.ts';
-import { PlayerMovementController } from './playerMovementController.ts';
-import { SceneGroundClickInput } from './sceneGroundClickInput.ts';
-import { attachGameplayIsometricCamera } from './gameplayCameraController.ts';
+import { createMovementTargetState } from '../../../world/movement/movementTargetState.ts';
+import { createPlayerAnimationController } from '../player/playerAnimationController.ts';
+import { PlayerMovementController } from '../player/playerMovementController.ts';
+import { SceneGroundClickInput } from '../input/sceneGroundClickInput.ts';
+import { attachGameplayIsometricCamera } from '../camera/gameplayCameraController.ts';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.ts';
-import { ENCOUNTER_INTERACTION_DISTANCE } from '../../world/encounter/encounterRules.ts';
-import { evaluateEnemyPerceptionPipeline } from '../../world/enemy/enemyPerception.ts';
-import { updateEnemyAmbientBehavior } from '../../world/enemy/enemyAmbientBehavior.ts';
-import { createCombatRuntime } from './combatRuntime.ts';
-import { createCombatDebugShell } from './combatDebugShell.ts';
-import { createEnemyVisionGridDebugOverlay } from './enemyVisionGridDebugOverlay.ts';
-import { createCombatGridMapper } from '../../world/combat/combatGridMapper.ts';
+import { ENCOUNTER_INTERACTION_DISTANCE } from '../../../world/encounter/encounterRules.ts';
+import { evaluateEnemyPerceptionPipeline } from '../../../world/enemy/enemyPerception.ts';
+import { updateEnemyAmbientBehavior } from '../../../world/enemy/enemyAmbientBehavior.ts';
+import { createCombatRuntime } from '../combat/combatRuntime.ts';
+import { createCombatDebugShell } from '../debug/combatDebugShell.ts';
+import { createEnemyVisionGridDebugOverlay } from '../debug/enemyVisionGridDebugOverlay.ts';
+import { createCombatGridMapper } from '../../../world/combat/combatGridMapper.ts';
 import type {
   CombatStateLike,
   EncounterStartPayload,
@@ -24,7 +24,7 @@ import type {
   RuntimeNormalizationState,
   SceneRuntimeMount,
   SceneRuntimeMountOptions
-} from './runtimeContracts.ts';
+} from '../shared/runtimeContracts.ts';
 
 interface ExplorationRuntimeLike {
   districtScene?: { sceneContainer?: unknown; cameras?: unknown[] };

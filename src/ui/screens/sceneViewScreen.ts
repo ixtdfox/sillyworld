@@ -1,12 +1,12 @@
 import { resolveAssetPath } from '../../platform/browser/assetResolver.ts';
-import { mountSceneRuntime } from '../rendering/sceneRuntime.ts';
+import { mountSceneRuntime } from '../rendering/scene/sceneRuntime.ts';
 import { Screen } from './screenSystem.ts';
 import type {
   NormalizationDebugInfo,
   PositionLike,
   RuntimeDebugState,
   RuntimeDispose
-} from '../rendering/runtimeContracts.ts';
+} from '../rendering/shared/runtimeContracts.ts';
 
 export interface SceneViewScreenProps {
   districtId?: string;

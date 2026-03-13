@@ -1,7 +1,7 @@
 // @ts-nocheck
-import type { EncounterInteractionPayload, PositionNodeLike, RuntimeDispose } from './runtimeContracts.ts';
+import type { EncounterInteractionPayload, PositionNodeLike, RuntimeDispose } from '../shared/runtimeContracts.ts';
 
-import { ENCOUNTER_INTERACTION_DISTANCE } from '../../world/encounter/encounterRules.ts';
+import { ENCOUNTER_INTERACTION_DISTANCE } from '../../../world/encounter/encounterRules.ts';
 
 export { ENCOUNTER_INTERACTION_DISTANCE };
 
