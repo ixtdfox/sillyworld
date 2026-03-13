@@ -3,6 +3,7 @@ import { loadWorldScene } from './worldSceneLoader.ts';
 import { loadPlayerCharacter } from './playerCharacterLoader.ts';
 import { loadEnemyCharacter } from './enemyCharacterLoader.ts';
 import { spawnPlayerCharacter } from './playerSpawn.ts';
+import { DEFAULT_ENEMY_PERCEPTION_SETTINGS } from './enemyPerception.ts';
 import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from './runtimeContracts.ts';
 
 const DEFAULT_ENEMY_SPAWN: Readonly<{ x: number; z: number }> = Object.freeze({ x: 2, z: 2 });
@@ -39,6 +40,9 @@ interface DistrictExplorationOptions {
   playerNormalizationId?: string;
   enemyNormalizationId?: string;
   enemyArchetypeId?: string;
+  enemyVisionAngleDegrees?: number;
+  enemyVisionDistance?: number;
+  enemyFacingDirection?: { x: number; y: number; z: number };
   resolveAssetPath?: AssetResolver;
 }
 
@@ -100,6 +104,15 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     playerMeshRoot: playerEntity.rootNode,
     enemyEntity,
     enemyMeshRoot: enemyEntity.rootNode,
+    enemyPerception: {
+      visionAngleDegrees: Number.isFinite(options.enemyVisionAngleDegrees)
+        ? Math.max(0, options.enemyVisionAngleDegrees)
+        : DEFAULT_ENEMY_PERCEPTION_SETTINGS.visionAngleDegrees,
+      visionDistance: Number.isFinite(options.enemyVisionDistance)
+        ? Math.max(0, options.enemyVisionDistance)
+        : DEFAULT_ENEMY_PERCEPTION_SETTINGS.visionDistance,
+      facingDirection: options.enemyFacingDirection ?? { x: 0, y: 0, z: -1 }
+    },
     dispose
   };
 }

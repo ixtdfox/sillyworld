@@ -70,6 +70,8 @@ function buildDebugLines(debugState: RuntimeDebugState): string[] {
       `enemy: ${formatPosition(exploration?.enemyPosition)}`,
       `distance: ${formatNumber(exploration?.distanceToEnemy)}`,
       `interaction allowed: ${exploration?.enemyInteractionAllowed ? 'yes' : 'no'}`,
+      `enemy perception: ${exploration?.enemyPerceptionDetected ? 'detected' : 'no'} (${exploration?.enemyPerceptionReason ?? 'n/a'})`,
+      `perception dist/angle: ${formatNumber(exploration?.enemyPerceptionDistance)} / ${formatNumber(exploration?.enemyPerceptionAngle)}`,
       formatNormalizationLine('norm player', normalization?.player),
       formatNormalizationLine('norm enemy', normalization?.enemy)
     ];
