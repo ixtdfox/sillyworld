@@ -1,4 +1,4 @@
-import type { GameStateSeed, PlayerState, RelationshipState } from '../contracts.ts';
+import type { PlayerState, RelationshipState } from '../contracts.ts';
 
 type RelationshipEntrySeed = Partial<RelationshipState>;
 

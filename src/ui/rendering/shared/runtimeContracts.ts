@@ -1,6 +1,8 @@
 // @ts-nocheck
 import type { PositionLike, PositionNodeLike } from '../../../world/spatial/types.ts';
 
+export type { PositionLike } from '../../../world/spatial/types.ts';
+
 export type RuntimeMode = 'loading' | 'transitioning' | 'exploration' | 'combat';
 
 export type RuntimeDispose = () => void;

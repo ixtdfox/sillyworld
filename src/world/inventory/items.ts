@@ -1,4 +1,4 @@
-import type { GameStateSeed, ItemDefinitionState, ItemInstanceState, ItemsState } from '../contracts.ts';
+import type { ItemDefinitionState, ItemInstanceState, ItemsState } from '../contracts.ts';
 import { indexBy } from '../utils/object.ts';
 
 type ItemsSeed = Partial<ItemsState> & {
