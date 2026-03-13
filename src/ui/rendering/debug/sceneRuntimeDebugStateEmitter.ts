@@ -38,7 +38,7 @@ export function toPositionSnapshot(node?: PositionNodeLike | null): PositionLike
   };
 }
 
-export class RuntimeDebugStateEmitter {
+export class SceneRuntimeDebugStateEmitter {
   readonly #options: SceneRuntimeMountOptions;
   readonly #runtime: { BABYLON: { Vector3: { Distance: (a: PositionLike, b: PositionLike) => number } } };
   #mode: RuntimeMode = 'loading';

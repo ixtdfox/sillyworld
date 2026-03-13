@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { attachGroundClickInput } from '../src/ui/rendering/input/sceneGroundClickInput.ts';
+import { attachSceneGroundMovementInput } from '../src/ui/rendering/scene/sceneGroundMovementInput.ts';
 
 function createRuntime({ pickResult }) {
   let observer = null;
@@ -60,7 +60,7 @@ test('accepts Ground picks and sets movement target', () => {
   });
   const movementTargetState = createMovementTargetState();
 
-  attachGroundClickInput(runtime, movementTargetState);
+  attachSceneGroundMovementInput(runtime, movementTargetState);
   runtime.triggerPointerDown();
 
   assert.deepEqual(movementTargetState.getTarget(), { x: 1, y: 2, z: 3 });
@@ -79,7 +79,7 @@ test('rejects Wall picks and clears stale movement target', () => {
   const movementTargetState = createMovementTargetState();
   movementTargetState.setTarget({ x: 9, y: 9, z: 9 });
 
-  attachGroundClickInput(runtime, movementTargetState);
+  attachSceneGroundMovementInput(runtime, movementTargetState);
   runtime.triggerPointerDown();
 
   assert.equal(movementTargetState.getTarget(), null);
@@ -97,7 +97,7 @@ test('rejects no-hit picks and clears stale movement target', () => {
   const movementTargetState = createMovementTargetState();
   movementTargetState.setTarget({ x: 9, y: 9, z: 9 });
 
-  attachGroundClickInput(runtime, movementTargetState);
+  attachSceneGroundMovementInput(runtime, movementTargetState);
   runtime.triggerPointerDown();
 
   assert.equal(movementTargetState.getTarget(), null);

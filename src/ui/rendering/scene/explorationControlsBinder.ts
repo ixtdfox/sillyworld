@@ -2,7 +2,7 @@
 import { createMovementTargetState } from '../../../world/movement/movementTargetState.ts';
 import { createPlayerAnimationController } from '../player/playerAnimationController.ts';
 import { PlayerMovementController } from '../player/playerMovementController.ts';
-import { SceneGroundClickInput } from '../input/sceneGroundClickInput.ts';
+import { SceneGroundMovementInput } from './sceneGroundMovementInput.ts';
 import { attachGameplayIsometricCamera } from '../camera/gameplayCameraController.ts';
 import type { PositionLike, PositionNodeLike, RuntimeDispose } from '../shared/runtimeContracts.ts';
 
@@ -32,7 +32,7 @@ export function createExplorationControlsBinder(
       onMovingStateChange: (isMoving: boolean) => playerAnimationController.setMoving(isMoving)
     }
   );
-  const groundClickInput = new SceneGroundClickInput(runtime, movementTargetState);
+  const groundClickInput = new SceneGroundMovementInput(runtime, movementTargetState);
 
   return {
     attach: () => {

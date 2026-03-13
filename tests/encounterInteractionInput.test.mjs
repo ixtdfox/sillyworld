@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  attachEncounterInteractionInput,
+  attachSceneEncounterInteractionInput,
   ENCOUNTER_INTERACTION_DISTANCE
-} from '../src/ui/rendering/input/encounterInteractionInput.ts';
+} from '../src/ui/rendering/scene/sceneEncounterInteractionInput.ts';
 
 function createRuntime({ pickResult }) {
   let observer = null;
@@ -60,7 +60,7 @@ test('starts encounter when clicking enemy within interaction distance', () => {
   });
 
   let encounterCount = 0;
-  attachEncounterInteractionInput(runtime, {
+  attachSceneEncounterInteractionInput(runtime, {
     playerRoot,
     enemyRoot,
     onEncounterStart: () => {
@@ -85,7 +85,7 @@ test('does not start encounter when player is out of range', () => {
   });
 
   let encounterCount = 0;
-  attachEncounterInteractionInput(runtime, {
+  attachSceneEncounterInteractionInput(runtime, {
     playerRoot,
     enemyRoot,
     onEncounterStart: () => {
@@ -110,7 +110,7 @@ test('prevents double encounter start when enemy is clicked repeatedly', () => {
   });
 
   let encounterCount = 0;
-  attachEncounterInteractionInput(runtime, {
+  attachSceneEncounterInteractionInput(runtime, {
     playerRoot,
     enemyRoot,
     interactionDistance: ENCOUNTER_INTERACTION_DISTANCE,
