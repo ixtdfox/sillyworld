@@ -6,43 +6,6 @@ function toCell(cell) {
   return normalizeGridCell(cell);
 }
 
-function getCellDistance(a, b) {
-  return Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
-}
-
-function findNearestWalkableCell(grid, originCell, maxRadius = 4) {
-  if (!grid || !originCell || !Number.isFinite(originCell.x) || !Number.isFinite(originCell.z)) {
-    return null;
-  }
-
-  const start = toCell(originCell);
-  if (grid.isCellWalkable(start)) {
-    return start;
-  }
-
-  let best = null;
-  for (let radius = 1; radius <= maxRadius; radius += 1) {
-    for (let x = start.x - radius; x <= start.x + radius; x += 1) {
-      for (let z = start.z - radius; z <= start.z + radius; z += 1) {
-        const candidate = { x, z };
-        if (!grid.isCellWalkable(candidate)) {
-          continue;
-        }
-
-        if (!best || getCellDistance(start, candidate) < getCellDistance(start, best)) {
-          best = candidate;
-        }
-      }
-    }
-
-    if (best) {
-      return best;
-    }
-  }
-
-  return null;
-}
-
 export function mapWorldPositionToCombatCell({ unitId, worldPosition, gridMapper, grid, logger = console }) {
   if (!gridMapper || typeof gridMapper.worldToGridCell !== 'function') {
     throw new Error('[SillyRPG] Combat world-position mapping requires a grid mapper.');
@@ -57,28 +20,50 @@ export function mapWorldPositionToCombatCell({ unitId, worldPosition, gridMapper
   }
 
   const mappedCell = toCell(gridMapper.worldToGridCell(worldPosition));
+  const expectedSnappedWorld = gridMapper.gridCellToWorld(mappedCell, {
+    fallbackY: Number.isFinite(worldPosition.y) ? worldPosition.y : 0
+  });
+
+  logger.info?.('[SillyRPG] Combat entry world/grid mapping resolved.', {
+    unitId: unitId ?? null,
+    worldPosition: {
+      x: worldPosition.x,
+      y: worldPosition.y,
+      z: worldPosition.z
+    },
+    resolvedCell: mappedCell,
+    expectedSnappedCellCenter: expectedSnappedWorld
+  });
 
   if (!grid) {
-    return { cell: mappedCell, mappedCell, usedFallback: false };
+    return { cell: mappedCell, mappedCell, expectedSnappedWorld, usedFallback: false, isWalkable: true };
   }
 
-  if (grid.isCellWalkable(mappedCell)) {
-    return { cell: mappedCell, mappedCell, usedFallback: false };
-  }
-
-  const fallbackCell = findNearestWalkableCell(grid, mappedCell);
-  logger.warn?.('[SillyRPG] Combat participant world position mapped to an invalid tactical cell.', {
+  const isWalkable = grid.isCellWalkable(mappedCell);
+  if (!isWalkable) {
+    logger.error?.('[SillyRPG] Combat entry resolved to non-walkable tactical cell.', {
     unitId: unitId ?? null,
     worldPosition,
     mappedCell,
-    fallbackCell,
+    expectedSnappedCellCenter: expectedSnappedWorld,
+    gridBounds: grid.bounds ?? null
+  });
+  }
+
+  console.assert(isWalkable, '[SillyRPG] Combat entry expected mapped tactical cell to be walkable.', {
+    unitId: unitId ?? null,
+    worldPosition,
+    mappedCell,
+    expectedSnappedCellCenter: expectedSnappedWorld,
     gridBounds: grid.bounds ?? null
   });
 
   return {
-    cell: fallbackCell,
+    cell: mappedCell,
     mappedCell,
-    usedFallback: fallbackCell !== null
+    expectedSnappedWorld,
+    usedFallback: false,
+    isWalkable
   };
 }
 
@@ -125,6 +110,8 @@ export function mapCombatParticipantsFromWorldPositions({ participants = [], gri
         : null,
       mappedCell: mapping.mappedCell,
       assignedCell: mapping.cell,
+      expectedSnappedCellCenter: mapping.expectedSnappedWorld,
+      isWalkable: mapping.isWalkable,
       usedFallbackCell: mapping.usedFallback
     });
 

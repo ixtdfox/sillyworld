@@ -20,11 +20,13 @@ test('maps a world position to a valid tactical cell', () => {
   assert.deepEqual(result, {
     cell: { x: 0, z: -1 },
     mappedCell: { x: 0, z: -1 },
-    usedFallback: false
+    usedFallback: false,
+    isWalkable: true,
+    expectedSnappedWorld: { x: 1, y: 0, z: -1 }
   });
 });
 
-test('falls back to nearest walkable cell when mapped cell is blocked', () => {
+test('keeps mapped cell and flags non-walkable when mapped cell is blocked', () => {
   const mapper = createCombatGridMapper({ cellSize: 1, originWorldX: 0, originWorldZ: 0 });
   const grid = createCombatGrid({
     minX: -1,
@@ -43,9 +45,9 @@ test('falls back to nearest walkable cell when mapped cell is blocked', () => {
   });
 
   assert.deepEqual(result.mappedCell, { x: 0, z: 0 });
-  assert.equal(result.usedFallback, true);
-  assert.ok(result.cell);
-  assert.equal(grid.isCellWalkable(result.cell), true);
+  assert.equal(result.usedFallback, false);
+  assert.deepEqual(result.cell, { x: 0, z: 0 });
+  assert.equal(result.isWalkable, false);
 });
 
 test('registers participants with mapped initial cells', () => {

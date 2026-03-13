@@ -14,7 +14,6 @@ import { createCombatMovementRangeHighlighter } from './combatMovementRangeHighl
 import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from '../../../world/combat/playerActionModeStateMachine.ts';
 import { createCombatDebugShell } from '../debug/combatDebugShell.ts';
 import { mapCombatParticipantsFromWorldPositions } from '../../../world/combat/combatWorldPositionMapper.ts';
-import { snapActorToNearestValidGridCell } from '../shared/gridAlignment.ts';
 const DEFAULT_PLAYER_SPAWN_CELL = Object.freeze({ x: -1, z: 1 });
 const DEFAULT_ENEMY_SPAWN_CELL = Object.freeze({ x: 1, z: -1 });
 const DEFAULT_AP_PER_TURN = 2;
@@ -207,28 +206,7 @@ export async function createCombatRuntime(runtime, options = {}) {
     blockedCells: combatGridConfig.blockedCells
   });
 
-  const isCombatCellValid = (cell) => grid.isWithinBounds(cell) && !grid.isBlocked(cell);
-  const resolveGroundYForGridAlignment = ({ x, z, fallbackY = 0 }) => resolveGroundY({ runtime, x, z, fallbackY });
 
-  snapActorToNearestValidGridCell({
-    runtime,
-    actor: playerEntity,
-    gridMapper,
-    isCellValid: isCombatCellValid,
-    resolveY: resolveGroundYForGridAlignment,
-    reason: 'combat_entry_player',
-    logger: console
-  });
-
-  snapActorToNearestValidGridCell({
-    runtime,
-    actor: enemyEntity,
-    gridMapper,
-    isCellValid: isCombatCellValid,
-    resolveY: resolveGroundYForGridAlignment,
-    reason: 'combat_entry_enemy',
-    logger: console
-  });
 
   const participants = resolveEncounterParticipants({
     ...options,
@@ -270,8 +248,44 @@ export async function createCombatRuntime(runtime, options = {}) {
   const mappedPlayer = mappedParticipants.find((participant) => participant.id === participants.playerParticipant.id);
   const mappedEnemy = mappedParticipants.find((participant) => participant.id === enemyUnit.id);
 
+  if (!mappedPlayer?.initialCell || !mappedEnemy?.initialCell) {
+    throw new Error('[SillyRPG] Combat entry requires resolved tactical cells for player and enemy participants.');
+  }
+
+  if (mappedPlayer.isWalkable === false || mappedEnemy.isWalkable === false) {
+    throw new Error('[SillyRPG] Combat entry resolved to non-walkable tactical cells.');
+  }
+
   playerSpawnCell = normalizeCell(mappedPlayer?.initialCell, DEFAULT_PLAYER_SPAWN_CELL);
   enemySpawnCell = normalizeCell(mappedEnemy?.initialCell, DEFAULT_ENEMY_SPAWN_CELL);
+
+  const playerExpectedSnappedCenter = gridMapper.gridCellToWorld(playerSpawnCell, {
+    fallbackY: playerEntity.rootNode.position.y
+  });
+  const enemyExpectedSnappedCenter = gridMapper.gridCellToWorld(enemySpawnCell, {
+    fallbackY: enemyEntity.rootNode.position.y
+  });
+
+  console.info('[SillyRPG] Combat entry validation snapshot.', {
+    player: {
+      worldPosition: {
+        x: playerEntity.rootNode.position.x,
+        y: playerEntity.rootNode.position.y,
+        z: playerEntity.rootNode.position.z
+      },
+      resolvedCell: playerSpawnCell,
+      expectedSnappedCellCenter: playerExpectedSnappedCenter
+    },
+    enemy: {
+      worldPosition: {
+        x: enemyEntity.rootNode.position.x,
+        y: enemyEntity.rootNode.position.y,
+        z: enemyEntity.rootNode.position.z
+      },
+      resolvedCell: enemySpawnCell,
+      expectedSnappedCellCenter: enemyExpectedSnappedCenter
+    }
+  });
 
   if (enemySpawnCell.x === playerSpawnCell.x && enemySpawnCell.z === playerSpawnCell.z) {
     enemySpawnCell = { x: playerSpawnCell.x + 1, z: playerSpawnCell.z };
