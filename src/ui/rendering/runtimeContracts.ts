@@ -35,6 +35,10 @@ export interface ExplorationDebugState {
   enemyPosition: PositionLike | null;
   distanceToEnemy: number | null;
   enemyInteractionAllowed: boolean;
+  enemyPerceptionDetected?: boolean;
+  enemyPerceptionReason?: string | null;
+  enemyPerceptionDistance?: number | null;
+  enemyPerceptionAngle?: number | null;
   normalization: RuntimeNormalizationState | null;
 }
 
@@ -105,6 +109,9 @@ export interface SceneRuntimeMountOptions {
   playerNormalizationId?: string;
   enemyNormalizationId?: string;
   enemyArchetypeId?: string;
+  enemyVisionAngleDegrees?: number;
+  enemyVisionDistance?: number;
+  enemyFacingDirection?: { x: number; y: number; z: number };
   resolveAssetPath?: AssetResolver;
   onEncounterStart?: (payload: EncounterStartPayload) => void;
   onDebugStateChange?: (state: RuntimeDebugState) => void;
