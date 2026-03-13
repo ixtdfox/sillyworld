@@ -3,8 +3,8 @@ import { loadWorldScene } from './worldSceneLoader.ts';
 import { loadPlayerCharacter } from './playerCharacterLoader.ts';
 import { loadEnemyCharacter } from './enemyCharacterLoader.ts';
 import { spawnPlayerCharacter } from './playerSpawn.ts';
-import { DEFAULT_ENEMY_PERCEPTION_SETTINGS } from './enemyPerception.ts';
-import { createEnemyAmbientBehavior } from './enemyAmbientBehavior.ts';
+import { DEFAULT_ENEMY_PERCEPTION_SETTINGS } from '../../world/enemy/enemyPerception.ts';
+import { createEnemyAmbientBehavior } from '../../world/enemy/enemyAmbientBehavior.ts';
 import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from './runtimeContracts.ts';
 
 const DEFAULT_ENEMY_SPAWN: Readonly<{ x: number; z: number }> = Object.freeze({ x: 2, z: 2 });

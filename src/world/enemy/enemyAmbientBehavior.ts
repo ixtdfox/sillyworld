@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { PositionLike, PositionNodeLike } from './runtimeContracts.ts';
+import type { PositionLike, PositionNodeLike } from '../../ui/rendering/runtimeContracts.ts';
 
 const EPSILON = 1e-5;
 const DEFAULT_FACING_DIRECTION = Object.freeze({ x: 0, y: 0, z: -1 });

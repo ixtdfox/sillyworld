@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { DEFAULT_COMBAT_GRID_CONFIG } from './combatGridConfig.ts';
+import { DEFAULT_COMBAT_GRID_CONFIG } from '../../world/combat/combatGridConfig.ts';
 
 export function createCombatGridMapper(options = {}) {
   const cellSize = options.cellSize ?? DEFAULT_COMBAT_GRID_CONFIG.cellSize;

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { createCombatGridMapper } from './combatGridMapper.ts';
-import { getEnemyVisionCoverage } from './enemyPerception.ts';
+import { getEnemyVisionCoverage } from '../../world/enemy/enemyPerception.ts';
 
 function keyForCell(cell) {
   return `${cell.x},${cell.z}`;

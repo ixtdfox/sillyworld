@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createEnemyAmbientBehavior, updateEnemyAmbientBehavior } from '../src/ui/rendering/enemyAmbientBehavior.ts';
+import { createEnemyAmbientBehavior, updateEnemyAmbientBehavior } from '../src/world/enemy/enemyAmbientBehavior.ts';
 
 function createEnemyRootNode(position = { x: 0, y: 0, z: 0 }) {
   return {

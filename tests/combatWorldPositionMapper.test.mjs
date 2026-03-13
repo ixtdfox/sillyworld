@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createCombatGridMapper } from '../src/ui/rendering/combatGridMapper.ts';
-import { createCombatGrid } from '../src/ui/rendering/combatGrid.ts';
-import { mapCombatParticipantsFromWorldPositions, mapWorldPositionToCombatCell } from '../src/ui/rendering/combatWorldPositionMapper.ts';
+import { createCombatGrid } from '../src/world/combat/combatGrid.ts';
+import { mapCombatParticipantsFromWorldPositions, mapWorldPositionToCombatCell } from '../src/world/combat/combatWorldPositionMapper.ts';
 
 test('maps a world position to a valid tactical cell', () => {
   const mapper = createCombatGridMapper({ cellSize: 2, originWorldX: 0, originWorldZ: 0 });
