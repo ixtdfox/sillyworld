@@ -27,6 +27,7 @@ interface MovementTargetStateLike {
 
 interface PlayerMovementControllerOptions {
   moveSpeed?: number;
+  stopDistance?: number;
   onMovingStateChange?: (isMoving: boolean) => void;
   gridMapper: {
     worldToGridCell: (worldPosition: { x: number; z: number }) => { x: number; z: number };
@@ -34,6 +35,10 @@ interface PlayerMovementControllerOptions {
   };
   resolveGroundY: ({ x, z, fallbackY }: { x: number; z: number; fallbackY?: number }) => number;
   BABYLON: { Vector3: new (x: number, y: number, z: number) => unknown };
+  grid?: {
+    findPath?: (startCell: { x: number; z: number }, goalCell: { x: number; z: number }, options?: unknown) => Array<{ x: number; z: number }> | null;
+    isCellWalkable?: (cell: { x: number; z: number }) => boolean;
+  };
 }
 
 export class PlayerMovementController {
@@ -42,13 +47,21 @@ export class PlayerMovementController {
   readonly #movementTargetState: MovementTargetStateLike;
   readonly #cellsPerSecond: number;
   readonly #onMovingStateChange: (isMoving: boolean) => void;
+  readonly #stopDistance: number;
   readonly #gridMapper;
   readonly #resolveGroundY;
   readonly #BABYLON;
+  readonly #grid;
 
   #isMoving = false;
   #observer: unknown | null = null;
-  #stepAccumulatorSeconds = 0;
+  #activePath: {
+    cells: Array<{ x: number; z: number }>;
+    waypoints: Array<unknown>;
+    destinationCell: { x: number; z: number };
+  } | null = null;
+  #activeWaypointIndex = 0;
+  #pathSignature = '';
 
   constructor(
     runtime: BabylonRuntimeSubset,
@@ -60,10 +73,12 @@ export class PlayerMovementController {
     this.#playerCharacter = playerCharacter;
     this.#movementTargetState = movementTargetState;
     this.#cellsPerSecond = options.moveSpeed ?? DEFAULT_CELLS_PER_SECOND;
+    this.#stopDistance = options.stopDistance ?? 0.05;
     this.#onMovingStateChange = options.onMovingStateChange ?? (() => {});
     this.#gridMapper = options.gridMapper;
     this.#resolveGroundY = options.resolveGroundY;
     this.#BABYLON = options.BABYLON;
+    this.#grid = options.grid ?? null;
   }
 
   public attach(): RuntimeDispose {
@@ -91,6 +106,7 @@ export class PlayerMovementController {
   #tick(): void {
     const targetCell = this.#movementTargetState.getTargetCell?.() ?? this.#movementTargetState.getTarget?.();
     if (!this.#movementTargetState.hasTarget() || !targetCell) {
+      this.#clearPath();
       this.#setMoving(false);
       return;
     }
@@ -100,36 +116,103 @@ export class PlayerMovementController {
 
     if (currentCell.x === targetCell.x && currentCell.z === targetCell.z) {
       this.#movementTargetState.clearTarget();
+      this.#clearPath();
       this.#setMoving(false);
       this.#applyGridCellToTransform(currentCell);
       return;
     }
 
-    this.#setMoving(true);
-    const deltaTimeMs = this.#runtime.engine.getDeltaTime?.() ?? 16;
-    const deltaTimeSeconds = deltaTimeMs / 1000;
-    this.#stepAccumulatorSeconds += deltaTimeSeconds;
-
-    const stepInterval = 1 / Math.max(0.1, this.#cellsPerSecond);
-    if (this.#stepAccumulatorSeconds < stepInterval) {
+    if (!this.#ensurePath(currentCell, targetCell)) {
+      this.#movementTargetState.clearTarget();
+      this.#clearPath();
+      this.#setMoving(false);
       return;
     }
 
-    this.#stepAccumulatorSeconds -= stepInterval;
-
-    const nextCell = {
-      x: currentCell.x,
-      z: currentCell.z
-    };
-
-    if (targetCell.x !== currentCell.x) {
-      nextCell.x += Math.sign(targetCell.x - currentCell.x);
-    } else if (targetCell.z !== currentCell.z) {
-      nextCell.z += Math.sign(targetCell.z - currentCell.z);
+    if (!this.#activePath || this.#activeWaypointIndex >= this.#activePath.waypoints.length) {
+      this.#clearPath();
+      this.#setMoving(false);
+      return;
     }
 
-    this.#playerCharacter.gridCell = nextCell;
-    this.#applyGridCellToTransform(nextCell);
+    this.#setMoving(true);
+    this.#followPath();
+  }
+
+  #ensurePath(currentCell: { x: number; z: number }, targetCell: { x: number; z: number }): boolean {
+    const nextPathSignature = `${currentCell.x},${currentCell.z}>${targetCell.x},${targetCell.z}`;
+    if (this.#activePath && this.#pathSignature === nextPathSignature) {
+      return true;
+    }
+
+    const pathCells = this.#resolvePath(currentCell, targetCell);
+    if (!pathCells || pathCells.length <= 1) {
+      return false;
+    }
+
+    const waypoints = pathCells.slice(1).map((cell) => {
+      const world = this.#gridMapper.gridCellToWorld(cell, {
+        resolveY: ({ x, z }) => this.#resolveGroundY({ x, z, fallbackY: this.#playerCharacter.rootNode.position.y })
+      });
+      return new this.#BABYLON.Vector3(world.x, world.y, world.z);
+    });
+
+    this.#activePath = {
+      cells: pathCells,
+      waypoints,
+      destinationCell: pathCells[pathCells.length - 1]
+    };
+    this.#activeWaypointIndex = 0;
+    this.#pathSignature = nextPathSignature;
+    return true;
+  }
+
+  #resolvePath(currentCell: { x: number; z: number }, targetCell: { x: number; z: number }): Array<{ x: number; z: number }> | null {
+    if (this.#grid?.isCellWalkable && !this.#grid.isCellWalkable(targetCell)) {
+      return null;
+    }
+
+    if (typeof this.#grid?.findPath === 'function') {
+      return this.#grid.findPath(currentCell, targetCell);
+    }
+
+    return [currentCell, targetCell];
+  }
+
+  #followPath(): void {
+    if (!this.#activePath) {
+      return;
+    }
+
+    const currentPosition = this.#playerCharacter.rootNode.position;
+    const targetPosition = this.#activePath.waypoints[this.#activeWaypointIndex];
+    const toTarget = targetPosition.subtract(currentPosition);
+    const distanceToTarget = toTarget.length();
+
+    if (distanceToTarget <= this.#stopDistance) {
+      currentPosition.copyFrom(targetPosition);
+      const reachedCell = this.#activePath.cells[this.#activeWaypointIndex + 1];
+      if (reachedCell) {
+        this.#playerCharacter.gridCell = reachedCell;
+      }
+      this.#activeWaypointIndex += 1;
+
+      if (this.#activeWaypointIndex >= this.#activePath.waypoints.length) {
+        const destinationCell = this.#activePath.destinationCell;
+        this.#playerCharacter.gridCell = destinationCell;
+        this.#movementTargetState.clearTarget();
+        this.#applyGridCellToTransform(destinationCell);
+        this.#clearPath();
+        this.#setMoving(false);
+      }
+
+      return;
+    }
+
+    const deltaTimeSeconds = (this.#runtime.engine.getDeltaTime?.() ?? 16) / 1000;
+    const stepDistance = this.#cellsPerSecond * deltaTimeSeconds;
+    const moveVector = toTarget.normalize().scale(Math.min(stepDistance, distanceToTarget));
+    currentPosition.addInPlace(moveVector);
   }
 
   #applyGridCellToTransform(cell: { x: number; z: number }): void {
@@ -147,6 +230,12 @@ export class PlayerMovementController {
 
     this.#isMoving = nextMovingState;
     this.#onMovingStateChange(this.#isMoving);
+  }
+
+  #clearPath(): void {
+    this.#activePath = null;
+    this.#activeWaypointIndex = 0;
+    this.#pathSignature = '';
   }
 }
 

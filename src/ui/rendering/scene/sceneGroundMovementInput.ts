@@ -14,6 +14,10 @@ interface MovementTargetStateLike {
   setTarget(nextTargetCell: { x: number; z: number }): void;
 }
 
+interface GridLike {
+  isCellWalkable?: (cell: { x: number; z: number }) => boolean;
+}
+
 interface BabylonRuntimeSubset {
   BABYLON: { PointerEventTypes: { POINTERDOWN: number } };
   scene: {
@@ -31,16 +35,19 @@ export class SceneGroundMovementInput {
   readonly #runtime: BabylonRuntimeSubset;
   readonly #movementTargetState: MovementTargetStateLike;
   readonly #gridMapper: { worldToGridCell: (worldPosition: { x: number; z: number }) => { x: number; z: number } };
+  readonly #grid: GridLike | null;
   #observer: unknown | null = null;
 
   constructor(
     runtime: BabylonRuntimeSubset,
     movementTargetState: MovementTargetStateLike,
-    gridMapper?: { worldToGridCell: (worldPosition: { x: number; z: number }) => { x: number; z: number } }
+    gridMapper?: { worldToGridCell: (worldPosition: { x: number; z: number }) => { x: number; z: number } },
+    grid?: GridLike
   ) {
     this.#runtime = runtime;
     this.#movementTargetState = movementTargetState;
     this.#gridMapper = gridMapper ?? { worldToGridCell: (worldPosition) => worldPosition };
+    this.#grid = grid ?? null;
   }
 
   public attach(): RuntimeDispose {
@@ -61,7 +68,12 @@ export class SceneGroundMovementInput {
         return;
       }
 
-      const targetCell = this.#gridMapper.worldToGridCell(resolution.target);
+      const meshCell = pickResult?.pickedMesh?.metadata?.gridCell;
+      const targetCell = meshCell ?? this.#gridMapper.worldToGridCell(resolution.target);
+      if (typeof this.#grid?.isCellWalkable === 'function' && !this.#grid.isCellWalkable(targetCell)) {
+        this.#movementTargetState.clearTarget();
+        return;
+      }
       this.#movementTargetState.setTarget(targetCell);
     });
 
@@ -79,8 +91,9 @@ export class SceneGroundMovementInput {
 export function attachSceneGroundMovementInput(
   runtime: BabylonRuntimeSubset,
   movementTargetState: MovementTargetStateLike,
-  gridMapper?: { worldToGridCell: (worldPosition: { x: number; z: number }) => { x: number; z: number } }
+  gridMapper?: { worldToGridCell: (worldPosition: { x: number; z: number }) => { x: number; z: number } },
+  grid?: GridLike
 ): RuntimeDispose {
-  const input = new SceneGroundMovementInput(runtime, movementTargetState, gridMapper);
+  const input = new SceneGroundMovementInput(runtime, movementTargetState, gridMapper, grid);
   return input.attach();
 }
