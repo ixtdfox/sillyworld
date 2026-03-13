@@ -290,27 +290,6 @@ export async function createCombatRuntime(runtime, options = {}) {
     fallbackY: enemyEntity.rootNode.position.y
   });
 
-  console.info('[SillyRPG] Combat entry validation snapshot.', {
-    player: {
-      worldPosition: {
-        x: playerEntity.rootNode.position.x,
-        y: playerEntity.rootNode.position.y,
-        z: playerEntity.rootNode.position.z
-      },
-      resolvedCell: playerSpawnCell,
-      expectedSnappedCellCenter: playerExpectedSnappedCenter
-    },
-    enemy: {
-      worldPosition: {
-        x: enemyEntity.rootNode.position.x,
-        y: enemyEntity.rootNode.position.y,
-        z: enemyEntity.rootNode.position.z
-      },
-      resolvedCell: enemySpawnCell,
-      expectedSnappedCellCenter: enemyExpectedSnappedCenter
-    }
-  });
-
   enemySpawnCell = resolveDistinctSpawnCell({
     originCell: enemySpawnCell,
     blockedCell: playerSpawnCell,

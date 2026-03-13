@@ -31,7 +31,7 @@ export function ensureRoot(): HTMLDivElement {
   return root;
 }
 
-export function showRoot(): void {
+export function createRoot(): void {
   const root = ensureRoot();
   root.hidden = false;
 }

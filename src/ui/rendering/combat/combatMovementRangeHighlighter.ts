@@ -11,7 +11,7 @@ function createCellSignature(cells) {
 
 function disposeHighlights(highlightsByCell) {
   for (const mesh of highlightsByCell.values()) {
-    mesh.dispose(false, true);
+    mesh.dispose();
   }
   highlightsByCell.clear();
 }
@@ -149,11 +149,12 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
     pathPreviewSignature = '';
     combatState.hoveredMovementPath = null;
     while (pathPreviewMeshes.length) {
-      pathPreviewMeshes.pop()?.dispose(false, true);
+      pathPreviewMeshes.pop()?.dispose(false, false);
     }
   };
 
   const syncPathPreview = (pathCells) => {
+
     const nextSignature = createPathSignature(pathCells);
     if (!nextSignature) {
       clearPathPreview();
@@ -167,7 +168,7 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
 
     pathPreviewSignature = nextSignature;
     while (pathPreviewMeshes.length) {
-      pathPreviewMeshes.pop()?.dispose(false, true);
+      pathPreviewMeshes.pop()?.dispose(false, false);
     }
 
     const mapper = battlefieldView.getGridMapper();
@@ -204,13 +205,14 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
   };
 
   const clearHover = () => {
-    hoverMesh?.dispose(false, true);
+    hoverMesh?.dispose(false, false);
     hoverMesh = null;
     combatState.hoveredMovementDestination = null;
     clearPathPreview();
   };
 
   const clear = () => {
+
     cacheSignature = '';
     disposeHighlights(highlightsByCell);
     clearHover();
@@ -224,6 +226,8 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
     const pulse = 0.9 + Math.sin(performance.now() * 0.004) * 0.18;
     overlayState.material.alpha = Math.min(0.82, Math.max(0.2, alpha * pulse));
   };
+
+
 
   const syncHoverPreview = (reachableCellKeySet) => {
     const { cell: hoveredCell } = pickCombatCellAtPointer(runtime, combatState.gridMapper);
@@ -246,20 +250,25 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
         allowOccupiedByUnitId: playerUnit.id,
         movementCost
       });
+
+      const pathSignature = Array.isArray(path)
+          ? path.map((cell) => `${cell.x},${cell.z}`).join('>')
+          : 'INVALID';
+
       syncPathPreview(path);
     } else {
       clearPathPreview();
     }
 
     const desiredMaterial = isReachable
-      ? ensureOverlayAssets(runtime, hoverReachableOverlayState, hoverReachableColor, hoverReachableAlpha, {
-        emissiveMultiplier: 1.15,
-        namePrefix: 'combatMoveHoverReachable'
-      }).material
-      : ensureOverlayAssets(runtime, hoverInvalidOverlayState, hoverInvalidColor, hoverInvalidAlpha, {
-        emissiveMultiplier: 0.95,
-        namePrefix: 'combatMoveHoverInvalid'
-      }).material;
+        ? ensureOverlayAssets(runtime, hoverReachableOverlayState, hoverReachableColor, hoverReachableAlpha, {
+          emissiveMultiplier: 1.15,
+          namePrefix: 'combatMoveHoverReachable'
+        }).material
+        : ensureOverlayAssets(runtime, hoverInvalidOverlayState, hoverInvalidColor, hoverInvalidAlpha, {
+          emissiveMultiplier: 0.95,
+          namePrefix: 'combatMoveHoverInvalid'
+        }).material;
 
     if (!hoverMesh) {
       hoverMesh = createHighlightMesh(runtime, battlefieldView, hoveredCell, { material: desiredMaterial }, {
@@ -333,13 +342,16 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
     dispose: () => {
       runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
       layer.clear();
-      overlayState.material?.dispose(false, true);
+      overlayState.material?.dispose();
       overlayState.texture?.dispose();
-      hoverReachableOverlayState.material?.dispose(false, true);
+
+      hoverReachableOverlayState.material?.dispose();
       hoverReachableOverlayState.texture?.dispose();
-      hoverInvalidOverlayState.material?.dispose(false, true);
+
+      hoverInvalidOverlayState.material?.dispose();
       hoverInvalidOverlayState.texture?.dispose();
-      pathOverlayState.material?.dispose(false, true);
+
+      pathOverlayState.material?.dispose();
       pathOverlayState.texture?.dispose();
     }
   };

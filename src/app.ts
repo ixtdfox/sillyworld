@@ -1,4 +1,4 @@
-import { hideRoot, mountContent, showRoot } from './ui/mount.ts';
+import { hideRoot, mountContent, createRoot } from './ui/mount.ts';
 import { renderTopBar } from './ui/components/topBar.ts';
 import { renderSettingsStub } from './ui/screens/mainMenu.ts';
 import { MainMenuScreen } from './ui/screens/mainMenuScreen.ts';
@@ -6,11 +6,11 @@ import { renderPhaseTransitionInterstitial } from './ui/screens/phaseTransitionI
 import { MapScreen } from './ui/screens/phoneMap/phoneCityMapScreen.ts';
 import { SceneViewScreen } from './ui/screens/sceneViewScreen.ts';
 import { ScreenManager } from './ui/screens/screenSystem.ts';
-import { MAP_LEVEL, worldStore } from './world/index.ts';
+import { MAP_LEVEL, worldStore } from './world';
 import { createStandalonePersistence } from './platform/browser/localPersistence.ts';
 import { loadSeed } from './platform/browser/seedLoader.ts';
 import type { AppController as AppControllerContract, RegionId } from './shared/types.ts';
-import type { PhaseTransitionRecord } from './world/contracts.ts';
+import type { PhaseTransitionRecord } from './world';
 import { AppController } from './core/app/AppController.ts';
 
 const APP_TITLE = 'SillyRPG';
@@ -25,7 +25,7 @@ class ApplicationSession {
 
   async start(): Promise<void> {
     console.info('[SillyRPG] Mounting application root.');
-    showRoot();
+    createRoot();
     await this.#controller.initialize();
     console.info('[SillyRPG] Startup complete.');
   }
