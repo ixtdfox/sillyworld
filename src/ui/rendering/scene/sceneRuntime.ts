@@ -14,6 +14,7 @@ import { createExplorationControlsBinder, type ExplorationControlsBinder } from 
 import { createBabylonLineOfSightAdapter } from './babylonLineOfSightAdapter.ts';
 import { createPerceptionObserverBinder } from './perceptionObserverBinder.ts';
 import { setupSceneExplorationDebugShell } from '../debug/sceneExplorationDebugShell.ts';
+import { attachGameplayIsometricCamera } from '../camera/gameplayCameraController.ts';
 import type {
   CombatStateLike,
   EncounterStartPayload,
@@ -55,6 +56,7 @@ export class SceneRuntime {
   #lastPerceptionResult: { canSeePlayer?: boolean; reason?: string | null; distanceToPlayer?: number; angleToPlayerDegrees?: number } | null = null;
   #explorationDebugShell: { dispose?: RuntimeDispose } | null = null;
   #hasLineOfSight: (args: any) => boolean;
+  #detachGameplayCamera: RuntimeDispose = () => {};
 
   constructor(canvas: HTMLCanvasElement, options: SceneRuntimeMountOptions = {}) {
     this.#runtime = createBabylonWorldRuntime(canvas);
@@ -80,6 +82,7 @@ export class SceneRuntime {
     }
 
     this.#mountSession.register(() => {
+      this.#detachGameplayCamera();
       this.#disposeCombatRuntime();
       this.#detachPerceptionObserver();
       this.#disposeExplorationControls();
@@ -188,6 +191,10 @@ export class SceneRuntime {
       playerEntity: explorationRuntime.playerEntity,
       playerMeshRoot: explorationRuntime.playerMeshRoot
     });
+
+    this.#detachGameplayCamera();
+    this.#detachGameplayCamera = attachGameplayIsometricCamera(this.#runtime, explorationRuntime.playerMeshRoot);
+
     this.#explorationControls.attach();
 
     if (this.#options.debugEnabled) {

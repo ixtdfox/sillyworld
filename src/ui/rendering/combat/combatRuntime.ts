@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { attachGameplayIsometricCamera } from '../camera/gameplayCameraController.ts';
 import { createCombatTurnManager } from '../../../world/combat/combatTurnManager.ts';
 import { createCombatGrid } from '../../../world/combat/combatGrid.ts';
 import { createWorldGridMapper } from '../../../world/spatial/worldGrid.ts';
@@ -866,15 +865,6 @@ export async function createCombatRuntime(runtime, options = {}) {
     movementCost
   });
 
-  const detachCamera = options.attachCamera === false
-    ? () => {}
-    : attachGameplayIsometricCamera(runtime, playerEntity.rootNode, {
-        distance: 12,
-        elevationDegrees: 50,
-        yawDegrees: -35,
-        targetHeight: 1.1
-      });
-
   const detachCombatAttackInputController = attachCombatAttackInputController(runtime, {
     combatState,
     attackerUnit: playerUnit,
@@ -935,7 +925,6 @@ export async function createCombatRuntime(runtime, options = {}) {
     detachCombatAttackInputController?.();
     detachCombatMovementController?.();
     debugShell?.dispose?.();
-    detachCamera?.();
     console.debug('[SillyRPG] Combat runtime cleanup complete');
   };
 
