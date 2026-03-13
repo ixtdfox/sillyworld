@@ -17,6 +17,7 @@ import { createCombatGridOverlayRenderer } from './combatGridOverlayRenderer.ts'
 import { createCombatMovementRangeHighlighter } from './combatMovementRangeHighlighter.ts';
 import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from './playerActionModeStateMachine.ts';
 import { createCombatDebugShell } from './combatDebugShell.ts';
+import { mapCombatParticipantsFromWorldPositions } from './combatWorldPositionMapper.ts';
 import { ASSET_PATHS } from '../../core/assets/assetCatalog.ts';
 
 const COMBAT_SCENE_FILE = ASSET_PATHS.scenes.combatPrototype;
@@ -140,6 +141,45 @@ function createCombatState({ combatScene, playerUnit, enemyUnit, turnManager }) 
   };
 }
 
+function resolveEncounterParticipants(options = {}) {
+  const playerParticipant = {
+    id: 'player_1',
+    displayName: 'Player',
+    role: 'player',
+    team: 'player',
+    initiative: options.playerInitiative ?? 100,
+    entity: options.playerEntity
+  };
+
+  const enemyParticipants = [
+    {
+      id: 'enemy_1',
+      displayName: 'Enemy',
+      role: 'detecting_enemy',
+      team: 'enemy',
+      initiative: options.enemyInitiative ?? 10,
+      entity: options.enemyEntity
+    },
+    ...(Array.isArray(options.nearbyEnemyEntities)
+      ? options.nearbyEnemyEntities.map((entity, index) => ({
+          id: `enemy_nearby_${index + 1}`,
+          displayName: `Enemy ${index + 2}`,
+          role: 'nearby_enemy',
+          team: 'enemy',
+          initiative: options.enemyInitiative ?? 10,
+          entity
+        }))
+      : [])
+  ].filter((participant) => participant.entity);
+
+  return {
+    playerParticipant,
+    enemyParticipants,
+    supportedEnemyParticipants: enemyParticipants.slice(0, 1),
+    deferredEnemyParticipants: enemyParticipants.slice(1)
+  };
+}
+
 export async function createCombatRuntime(runtime, options = {}) {
   const isWorldCombatMode = options.worldCombatMode === true;
   const combatScene = isWorldCombatMode
@@ -197,18 +237,51 @@ export async function createCombatRuntime(runtime, options = {}) {
     blockedCells: combatGridConfig.blockedCells
   });
 
-  const playerUnit = createCombatUnit('player_1', 'player', playerEntity, options.playerInitiative ?? 100, 'Player');
-  const enemyUnit = createCombatUnit('enemy_1', 'enemy', enemyEntity, options.enemyInitiative ?? 10, 'Enemy');
-  const worldPlayerCell = playerEntity?.rootNode?.position ? gridMapper.worldToGridCell(playerEntity.rootNode.position) : null;
-  const worldEnemyCell = enemyEntity?.rootNode?.position ? gridMapper.worldToGridCell(enemyEntity.rootNode.position) : null;
-  const playerSpawnCell = normalizeCell(
-    options.playerSpawnCell ?? (isWorldCombatMode ? worldPlayerCell : null),
-    DEFAULT_PLAYER_SPAWN_CELL
+  const participants = resolveEncounterParticipants({
+    ...options,
+    playerEntity,
+    enemyEntity
+  });
+
+  if (participants.deferredEnemyParticipants.length > 0) {
+    console.info('[SillyRPG] Nearby enemy participants detected but deferred for future multi-enemy combat support.', {
+      deferredEnemyIds: participants.deferredEnemyParticipants.map((participant) => participant.id)
+    });
+  }
+
+  const playerUnit = createCombatUnit(
+    participants.playerParticipant.id,
+    participants.playerParticipant.team,
+    playerEntity,
+    participants.playerParticipant.initiative,
+    participants.playerParticipant.displayName
   );
-  let enemySpawnCell = normalizeCell(
-    options.enemySpawnCell ?? (isWorldCombatMode ? worldEnemyCell : null),
-    DEFAULT_ENEMY_SPAWN_CELL
+  const primaryEnemyParticipant = participants.supportedEnemyParticipants[0];
+  const enemyUnit = createCombatUnit(
+    primaryEnemyParticipant?.id ?? 'enemy_1',
+    primaryEnemyParticipant?.team ?? 'enemy',
+    enemyEntity,
+    primaryEnemyParticipant?.initiative ?? (options.enemyInitiative ?? 10),
+    primaryEnemyParticipant?.displayName ?? 'Enemy'
   );
+
+  let playerSpawnCell = normalizeCell(options.playerSpawnCell, DEFAULT_PLAYER_SPAWN_CELL);
+  let enemySpawnCell = normalizeCell(options.enemySpawnCell, DEFAULT_ENEMY_SPAWN_CELL);
+
+  if (isWorldCombatMode) {
+    const mappedParticipants = mapCombatParticipantsFromWorldPositions({
+      participants: [participants.playerParticipant, ...participants.supportedEnemyParticipants],
+      gridMapper,
+      grid,
+      logger: console
+    });
+    const mappedPlayer = mappedParticipants.find((participant) => participant.id === participants.playerParticipant.id);
+    const mappedEnemy = mappedParticipants.find((participant) => participant.id === enemyUnit.id);
+
+    playerSpawnCell = normalizeCell(mappedPlayer?.initialCell, DEFAULT_PLAYER_SPAWN_CELL);
+    enemySpawnCell = normalizeCell(mappedEnemy?.initialCell, DEFAULT_ENEMY_SPAWN_CELL);
+  }
+
   if (enemySpawnCell.x === playerSpawnCell.x && enemySpawnCell.z === playerSpawnCell.z) {
     enemySpawnCell = { x: playerSpawnCell.x + 1, z: playerSpawnCell.z };
   }
@@ -216,7 +289,7 @@ export async function createCombatRuntime(runtime, options = {}) {
   if (isWorldCombatMode) {
     playerUnit.gridCell = playerSpawnCell;
     enemyUnit.gridCell = enemySpawnCell;
-    console.debug('[SillyRPG] Combat unit placement derived from world positions', {
+    console.info('[SillyRPG] Combat initial cell assignment completed from world positions.', {
       playerSpawnCell,
       enemySpawnCell
     });
@@ -237,6 +310,14 @@ export async function createCombatRuntime(runtime, options = {}) {
   grid.setOccupied(enemyUnit.gridCell, enemyUnit.id);
 
   const turnManager = createCombatTurnManager([playerUnit, enemyUnit]);
+  const initialTurnOrder = turnManager.getState()?.orderedUnits ?? [];
+  console.info('[SillyRPG] Combat turn order created.', {
+    turnOrder: initialTurnOrder.map((entry) => ({
+      unitId: entry.unitId,
+      team: entry.team,
+      initiative: entry.initiative
+    }))
+  });
   const actionResolver = createCombatActionResolver({
     basicAttackApCost: options.basicAttackApCost ?? 1,
     basicAttackDamage: options.basicAttackDamage ?? DEFAULT_BASIC_ATTACK_DAMAGE
