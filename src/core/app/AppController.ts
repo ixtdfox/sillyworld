@@ -1,5 +1,6 @@
 import { NavigationController } from '../navigation/NavigationController.ts';
 import { SceneTransitionController } from '../navigation/SceneTransitionController.ts';
+import { COMBAT_TEST_BOOTSTRAP } from '../debug/combatTestBootstrap.ts';
 import type {
   AppController as AppControllerContract,
   AppControllerDeps,
@@ -11,7 +12,8 @@ import type {
   WorldClockSnapshot,
   WorldSeed,
   WorldStore,
-  WorldStoreStateSnapshot
+  WorldStoreStateSnapshot,
+  SceneLaunchOptions
 } from '../../shared/types.ts';
 
 const PHASE_LABELS: PhaseLabels = Object.freeze({
@@ -56,6 +58,7 @@ export class AppController implements AppControllerContract {
   readonly #onStateChange: NonNullable<AppControllerDeps['onStateChange']>;
 
   #seed: WorldSeed | null = null;
+  #sceneLaunchOptions: SceneLaunchOptions | null = null;
 
   constructor({ worldStore, mapLevel, loadSeed, persistence, onStateChange = () => {} }: AppControllerDeps) {
     this.#worldStore = worldStore;
@@ -118,6 +121,7 @@ export class AppController implements AppControllerContract {
   }
 
   async startNewGame(): Promise<void> {
+    this.#sceneLaunchOptions = null;
     const seed = await this.loadSeedOnce();
     const store = this.#worldStore.init(seed);
     store.reset(seed);
@@ -127,7 +131,36 @@ export class AppController implements AppControllerContract {
     this.requestRender();
   }
 
+
+  async startCombatTest(): Promise<void> {
+    const seed = await this.loadSeedOnce();
+    const store = this.#worldStore.init(seed);
+    store.reset(seed);
+
+    this.#sceneLaunchOptions = {
+      autoStartCombat: true,
+      ...(COMBAT_TEST_BOOTSTRAP.sceneOptions.playerSpawn ? { playerSpawn: COMBAT_TEST_BOOTSTRAP.sceneOptions.playerSpawn } : {}),
+      ...(COMBAT_TEST_BOOTSTRAP.sceneOptions.enemySpawn ? { enemySpawn: COMBAT_TEST_BOOTSTRAP.sceneOptions.enemySpawn } : {}),
+      ...(COMBAT_TEST_BOOTSTRAP.sceneOptions.playerFacingDirection ? { playerFacingDirection: COMBAT_TEST_BOOTSTRAP.sceneOptions.playerFacingDirection } : {}),
+      ...(COMBAT_TEST_BOOTSTRAP.sceneOptions.enemyFacingDirection ? { enemyFacingDirection: COMBAT_TEST_BOOTSTRAP.sceneOptions.enemyFacingDirection } : {}),
+      ...(COMBAT_TEST_BOOTSTRAP.sceneOptions.skipEnemyPatrol ? { skipEnemyPatrol: COMBAT_TEST_BOOTSTRAP.sceneOptions.skipEnemyPatrol } : {})
+    };
+
+    this.navigation.reset({
+      screen: 'scene',
+      level: this.#mapLevel.District,
+      contextId: COMBAT_TEST_BOOTSTRAP.districtId,
+      navStack: [
+        { level: this.#mapLevel.City, contextId: 'city:larkspur' },
+        { level: this.#mapLevel.District, contextId: COMBAT_TEST_BOOTSTRAP.districtId }
+      ]
+    });
+
+    this.requestRender();
+  }
+
   async loadAndResumeGame(): Promise<void> {
+    this.#sceneLaunchOptions = null;
     const seed = await this.loadSeedOnce();
     const store = this.#worldStore.init(seed);
     const loaded = store.load(this.#persistence.storage);
@@ -148,8 +181,13 @@ export class AppController implements AppControllerContract {
   }
 
   async initialize(): Promise<void> {
+    this.#sceneLaunchOptions = null;
     await this.loadSeedOnce();
     this.requestRender();
+  }
+
+  getSceneLaunchOptions(): SceneLaunchOptions | null {
+    return this.#sceneLaunchOptions;
   }
 
   private requestRender(): void {

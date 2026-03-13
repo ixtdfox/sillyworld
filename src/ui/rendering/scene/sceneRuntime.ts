@@ -89,6 +89,24 @@ export class SceneRuntime {
 
     try {
       await this.#setupExplorationRuntime();
+
+      if (this.#options.autoStartCombat === true && this.#explorationRuntime?.playerMeshRoot && this.#explorationRuntime?.enemyMeshRoot) {
+        const playerPosition = this.#explorationRuntime.playerMeshRoot.position;
+        const enemyPosition = this.#explorationRuntime.enemyMeshRoot.position;
+        const dx = enemyPosition.x - playerPosition.x;
+        const dy = enemyPosition.y - playerPosition.y;
+        const dz = enemyPosition.z - playerPosition.z;
+        const distanceToEnemy = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        await this.enterCombatMode({
+          playerRoot: this.#explorationRuntime.playerMeshRoot,
+          enemyRoot: this.#explorationRuntime.enemyMeshRoot,
+          distanceToEnemy,
+          interactionDistance: this.#interactionDistance
+        });
+        return;
+      }
+
       this.enterExplorationMode();
     } catch (error) {
       this.#mountSession.dispose();
@@ -137,14 +155,17 @@ export class SceneRuntime {
       sceneFile: this.#options.sceneFile,
       playerFile: this.#options.playerFile,
       enemyFile: this.#options.enemyFile,
+      playerSpawn: this.#options.playerSpawn,
       enemySpawn: this.#options.enemySpawn,
       playerNormalizationId: this.#options.playerNormalizationId,
       enemyNormalizationId: this.#options.enemyNormalizationId,
       enemyArchetypeId: this.#options.enemyArchetypeId,
       enemyVisionAngleDegrees: this.#options.enemyVisionAngleDegrees,
       enemyVisionDistance: this.#options.enemyVisionDistance,
+      playerFacingDirection: this.#options.playerFacingDirection,
       enemyFacingDirection: this.#options.enemyFacingDirection,
       enemyPatrolPoints: this.#options.enemyPatrolPoints,
+      skipEnemyPatrol: this.#options.skipEnemyPatrol,
       resolveAssetPath: this.#options.resolveAssetPath
     });
     this.#explorationRuntime = explorationRuntime;

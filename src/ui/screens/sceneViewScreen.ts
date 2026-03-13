@@ -10,6 +10,12 @@ import type {
 
 export interface SceneViewScreenProps {
   districtId?: string;
+  autoStartCombat?: boolean;
+  playerSpawn?: { x: number; z: number };
+  enemySpawn?: { x: number; z: number };
+  playerFacingDirection?: { x: number; y: number; z: number };
+  enemyFacingDirection?: { x: number; y: number; z: number };
+  skipEnemyPatrol?: boolean;
 }
 
 function formatPosition(position: PositionLike | null | undefined): string {
@@ -127,6 +133,12 @@ export class SceneViewScreen extends Screen {
 
     const mountOptions = {
       ...(this.#props.districtId ? { districtId: this.#props.districtId } : {}),
+      ...(this.#props.playerSpawn ? { playerSpawn: this.#props.playerSpawn } : {}),
+      ...(this.#props.enemySpawn ? { enemySpawn: this.#props.enemySpawn } : {}),
+      ...(this.#props.playerFacingDirection ? { playerFacingDirection: this.#props.playerFacingDirection } : {}),
+      ...(this.#props.enemyFacingDirection ? { enemyFacingDirection: this.#props.enemyFacingDirection } : {}),
+      ...(this.#props.skipEnemyPatrol ? { skipEnemyPatrol: this.#props.skipEnemyPatrol } : {}),
+      autoStartCombat: this.#props.autoStartCombat === true,
       debugEnabled: this.#debugEnabled,
       onDebugStateChange: (debugState: RuntimeDebugState) => this.updateDebugOverlay(debugState),
       resolveAssetPath

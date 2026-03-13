@@ -70,8 +70,10 @@ class ApplicationSession {
     }
 
     if (nav.screen === 'scene') {
+      const sceneLaunchOptions = this.#controller.getSceneLaunchOptions();
       const sceneProps = {
-        ...(nav.contextId ? { districtId: nav.contextId } : {})
+        ...(nav.contextId ? { districtId: nav.contextId } : {}),
+        ...(sceneLaunchOptions ?? {})
       };
       this.#screenManager.mount(content, new SceneViewScreen(sceneProps));
       return;
@@ -98,6 +100,7 @@ class ApplicationSession {
       onNewGame: () => this.#controller.startNewGame(),
       onContinue: () => this.#controller.loadAndResumeGame(),
       onLoadGame: () => this.#controller.loadAndResumeGame(),
+      onTestCombat: () => this.#controller.startCombatTest(),
       onSettings: () => {
         this.#controller.navigation.setScreen('settings');
         this.render();
