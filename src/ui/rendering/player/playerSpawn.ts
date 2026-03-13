@@ -16,10 +16,19 @@ function findSpawnMarker(scene) {
 }
 
 function resolveGroundY({ scene, BABYLON, x, z, fallbackY }) {
-  const origin = new BABYLON.Vector3(x, fallbackY + 25, z);
-  const ray = new BABYLON.Ray(origin, new BABYLON.Vector3(0, -1, 0), 200);
+  const groundMesh = scene?.getMeshByName?.('Ground') ?? null;
+  if (!groundMesh || groundMesh.isEnabled?.() === false || groundMesh.isVisible === false) {
+    return fallbackY;
+  }
 
-  const hit = scene.pickWithRay(ray, (mesh) => mesh?.isEnabled?.() && mesh.isVisible);
+  const origin = new BABYLON.Vector3(x, fallbackY + 25, z);
+  const ray = new BABYLON.Ray(
+      origin,
+      new BABYLON.Vector3(0, -1, 0),
+      200
+  );
+
+  const hit = scene.pickWithRay(ray, (mesh) => mesh === groundMesh);
   return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 }
 
