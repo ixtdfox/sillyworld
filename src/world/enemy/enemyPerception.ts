@@ -174,13 +174,6 @@ function evaluateEnemyVisionTarget(
       visionAngleDegrees: settings.visionAngleDegrees
     };
   }
-  const logger = resolveLogger(world);
-  logger.debug('[SillyRPG] Enemy SEEE PLAYET!.', {
-    enemyId: enemy?.id ?? null,
-    playerId: player?.id ?? null,
-    distanceToPlayer: distanceToPlayer,
-    angleToPlayerDegrees: angleToPlayerDegrees
-  });
   return {
     canSeePlayer: true,
     reason: 'detected',

@@ -14,10 +14,11 @@ function createCellMaterial(runtime, color, alpha, name) {
   material.alpha = alpha;
   material.backFaceCulling = false;
   material.disableLighting = true;
+  material.needDepthPrePass = true;
   return material;
 }
 
-function createCellMesh(runtime, mapper, cell, y, name) {
+function createCellMesh(runtime, mapper, cell, y, name, yOffset = 0.045) {
   const world = mapper.gridCellToWorld(cell, { fallbackY: y });
   const mesh = runtime.BABYLON.MeshBuilder.CreateGround(name, {
     width: mapper.cellSize * 0.92,
@@ -26,7 +27,7 @@ function createCellMesh(runtime, mapper, cell, y, name) {
   }, runtime.scene);
 
   mesh.position.x = world.x;
-  mesh.position.y = world.y + 0.045;
+  mesh.position.y = world.y + yOffset;
   mesh.position.z = world.z;
   mesh.isPickable = false;
   mesh.metadata = {
@@ -62,19 +63,20 @@ export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
 
   const clearMeshes = () => {
     for (const mesh of visibleMeshes.values()) {
-      mesh.dispose(false, true);
+      mesh.dispose(false, false);
     }
     for (const mesh of blockedMeshes.values()) {
-      mesh.dispose(false, true);
+      mesh.dispose(false, false);
     }
     visibleMeshes.clear();
     blockedMeshes.clear();
-    playerDetectedMesh?.dispose(false, true);
+
+    playerDetectedMesh?.dispose(false, false);
     playerDetectedMesh = null;
     playerDetectedCellKey = null;
   };
 
-  const syncMeshSet = (targetMap, cells, material, prefix, y) => {
+  const syncMeshSet = (targetMap, cells, material, prefix, y, yOffset) => {
     const nextKeys = new Set(cells.map(keyForCell));
 
     for (const [cellKey, mesh] of targetMap.entries()) {
@@ -82,7 +84,9 @@ export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
         mesh.setEnabled(enabled && isVisible());
         continue;
       }
-      mesh.dispose(false, true);
+      // Important: materials are shared across all overlay cells.
+      // Do not dispose materials when removing individual meshes.
+      mesh.dispose(false, false);
       targetMap.delete(cellKey);
     }
 
@@ -92,7 +96,7 @@ export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
         continue;
       }
 
-      const mesh = createCellMesh(runtime, mapper, cell, y, `${prefix}_${cell.x}_${cell.z}`);
+      const mesh = createCellMesh(runtime, mapper, cell, y, `${prefix}_${cell.x}_${cell.z}`, yOffset);
       mesh.material = material;
       mesh.setEnabled(enabled && isVisible());
       targetMap.set(cellKey, mesh);
@@ -114,8 +118,8 @@ export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
       hasLineOfSight
     });
 
-    syncMeshSet(visibleMeshes, coverage.visibleCells, visibleMaterial, 'enemyVisionVisible', enemyY);
-    syncMeshSet(blockedMeshes, coverage.blockedCells, blockedMaterial, 'enemyVisionBlocked', enemyY);
+    syncMeshSet(visibleMeshes, coverage.visibleCells, visibleMaterial, 'enemyVisionVisible', enemyY, 0.045);
+    syncMeshSet(blockedMeshes, coverage.blockedCells, blockedMaterial, 'enemyVisionBlocked', enemyY, 0.06);
 
     const playerActor = getPlayerActor?.();
     const playerCell = playerActor?.rootNode?.position ? mapper.worldToGridCell(playerActor.rootNode.position) : null;
@@ -124,8 +128,15 @@ export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
     if (playerDetected && playerCell) {
       const nextPlayerCellKey = keyForCell(playerCell);
       if (!playerDetectedMesh || playerDetectedCellKey !== nextPlayerCellKey) {
-        playerDetectedMesh?.dispose(false, true);
-        playerDetectedMesh = createCellMesh(runtime, mapper, playerCell, enemyY, `enemyVisionPlayer_${playerCell.x}_${playerCell.z}`);
+        playerDetectedMesh?.dispose(false, false);
+        playerDetectedMesh = createCellMesh(
+            runtime,
+            mapper,
+            playerCell,
+            enemyY,
+            `enemyVisionPlayer_${playerCell.x}_${playerCell.z}`,
+            0.075
+        );
         playerDetectedMesh.material = playerDetectedMaterial;
         playerDetectedCellKey = nextPlayerCellKey;
       }
@@ -148,9 +159,9 @@ export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
         observer = null;
       }
       clearMeshes();
-      visibleMaterial.dispose(false, true);
-      blockedMaterial.dispose(false, true);
-      playerDetectedMaterial.dispose(false, true);
+      visibleMaterial.dispose(false, false);
+      blockedMaterial.dispose(false, false);
+      playerDetectedMaterial.dispose(false, false);
     }
   };
 }
