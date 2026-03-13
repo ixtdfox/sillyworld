@@ -1,0 +1,1 @@
+export const ENCOUNTER_INTERACTION_DISTANCE = 2.5;
