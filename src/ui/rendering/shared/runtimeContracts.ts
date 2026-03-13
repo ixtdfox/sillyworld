@@ -1,19 +1,11 @@
 // @ts-nocheck
+import type { PositionLike, PositionNodeLike } from '../../../world/spatial/types.ts';
+
 export type RuntimeMode = 'loading' | 'transitioning' | 'exploration' | 'combat';
 
 export type RuntimeDispose = () => void;
 
 export type AssetResolver = (assetPath: string) => string;
-
-export interface PositionLike {
-  x: number;
-  y: number;
-  z: number;
-}
-
-export interface PositionNodeLike {
-  position?: PositionLike | null;
-}
 
 export interface NormalizationDebugInfo {
   entityId: string | null;

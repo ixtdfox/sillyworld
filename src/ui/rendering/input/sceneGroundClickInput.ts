@@ -1,12 +1,6 @@
 // @ts-nocheck
+import { resolveGroundClickTarget } from '../../../world/input/groundClickPolicy.ts';
 import type { RuntimeDispose } from '../shared/runtimeContracts.ts';
-
-const GROUND_MESH_NAME = 'Ground';
-
-interface NodeLike {
-  name?: string;
-  parent?: NodeLike | null;
-}
 
 interface Vector3Like {
   x: number;
@@ -25,23 +19,12 @@ interface BabylonRuntimeSubset {
   scene: {
     pointerX: number;
     pointerY: number;
-    pick: (x: number, y: number) => { hit?: boolean; pickedMesh?: NodeLike; pickedPoint?: Vector3Like } | null;
+    pick: (x: number, y: number) => { hit?: boolean; pickedMesh?: unknown; pickedPoint?: Vector3Like } | null;
     onPointerObservable: {
       add: (callback: (pointerInfo: { type: number }) => void) => unknown;
       remove: (observer: unknown) => void;
     };
   };
-}
-
-function isGroundNode(node: NodeLike | null | undefined): boolean {
-  let current = node;
-  while (current) {
-    if (current.name === GROUND_MESH_NAME) {
-      return true;
-    }
-    current = current.parent ?? null;
-  }
-  return false;
 }
 
 export class SceneGroundClickInput {
@@ -64,42 +47,26 @@ export class SceneGroundClickInput {
         return;
       }
 
-      const rejectClick = (reason: string, pickedMeshName: string | undefined): void => {
+      const pickResult = this.#runtime.scene.pick(this.#runtime.scene.pointerX, this.#runtime.scene.pointerY);
+      const resolution = resolveGroundClickTarget(pickResult);
+
+      if (!resolution.accepted || !resolution.target) {
         this.#movementTargetState.clearTarget();
         console.log('[SillyRPG] Scene click rejected:', {
-          reason,
-          pickedMeshName: pickedMeshName ?? 'none',
+          reason: resolution.reason,
+          pickedMeshName: resolution.pickedMeshName,
           accepted: false
         });
-      };
-
-      const pickResult = this.#runtime.scene.pick(this.#runtime.scene.pointerX, this.#runtime.scene.pointerY);
-      const pickedMeshName = pickResult?.pickedMesh?.name ?? 'none';
-      console.log('[SillyRPG] Picked mesh name:', pickedMeshName);
-
-      if (!pickResult?.hit || !pickResult.pickedPoint) {
-        rejectClick('no hit', pickedMeshName);
         return;
       }
 
-      if (pickedMeshName === 'Wall') {
-        rejectClick('Wall', pickedMeshName);
-        return;
-      }
-
-      if (!isGroundNode(pickResult.pickedMesh)) {
-        rejectClick('not Ground', pickedMeshName);
-        return;
-      }
-
-      const target = pickResult.pickedPoint.clone();
-      this.#movementTargetState.setTarget(target);
+      this.#movementTargetState.setTarget(resolution.target);
       console.log('[SillyRPG] Scene click accepted:', {
         accepted: true,
-        pickedMeshName,
-        x: target.x,
-        y: target.y,
-        z: target.z
+        pickedMeshName: resolution.pickedMeshName,
+        x: resolution.target.x,
+        y: resolution.target.y,
+        z: resolution.target.z
       });
     });
 
