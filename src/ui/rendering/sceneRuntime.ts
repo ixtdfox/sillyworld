@@ -6,13 +6,13 @@ import { PlayerMovementController } from './playerMovementController.ts';
 import { SceneGroundClickInput } from './sceneGroundClickInput.ts';
 import { attachGameplayIsometricCamera } from './gameplayCameraController.ts';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.ts';
-import { ENCOUNTER_INTERACTION_DISTANCE } from './encounterInteractionInput.ts';
+import { ENCOUNTER_INTERACTION_DISTANCE } from '../../world/encounter/encounterRules.ts';
 import { evaluateEnemyPerceptionPipeline } from '../../world/enemy/enemyPerception.ts';
 import { updateEnemyAmbientBehavior } from '../../world/enemy/enemyAmbientBehavior.ts';
 import { createCombatRuntime } from './combatRuntime.ts';
 import { createCombatDebugShell } from './combatDebugShell.ts';
 import { createEnemyVisionGridDebugOverlay } from './enemyVisionGridDebugOverlay.ts';
-import { createCombatGridMapper } from './combatGridMapper.ts';
+import { createCombatGridMapper } from '../../world/combat/combatGridMapper.ts';
 import type {
   CombatStateLike,
   EncounterStartPayload,

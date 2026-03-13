@@ -2,7 +2,7 @@
 import { attachGameplayIsometricCamera } from './gameplayCameraController.ts';
 import { createCombatTurnManager } from '../../world/combat/combatTurnManager.ts';
 import { createCombatGrid } from '../../world/combat/combatGrid.ts';
-import { createCombatGridMapper } from './combatGridMapper.ts';
+import { createCombatGridMapper } from '../../world/combat/combatGridMapper.ts';
 import { createPlayerAnimationController } from './playerAnimationController.ts';
 import { attachCombatPlayerMovementController } from './combatPlayerMovementController.ts';
 import { createCombatActionResolver } from '../../world/combat/combatActionResolver.ts';
