@@ -8,6 +8,7 @@ import { attachGameplayIsometricCamera } from './gameplayCameraController.ts';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.ts';
 import { ENCOUNTER_INTERACTION_DISTANCE } from './encounterInteractionInput.ts';
 import { updateEnemyPerception } from './enemyPerception.ts';
+import { updateEnemyAmbientBehavior } from './enemyAmbientBehavior.ts';
 import { createCombatRuntime } from './combatRuntime.ts';
 import type {
   CombatStateLike,
@@ -27,6 +28,7 @@ interface ExplorationRuntimeLike {
   playerEntity?: { normalizationDebug?: RuntimeNormalizationState['player']; gameplayDimensions?: { interactionRadius?: number }; rootNode?: PositionNodeLike };
   enemyEntity?: { normalizationDebug?: RuntimeNormalizationState['enemy']; gameplayDimensions?: { interactionRadius?: number }; rootNode?: PositionNodeLike };
   enemyPerception?: { visionAngleDegrees?: number; visionDistance?: number; facingDirection?: PositionLike };
+  enemyAmbientBehavior?: { state?: string; facingDirection?: PositionLike; patrolPoints?: PositionLike[] };
   playerMeshRoot?: PositionNodeLike & { position: PositionLike };
   enemyMeshRoot?: PositionNodeLike & { position: PositionLike };
   dispose?: RuntimeDispose;
@@ -98,6 +100,14 @@ class RuntimeDebugState {
         explorationRuntime.enemyMeshRoot.position
       );
 
+      const currentPatrolIndex = Number.isFinite(explorationRuntime.enemyAmbientBehavior?.currentPatrolIndex)
+        ? explorationRuntime.enemyAmbientBehavior.currentPatrolIndex
+        : null;
+      const patrolPoints = explorationRuntime.enemyAmbientBehavior?.patrolPoints ?? [];
+      const patrolTarget = currentPatrolIndex !== null && patrolPoints.length > 0
+        ? patrolPoints[currentPatrolIndex % patrolPoints.length]
+        : null;
+
       this.#options.onDebugStateChange({
         mode: this.#mode,
         exploration: {
@@ -109,6 +119,9 @@ class RuntimeDebugState {
           enemyPerceptionReason: perceptionResult?.reason ?? null,
           enemyPerceptionDistance: Number.isFinite(perceptionResult?.distanceToPlayer) ? perceptionResult.distanceToPlayer : null,
           enemyPerceptionAngle: Number.isFinite(perceptionResult?.angleToPlayerDegrees) ? perceptionResult.angleToPlayerDegrees : null,
+          enemyAiState: explorationRuntime.enemyAmbientBehavior?.state ?? null,
+          enemyPatrolPointIndex: currentPatrolIndex,
+          enemyPatrolTarget: patrolTarget,
           normalization: normalizationSnapshot
         }
       });
@@ -273,6 +286,7 @@ export class SceneRuntime {
       enemyVisionAngleDegrees: this.#options.enemyVisionAngleDegrees,
       enemyVisionDistance: this.#options.enemyVisionDistance,
       enemyFacingDirection: this.#options.enemyFacingDirection,
+      enemyPatrolPoints: this.#options.enemyPatrolPoints,
       resolveAssetPath: this.#options.resolveAssetPath
     });
     this.#explorationRuntime = explorationRuntime;
@@ -357,6 +371,23 @@ export class SceneRuntime {
       }
       if (this.#modeController.getMode() !== 'exploration') {
         return;
+      }
+
+      const deltaMs = this.#runtime.engine?.getDeltaTime?.() ?? 16;
+      const deltaSeconds = Math.max(0, deltaMs / 1000);
+
+      const updatedBehavior = this.#explorationRuntime.enemyAmbientBehavior
+        ? updateEnemyAmbientBehavior({
+            enemyRootNode: this.#explorationRuntime.enemyMeshRoot,
+            behavior: this.#explorationRuntime.enemyAmbientBehavior,
+            deltaSeconds,
+            logger: console
+          })
+        : null;
+
+      if (updatedBehavior?.facingDirection) {
+        this.#explorationRuntime.enemyPerception = this.#explorationRuntime.enemyPerception ?? {};
+        this.#explorationRuntime.enemyPerception.facingDirection = { ...updatedBehavior.facingDirection };
       }
 
       const enemyActor = {

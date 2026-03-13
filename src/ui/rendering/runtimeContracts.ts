@@ -39,6 +39,9 @@ export interface ExplorationDebugState {
   enemyPerceptionReason?: string | null;
   enemyPerceptionDistance?: number | null;
   enemyPerceptionAngle?: number | null;
+  enemyAiState?: string | null;
+  enemyPatrolPointIndex?: number | null;
+  enemyPatrolTarget?: PositionLike | null;
   normalization: RuntimeNormalizationState | null;
 }
 
@@ -112,6 +115,7 @@ export interface SceneRuntimeMountOptions {
   enemyVisionAngleDegrees?: number;
   enemyVisionDistance?: number;
   enemyFacingDirection?: { x: number; y: number; z: number };
+  enemyPatrolPoints?: { x: number; y?: number; z: number }[];
   resolveAssetPath?: AssetResolver;
   onEncounterStart?: (payload: EncounterStartPayload) => void;
   onDebugStateChange?: (state: RuntimeDebugState) => void;
