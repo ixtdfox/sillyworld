@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { canEnemySeePlayer, getEnemyVisionCoverage, updateEnemyPerception } from '../src/ui/rendering/enemyPerception.ts';
+import { canEnemySeePlayer, evaluateEnemyPerceptionPipeline, getEnemyVisionCoverage, updateEnemyPerception } from '../src/ui/rendering/enemyPerception.ts';
 
 function actor({ x, y = 0, z, perception, facingDirection } = {}) {
   return {
@@ -92,4 +92,21 @@ test('getEnemyVisionCoverage surfaces blocked cells when LOS callback blocks tar
   const blockedKeys = new Set(coverage.blockedCells.map((cell) => `${cell.x},${cell.z}`));
 
   assert.equal(blockedKeys.has('0,2'), true);
+});
+
+
+test('evaluateEnemyPerceptionPipeline reports player grid cell visibility from coverage', () => {
+  const enemy = actor({ x: 0.2, z: 0.2, perception: { visionAngleDegrees: 90, visionDistance: 2.5 }, facingDirection: { x: 0, y: 0, z: 1 } });
+  const player = actor({ x: 0.7, z: 1.7 });
+  const mapper = {
+    cellSize: 1,
+    worldToGridCell: ({ x, z }) => ({ x: Math.floor(x), z: Math.floor(z) }),
+    gridCellToWorld: ({ x, z }) => ({ x: x + 0.5, y: 0, z: z + 0.5 })
+  };
+
+  const pipeline = evaluateEnemyPerceptionPipeline(enemy, player, mapper);
+
+  assert.deepEqual(pipeline.playerCell, { x: 0, z: 1 });
+  assert.equal(pipeline.playerCellVisible, true);
+  assert.equal(pipeline.visibleCells.length > 0, true);
 });

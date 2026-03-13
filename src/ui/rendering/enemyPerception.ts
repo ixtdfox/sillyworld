@@ -52,6 +52,18 @@ export interface EnemyVisionCoverage {
   blockedCells: EnemyVisionCoverageCell[];
 }
 
+export interface EnemyPerceptionPipelineResult {
+  enemyPosition: PositionLike | null;
+  facingDirection: PositionLike;
+  enemyCell: EnemyVisionCoverageCell | null;
+  playerPosition: PositionLike | null;
+  playerCell: EnemyVisionCoverageCell | null;
+  visibleCells: EnemyVisionCoverageCell[];
+  blockedCells: EnemyVisionCoverageCell[];
+  playerCellVisible: boolean;
+  perceptionResult: EnemyPerceptionResult;
+}
+
 function resolveLogger(world?: EnemyPerceptionWorld): Pick<Console, 'debug' | 'info'> {
   return world?.logger ?? console;
 }
@@ -259,6 +271,36 @@ export function getEnemyVisionCoverage(
     enemyCell,
     visibleCells,
     blockedCells
+  };
+}
+
+export function evaluateEnemyPerceptionPipeline(
+  enemy: EnemyPerceptionActor,
+  player: EnemyPerceptionActor,
+  gridMapper: EnemyPerceptionGridMapper,
+  world: EnemyPerceptionWorld = {}
+): EnemyPerceptionPipelineResult {
+  const enemyPosition = enemy?.rootNode?.position ?? null;
+  const playerPosition = player?.rootNode?.position ?? null;
+  const facingDirection = resolveFacingDirection(enemy);
+  const coverage = getEnemyVisionCoverage(enemy, gridMapper, world);
+  const playerCell = playerPosition ? gridMapper.worldToGridCell(playerPosition) : null;
+  const playerCellVisible = Boolean(
+    playerCell && coverage.visibleCells.some((cell) => cell.x === playerCell.x && cell.z === playerCell.z)
+  );
+
+  const perceptionResult = canEnemySeePlayer(enemy, player, world);
+
+  return {
+    enemyPosition,
+    facingDirection,
+    enemyCell: coverage.enemyCell,
+    playerPosition,
+    playerCell,
+    visibleCells: coverage.visibleCells,
+    blockedCells: coverage.blockedCells,
+    playerCellVisible,
+    perceptionResult
   };
 }
 

@@ -28,6 +28,11 @@ function createCellMesh(runtime, mapper, cell, y, name) {
   mesh.position.x = world.x;
   mesh.position.y = world.y + 0.045;
   mesh.position.z = world.z;
+  mesh.isPickable = false;
+  mesh.metadata = {
+    ...(mesh.metadata ?? {}),
+    isEnemyVisionDebugOverlay: true
+  };
   return mesh;
 }
 
@@ -47,6 +52,7 @@ export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
   const visibleMeshes = new Map();
   const blockedMeshes = new Map();
   let playerDetectedMesh = null;
+  let playerDetectedCellKey = null;
   let observer = null;
   let enabled = true;
 
@@ -65,6 +71,7 @@ export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
     blockedMeshes.clear();
     playerDetectedMesh?.dispose(false, true);
     playerDetectedMesh = null;
+    playerDetectedCellKey = null;
   };
 
   const syncMeshSet = (targetMap, cells, material, prefix, y) => {
@@ -115,12 +122,17 @@ export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
     const playerDetected = playerCell && coverage.visibleCells.some((cell) => cell.x === playerCell.x && cell.z === playerCell.z);
 
     if (playerDetected && playerCell) {
-      playerDetectedMesh?.dispose(false, true);
-      playerDetectedMesh = createCellMesh(runtime, mapper, playerCell, enemyY, `enemyVisionPlayer_${playerCell.x}_${playerCell.z}`);
-      playerDetectedMesh.material = playerDetectedMaterial;
+      const nextPlayerCellKey = keyForCell(playerCell);
+      if (!playerDetectedMesh || playerDetectedCellKey !== nextPlayerCellKey) {
+        playerDetectedMesh?.dispose(false, true);
+        playerDetectedMesh = createCellMesh(runtime, mapper, playerCell, enemyY, `enemyVisionPlayer_${playerCell.x}_${playerCell.z}`);
+        playerDetectedMesh.material = playerDetectedMaterial;
+        playerDetectedCellKey = nextPlayerCellKey;
+      }
       playerDetectedMesh.setEnabled(shouldShow);
     } else if (playerDetectedMesh) {
       playerDetectedMesh.setEnabled(false);
+      playerDetectedCellKey = null;
     }
   };
 
