@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { isCameraOrbiting, isPrimaryPointerAction } from '../shared/pointerInputGuards.ts';
 function isDescendantOf(node, possibleAncestor) {
   let current = node;
   while (current) {
@@ -75,6 +76,17 @@ export function attachCombatTargetSelectionFlow(runtime, options = {}) {
   };
 
   const pointerObserver = runtime.scene.onPointerObservable.add((pointerInfo) => {
+    if (pointerInfo.type === runtime.BABYLON.PointerEventTypes.POINTERDOWN && !isPrimaryPointerAction(pointerInfo)) {
+      return;
+    }
+
+    if (isCameraOrbiting(runtime)) {
+      if (pointerInfo.type === runtime.BABYLON.PointerEventTypes.POINTERMOVE) {
+        clearSelection();
+      }
+      return;
+    }
+
     if (!isEnabled()) {
       clearSelection();
       return;

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { pickCombatCellAtPointer } from './combatCellPointer.ts';
+import { isCameraOrbiting, isPrimaryPointerAction } from '../shared/pointerInputGuards.ts';
 import {
   advancePositionAlongWaypoints,
   buildWorldWaypointPath,
@@ -113,6 +114,10 @@ export function attachCombatPlayerMovementController(runtime, options) {
     }
 
     if (pointerInfo.type !== runtime.BABYLON.PointerEventTypes.POINTERDOWN) {
+      return;
+    }
+
+    if (!isPrimaryPointerAction(pointerInfo) || isCameraOrbiting(runtime)) {
       return;
     }
 

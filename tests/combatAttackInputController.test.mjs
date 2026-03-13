@@ -41,7 +41,7 @@ function createRuntime() {
     setPickResult: (result) => {
       pickResult = result;
     },
-    pointerDown: () => pointer.emit({ type: 1 }),
+    pointerDown: (payload = {}) => pointer.emit({ type: 1, event: { button: 0 }, ...payload }),
     pointerMove: () => pointer.emit({ type: 2 }),
     tick: () => beforeRender.emit()
   };
@@ -188,5 +188,66 @@ test('does not allow attack input when it is not attacker turn', () => {
   assert.equal(combatState.selectedTargetId, null);
   assert.equal(enemyRoot.renderOutline, false);
 
+  detach();
+});
+
+
+test('ignores right-click target confirmation while allowing hover selection', () => {
+  const runtime = createRuntime();
+  const enemyRoot = createMesh('enemy_root');
+
+  let attackCalls = 0;
+  const combatState = {
+    status: 'active',
+    inputMode: 'attack',
+    selectedTargetId: null,
+    getActiveUnit: () => ({ id: 'player_1' }),
+    tryBasicAttack: () => {
+      attackCalls += 1;
+      return { success: true };
+    }
+  };
+
+  const detach = attachCombatAttackInputController(runtime, {
+    combatState,
+    attackerUnit: { id: 'player_1' },
+    getPotentialTargets: () => [{ unit: { id: 'enemy_1', isAlive: true }, targetRoot: enemyRoot }],
+    isAttackEnabled: () => combatState.inputMode === 'attack'
+  });
+
+  runtime.setPickResult({ hit: true, pickedMesh: enemyRoot });
+  runtime.pointerMove();
+  runtime.pointerDown({ event: { button: 2 } });
+
+  assert.equal(combatState.selectedTargetId, 'enemy_1');
+  assert.equal(attackCalls, 0);
+  detach();
+});
+
+test('clears attack hover selection while camera orbit drag is active', () => {
+  const runtime = createRuntime();
+  runtime.inputState = { camera: { isOrbiting: true } };
+  const enemyRoot = createMesh('enemy_root');
+
+  const combatState = {
+    status: 'active',
+    inputMode: 'attack',
+    selectedTargetId: null,
+    getActiveUnit: () => ({ id: 'player_1' }),
+    tryBasicAttack: () => ({ success: true })
+  };
+
+  const detach = attachCombatAttackInputController(runtime, {
+    combatState,
+    attackerUnit: { id: 'player_1' },
+    getPotentialTargets: () => [{ unit: { id: 'enemy_1', isAlive: true }, targetRoot: enemyRoot }],
+    isAttackEnabled: () => true
+  });
+
+  runtime.setPickResult({ hit: true, pickedMesh: enemyRoot });
+  runtime.pointerMove();
+
+  assert.equal(combatState.selectedTargetId, null);
+  assert.equal(enemyRoot.renderOutline, false);
   detach();
 });

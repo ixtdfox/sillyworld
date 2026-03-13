@@ -2,6 +2,7 @@
 import type { EncounterInteractionPayload, PositionNodeLike, RuntimeDispose } from '../shared/runtimeContracts.ts';
 
 import { ENCOUNTER_INTERACTION_DISTANCE } from '../../../world/encounter/encounterRules.ts';
+import { isCameraOrbiting, isPrimaryPointerAction } from '../shared/pointerInputGuards.ts';
 
 export { ENCOUNTER_INTERACTION_DISTANCE };
 
@@ -75,6 +76,10 @@ export class SceneEncounterInteractionInput {
 
     this.#observer = this.#runtime.scene.onPointerObservable.add((pointerInfo) => {
       if (pointerInfo.type !== this.#runtime.BABYLON.PointerEventTypes.POINTERDOWN) {
+        return;
+      }
+
+      if (!isPrimaryPointerAction(pointerInfo) || isCameraOrbiting(this.#runtime)) {
         return;
       }
 
