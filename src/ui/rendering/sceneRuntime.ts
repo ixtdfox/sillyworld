@@ -22,8 +22,9 @@ import type {
 } from './runtimeContracts.ts';
 
 interface ExplorationRuntimeLike {
-  playerEntity?: { normalizationDebug?: RuntimeNormalizationState['player']; gameplayDimensions?: { interactionRadius?: number } };
-  enemyEntity?: { normalizationDebug?: RuntimeNormalizationState['enemy']; gameplayDimensions?: { interactionRadius?: number } };
+  districtScene?: { sceneContainer?: unknown; cameras?: unknown[] };
+  playerEntity?: { normalizationDebug?: RuntimeNormalizationState['player']; gameplayDimensions?: { interactionRadius?: number }; rootNode?: PositionNodeLike };
+  enemyEntity?: { normalizationDebug?: RuntimeNormalizationState['enemy']; gameplayDimensions?: { interactionRadius?: number }; rootNode?: PositionNodeLike };
   playerMeshRoot?: PositionNodeLike & { position: PositionLike };
   enemyMeshRoot?: PositionNodeLike & { position: PositionLike };
   dispose?: RuntimeDispose;
@@ -48,13 +49,12 @@ class RuntimeDebugState {
     this.#mode = mode;
   }
 
-  public emit(activeGameplayRuntime: ExplorationRuntimeLike | CombatRuntimeLike | null, combatTransitionStarted: boolean, interactionDistance: number): void {
+  public emit(state: { explorationRuntime: ExplorationRuntimeLike | null; combatRuntime: CombatRuntimeLike | null; combatTransitionStarted: boolean; interactionDistance: number }): void {
     if (this.#options.debugEnabled !== true || !this.#options.onDebugStateChange) {
       return;
     }
 
-    const explorationRuntime = this.#mode === 'exploration' ? (activeGameplayRuntime as ExplorationRuntimeLike | null) : null;
-    const combatRuntime = this.#mode === 'combat' ? (activeGameplayRuntime as CombatRuntimeLike | null) : null;
+    const { explorationRuntime, combatRuntime, combatTransitionStarted, interactionDistance } = state;
 
     const normalizationSnapshot: RuntimeNormalizationState | null = explorationRuntime
       ? {
@@ -88,7 +88,7 @@ class RuntimeDebugState {
       return;
     }
 
-    if (this.#mode === 'exploration' && explorationRuntime?.playerMeshRoot && explorationRuntime?.enemyMeshRoot) {
+    if (explorationRuntime?.playerMeshRoot && explorationRuntime?.enemyMeshRoot) {
       const playerPosition = SceneRuntime.toPositionSnapshot(explorationRuntime.playerMeshRoot);
       const enemyPosition = SceneRuntime.toPositionSnapshot(explorationRuntime.enemyMeshRoot);
       const distanceToEnemy = this.#runtime.BABYLON.Vector3.Distance(
@@ -150,16 +150,41 @@ class EncounterCoordinator {
   }
 }
 
+class WorldModeController {
+  #mode: RuntimeMode = 'loading';
+
+  public getMode(): RuntimeMode {
+    return this.#mode;
+  }
+
+  public enterExplorationMode() {
+    this.#mode = 'exploration';
+  }
+
+  public enterCombatMode() {
+    this.#mode = 'combat';
+  }
+
+  public enterTransitionMode() {
+    this.#mode = 'transitioning';
+  }
+}
+
 export class SceneRuntime {
   readonly #runtime: ReturnType<typeof createBabylonWorldRuntime>;
   readonly #options: SceneRuntimeMountOptions;
   readonly #debugState: RuntimeDebugState;
   readonly #mountSession = new SceneMountSession();
   readonly #encounterCoordinator: EncounterCoordinator;
+  readonly #modeController = new WorldModeController();
 
-  #activeGameplayRuntime: ExplorationRuntimeLike | CombatRuntimeLike | null = null;
+  #explorationRuntime: ExplorationRuntimeLike | null = null;
+  #combatRuntime: CombatRuntimeLike | null = null;
   #combatExitInProgress = false;
   #interactionDistance: number;
+  #detachExplorationInputs: RuntimeDispose = () => {};
+  #attachExplorationControls: (() => void) | null = null;
+  #explorationControlsAttached = false;
 
   constructor(canvas: HTMLCanvasElement, options: SceneRuntimeMountOptions = {}) {
     this.#runtime = createBabylonWorldRuntime(canvas);
@@ -172,7 +197,12 @@ export class SceneRuntime {
   public async mount(): Promise<RuntimeDispose> {
     const debugObserver = this.#options.debugEnabled === true
       ? this.#runtime.scene.onBeforeRenderObservable.add(() => {
-          this.#debugState.emit(this.#activeGameplayRuntime, !this.#encounterCoordinator.canStartCombat(), this.#interactionDistance);
+          this.#debugState.emit({
+            explorationRuntime: this.#explorationRuntime,
+            combatRuntime: this.#combatRuntime,
+            combatTransitionStarted: !this.#encounterCoordinator.canStartCombat(),
+            interactionDistance: this.#interactionDistance
+          });
         })
       : null;
 
@@ -181,12 +211,15 @@ export class SceneRuntime {
     }
 
     this.#mountSession.register(() => {
-      this.#disposeActiveGameplayRuntime();
+      this.#disposeCombatRuntime();
+      this.#disposeExplorationControls();
+      this.#explorationRuntime?.dispose?.();
       this.#runtime.dispose();
     });
 
     try {
       await this.#setupExplorationRuntime();
+      this.enterExplorationMode();
     } catch (error) {
       this.#mountSession.dispose();
       throw error;
@@ -207,9 +240,14 @@ export class SceneRuntime {
     };
   }
 
-  #disposeActiveGameplayRuntime(): void {
-    this.#activeGameplayRuntime?.dispose?.();
-    this.#activeGameplayRuntime = null;
+  #disposeCombatRuntime(): void {
+    this.#combatRuntime?.dispose?.();
+    this.#combatRuntime = null;
+  }
+
+  #disposeExplorationControls(): void {
+    this.#detachExplorationInputs?.();
+    this.#detachExplorationInputs = () => {};
   }
 
   async #setupExplorationRuntime(): Promise<void> {
@@ -224,7 +262,7 @@ export class SceneRuntime {
       enemyArchetypeId: this.#options.enemyArchetypeId,
       resolveAssetPath: this.#options.resolveAssetPath
     });
-    this.#activeGameplayRuntime = explorationRuntime;
+    this.#explorationRuntime = explorationRuntime;
 
     if (!Number.isFinite(this.#options.interactionDistance)) {
       const playerInteractionRadius = explorationRuntime.playerEntity?.gameplayDimensions?.interactionRadius;
@@ -235,9 +273,6 @@ export class SceneRuntime {
           ? enemyInteractionRadius
           : ENCOUNTER_INTERACTION_DISTANCE;
     }
-
-    this.#debugState.setMode('exploration');
-    this.#debugState.emit(this.#activeGameplayRuntime, !this.#encounterCoordinator.canStartCombat(), this.#interactionDistance);
 
     if (!explorationRuntime.playerEntity?.rootNode || !explorationRuntime.playerMeshRoot || !explorationRuntime.enemyMeshRoot) {
       throw new Error('Exploration runtime must expose player and enemy mesh roots.');
@@ -259,87 +294,156 @@ export class SceneRuntime {
       enemyRoot: explorationRuntime.enemyMeshRoot,
       interactionDistance: this.#interactionDistance,
       onEncounterStart: (details) => {
-        this.#transitionToCombat(details).catch((error) => {
-          console.error('[SillyRPG] Failed to transition from exploration to combat.', error);
+        this.enterCombatMode(details).catch((error) => {
+          console.error('[SillyRPG] Failed to enter world combat mode.', error);
         });
       }
     });
 
-    const detachCamera = attachGameplayIsometricCamera(this.#runtime, explorationRuntime.playerMeshRoot);
-    const detachGroundInput = groundClickInput.attach();
-    const detachEncounterInput = encounterInput.attach();
-    const detachMovement = movementController.attach();
+    this.#attachExplorationControls = () => {
+      if (this.#explorationControlsAttached) {
+        return;
+      }
+
+      this.#explorationControlsAttached = true;
+      const innerDetachGroundInput = groundClickInput.attach();
+      const innerDetachEncounterInput = encounterInput.attach();
+      const innerDetachMovement = movementController.attach();
+      const innerDetachCamera = attachGameplayIsometricCamera(this.#runtime, explorationRuntime.playerMeshRoot);
+
+      this.#detachExplorationInputs = () => {
+        if (!this.#explorationControlsAttached) {
+          return;
+        }
+
+        this.#explorationControlsAttached = false;
+        innerDetachGroundInput();
+        innerDetachEncounterInput();
+        innerDetachMovement();
+        innerDetachCamera();
+        this.#detachExplorationInputs = () => {};
+      };
+    };
+
+    this.#attachExplorationControls();
 
     const previousDispose = explorationRuntime.dispose;
     explorationRuntime.dispose = () => {
-      detachGroundInput();
-      detachEncounterInput();
-      detachMovement();
-      detachCamera();
+      this.#disposeExplorationControls();
       previousDispose?.();
     };
   }
 
-  async #transitionOutOfCombat(): Promise<void> {
+  async exitCombatMode(): Promise<void> {
     if (this.#combatExitInProgress) {
-      console.debug('[SillyRPG] Combat exit ignored because a transition is already in progress.');
+      console.debug('[SillyRPG] Combat mode exit ignored because exit is already in progress.');
       return;
     }
 
     this.#combatExitInProgress = true;
-    console.info('[SillyRPG] Combat exit transition start');
-    this.#debugState.setMode('transitioning');
-    this.#debugState.emit(this.#activeGameplayRuntime, !this.#encounterCoordinator.canStartCombat(), this.#interactionDistance);
-    this.#disposeActiveGameplayRuntime();
-    this.#encounterCoordinator.reset();
+    this.#modeController.enterTransitionMode();
+    this.#debugState.setMode(this.#modeController.getMode());
+    this.#debugState.emit({
+      explorationRuntime: this.#explorationRuntime,
+      combatRuntime: this.#combatRuntime,
+      combatTransitionStarted: !this.#encounterCoordinator.canStartCombat(),
+      interactionDistance: this.#interactionDistance
+    });
 
     try {
-      await this.#setupExplorationRuntime();
+      this.#disposeCombatRuntime();
+      this.#encounterCoordinator.reset();
+      this.enterExplorationMode();
+      console.info('[SillyRPG] Combat mode exited');
     } finally {
       this.#combatExitInProgress = false;
-      console.info('[SillyRPG] Combat exit transition complete');
     }
   }
 
-  async #transitionToCombat(encounterDetails: EncounterStartPayload): Promise<CombatStateLike | null> {
+  async enterCombatMode(encounterDetails: EncounterStartPayload): Promise<CombatStateLike | null> {
     if (!this.#encounterCoordinator.canStartCombat()) {
       return null;
     }
 
-    this.#debugState.setMode('transitioning');
-    this.#debugState.emit(this.#activeGameplayRuntime, true, this.#interactionDistance);
-    this.#disposeActiveGameplayRuntime();
+    if (!this.#explorationRuntime?.playerEntity || !this.#explorationRuntime?.enemyEntity) {
+      throw new Error('Cannot enter combat mode without active exploration entities.');
+    }
+
+    this.#modeController.enterTransitionMode();
+    this.#debugState.setMode(this.#modeController.getMode());
+    this.#debugState.emit({
+      explorationRuntime: this.#explorationRuntime,
+      combatRuntime: this.#combatRuntime,
+      combatTransitionStarted: true,
+      interactionDistance: this.#interactionDistance
+    });
+
+    this.#disposeExplorationControls();
 
     const combatRuntime = await createCombatRuntime(this.#runtime, {
-      sceneFile: this.#options.combatSceneFile,
-      playerFile: this.#options.playerFile,
-      enemyFile: this.#options.enemyFile,
-      playerNormalizationId: this.#options.playerNormalizationId,
-      enemyNormalizationId: this.#options.enemyNormalizationId,
+      worldCombatMode: true,
+      sceneContainer: this.#explorationRuntime.districtScene?.sceneContainer,
+      cameras: this.#explorationRuntime.districtScene?.cameras,
+      playerEntity: this.#explorationRuntime.playerEntity,
+      enemyEntity: this.#explorationRuntime.enemyEntity,
       enemyArchetypeId: this.#options.enemyArchetypeId,
-      resolveAssetPath: this.#options.resolveAssetPath,
+      attachCamera: false,
       onCombatEnd: ({ result, combatState: resolvedCombatState }) => {
         console.info('[SillyRPG] Combat end callback received', {
           result: result ?? null,
           source: resolvedCombatState?.endReason ?? 'unknown'
         });
-        this.#transitionOutOfCombat().catch((error) => {
-          console.error('[SillyRPG] Failed to transition from combat to exploration.', error);
+        this.exitCombatMode().catch((error) => {
+          console.error('[SillyRPG] Failed to exit combat mode.', error);
         });
       }
     });
 
-    this.#activeGameplayRuntime = combatRuntime as CombatRuntimeLike;
-    this.#debugState.setMode('combat');
-    this.#debugState.emit(this.#activeGameplayRuntime, true, this.#interactionDistance);
+    this.#combatRuntime = combatRuntime as CombatRuntimeLike;
+    this.#modeController.enterCombatMode();
+    this.#debugState.setMode(this.#modeController.getMode());
+    this.#debugState.emit({
+      explorationRuntime: this.#explorationRuntime,
+      combatRuntime: this.#combatRuntime,
+      combatTransitionStarted: true,
+      interactionDistance: this.#interactionDistance
+    });
 
     const combatState = (combatRuntime as CombatRuntimeLike).combatState;
+    console.info('[SillyRPG] Combat mode entered');
+    console.info('[SillyRPG] Combat participants registered', {
+      playerId: combatState?.units?.player?.id ?? null,
+      enemyId: combatState?.units?.enemy?.id ?? null
+    });
     this.#encounterCoordinator.notifyCombatStarted({
       ...encounterDetails,
       combatState
     });
 
     return combatState ?? null;
+  }
+
+  enterExplorationMode(): void {
+    this.#modeController.enterExplorationMode();
+    this.#debugState.setMode(this.#modeController.getMode());
+    this.#debugState.emit({
+      explorationRuntime: this.#explorationRuntime,
+      combatRuntime: this.#combatRuntime,
+      combatTransitionStarted: !this.#encounterCoordinator.canStartCombat(),
+      interactionDistance: this.#interactionDistance
+    });
+
+    if (this.#modeController.getMode() === 'exploration' && this.#explorationRuntime?.playerMeshRoot) {
+      this.#setupExplorationControlsIfMissing();
+    }
+  }
+
+  #setupExplorationControlsIfMissing() {
+    if (this.#explorationControlsAttached) {
+      return;
+    }
+
+    this.#attachExplorationControls?.();
   }
 }
 

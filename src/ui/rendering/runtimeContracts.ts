@@ -99,7 +99,6 @@ export interface SceneRuntimeMountOptions {
   interactionDistance?: number;
   debugEnabled?: boolean;
   sceneFile?: string;
-  combatSceneFile?: string;
   playerFile?: string;
   enemyFile?: string;
   enemySpawn?: { x: number; z: number };
