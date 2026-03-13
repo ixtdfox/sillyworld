@@ -1,23 +1,10 @@
 // @ts-nocheck
-import type { PositionLike, RuntimeDispose } from '../shared/runtimeContracts.ts';
+import type { RuntimeDispose } from '../shared/runtimeContracts.ts';
 
-const DEFAULT_MOVE_SPEED = 2.5;
-const DEFAULT_STOP_DISTANCE = 0.1;
-
-interface Vector3Like {
-  x: number;
-  y: number;
-  z: number;
-  subtract(other: Vector3Like): Vector3Like;
-  length(): number;
-  normalize(): Vector3Like;
-  scale(value: number): Vector3Like;
-  addInPlace(other: Vector3Like): Vector3Like;
-  copyFrom(other: Vector3Like): void;
-}
+const DEFAULT_CELLS_PER_SECOND = 4;
 
 interface BabylonRuntimeSubset {
-  engine: { [key: string]: unknown; getDeltaTime?: () => number };
+  engine: { getDeltaTime?: () => number };
   scene: {
     onBeforeRenderObservable: {
       add: (callback: () => void) => unknown;
@@ -27,50 +14,67 @@ interface BabylonRuntimeSubset {
 }
 
 interface PlayerCharacterLike {
-  rootNode: { position: PositionLike };
+  rootNode: { position: { copyFrom: (position: unknown) => void; x: number; y: number; z: number } };
+  gridCell?: { x: number; z: number } | null;
 }
 
 interface MovementTargetStateLike {
   hasTarget(): boolean;
-  getTarget(): PositionLike;
+  getTargetCell?(): { x: number; z: number } | null;
+  getTarget(): { x: number; z: number } | null;
   clearTarget(): void;
 }
 
 interface PlayerMovementControllerOptions {
   moveSpeed?: number;
-  stopDistance?: number;
   onMovingStateChange?: (isMoving: boolean) => void;
+  gridMapper: {
+    worldToGridCell: (worldPosition: { x: number; z: number }) => { x: number; z: number };
+    gridCellToWorld: (cell: { x: number; z: number }, transform?: { resolveY?: ({ x, z }: { x: number; z: number }) => number; fallbackY?: number }) => { x: number; y: number; z: number };
+  };
+  resolveGroundY: ({ x, z, fallbackY }: { x: number; z: number; fallbackY?: number }) => number;
+  BABYLON: { Vector3: new (x: number, y: number, z: number) => unknown };
 }
 
 export class PlayerMovementController {
   readonly #runtime: BabylonRuntimeSubset;
   readonly #playerCharacter: PlayerCharacterLike;
   readonly #movementTargetState: MovementTargetStateLike;
-  readonly #moveSpeed: number;
-  readonly #stopDistance: number;
+  readonly #cellsPerSecond: number;
   readonly #onMovingStateChange: (isMoving: boolean) => void;
+  readonly #gridMapper;
+  readonly #resolveGroundY;
+  readonly #BABYLON;
 
   #isMoving = false;
   #observer: unknown | null = null;
+  #stepAccumulatorSeconds = 0;
 
   constructor(
     runtime: BabylonRuntimeSubset,
     playerCharacter: PlayerCharacterLike,
     movementTargetState: MovementTargetStateLike,
-    options: PlayerMovementControllerOptions = {}
+    options: PlayerMovementControllerOptions
   ) {
     this.#runtime = runtime;
     this.#playerCharacter = playerCharacter;
     this.#movementTargetState = movementTargetState;
-    this.#moveSpeed = options.moveSpeed ?? DEFAULT_MOVE_SPEED;
-    this.#stopDistance = options.stopDistance ?? DEFAULT_STOP_DISTANCE;
+    this.#cellsPerSecond = options.moveSpeed ?? DEFAULT_CELLS_PER_SECOND;
     this.#onMovingStateChange = options.onMovingStateChange ?? (() => {});
+    this.#gridMapper = options.gridMapper;
+    this.#resolveGroundY = options.resolveGroundY;
+    this.#BABYLON = options.BABYLON;
   }
 
   public attach(): RuntimeDispose {
     if (this.#observer) {
       return () => this.dispose();
     }
+
+    if (!this.#playerCharacter.gridCell) {
+      this.#playerCharacter.gridCell = this.#gridMapper.worldToGridCell(this.#playerCharacter.rootNode.position);
+    }
+    this.#applyGridCellToTransform(this.#playerCharacter.gridCell);
 
     this.#observer = this.#runtime.scene.onBeforeRenderObservable.add(() => this.#tick());
     return () => this.dispose();
@@ -85,33 +89,55 @@ export class PlayerMovementController {
   }
 
   #tick(): void {
-    if (!this.#movementTargetState.hasTarget()) {
+    const targetCell = this.#movementTargetState.getTargetCell?.() ?? this.#movementTargetState.getTarget?.();
+    if (!this.#movementTargetState.hasTarget() || !targetCell) {
+      this.#setMoving(false);
       return;
     }
 
-    const target = this.#movementTargetState.getTarget() as Vector3Like;
-    const currentPosition = this.#playerCharacter.rootNode.position as Vector3Like;
-    const toTarget = target.subtract(currentPosition);
-    const distanceToTarget = toTarget.length();
+    const currentCell = this.#playerCharacter.gridCell ?? this.#gridMapper.worldToGridCell(this.#playerCharacter.rootNode.position);
+    this.#playerCharacter.gridCell = currentCell;
 
-    if (!this.#isMoving) {
-      this.#setMoving(true);
-      console.log('[SillyRPG] Movement start');
-    }
-
-    if (distanceToTarget <= this.#stopDistance) {
-      currentPosition.copyFrom(target);
+    if (currentCell.x === targetCell.x && currentCell.z === targetCell.z) {
       this.#movementTargetState.clearTarget();
       this.#setMoving(false);
-      console.log('[SillyRPG] Movement stop');
+      this.#applyGridCellToTransform(currentCell);
       return;
     }
 
+    this.#setMoving(true);
     const deltaTimeMs = this.#runtime.engine.getDeltaTime?.() ?? 16;
     const deltaTimeSeconds = deltaTimeMs / 1000;
-    const stepDistance = this.#moveSpeed * deltaTimeSeconds;
-    const moveVector = toTarget.normalize().scale(Math.min(stepDistance, distanceToTarget));
-    currentPosition.addInPlace(moveVector);
+    this.#stepAccumulatorSeconds += deltaTimeSeconds;
+
+    const stepInterval = 1 / Math.max(0.1, this.#cellsPerSecond);
+    if (this.#stepAccumulatorSeconds < stepInterval) {
+      return;
+    }
+
+    this.#stepAccumulatorSeconds -= stepInterval;
+
+    const nextCell = {
+      x: currentCell.x,
+      z: currentCell.z
+    };
+
+    if (targetCell.x !== currentCell.x) {
+      nextCell.x += Math.sign(targetCell.x - currentCell.x);
+    } else if (targetCell.z !== currentCell.z) {
+      nextCell.z += Math.sign(targetCell.z - currentCell.z);
+    }
+
+    this.#playerCharacter.gridCell = nextCell;
+    this.#applyGridCellToTransform(nextCell);
+  }
+
+  #applyGridCellToTransform(cell: { x: number; z: number }): void {
+    const world = this.#gridMapper.gridCellToWorld(cell, {
+      resolveY: ({ x, z }) => this.#resolveGroundY({ x, z, fallbackY: this.#playerCharacter.rootNode.position.y })
+    });
+
+    this.#playerCharacter.rootNode.position.copyFrom(new this.#BABYLON.Vector3(world.x, world.y, world.z));
   }
 
   #setMoving(nextMovingState: boolean): void {
@@ -128,7 +154,7 @@ export function attachPlayerMovementController(
   runtime: BabylonRuntimeSubset,
   playerCharacter: PlayerCharacterLike,
   movementTargetState: MovementTargetStateLike,
-  options: PlayerMovementControllerOptions = {}
+  options: PlayerMovementControllerOptions
 ): RuntimeDispose {
   const controller = new PlayerMovementController(runtime, playerCharacter, movementTargetState, options);
   return controller.attach();

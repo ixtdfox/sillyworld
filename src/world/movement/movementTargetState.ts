@@ -1,15 +1,31 @@
 // @ts-nocheck
-export function createMovementTargetState() {
-  let target = null;
+
+function normalizeCell(cell) {
+  if (!cell || !Number.isFinite(cell.x) || !Number.isFinite(cell.z)) {
+    return null;
+  }
 
   return {
-    getTarget: () => target,
-    hasTarget: () => Boolean(target),
-    setTarget: (nextTarget) => {
-      target = nextTarget ? nextTarget.clone() : null;
+    x: Math.trunc(cell.x),
+    z: Math.trunc(cell.z)
+  };
+}
+
+export function createMovementTargetState() {
+  let targetCell = null;
+
+  return {
+    getTarget: () => targetCell,
+    getTargetCell: () => targetCell,
+    hasTarget: () => Boolean(targetCell),
+    setTarget: (nextTargetCell) => {
+      targetCell = normalizeCell(nextTargetCell);
+    },
+    setTargetCell: (nextTargetCell) => {
+      targetCell = normalizeCell(nextTargetCell);
     },
     clearTarget: () => {
-      target = null;
+      targetCell = null;
     }
   };
 }

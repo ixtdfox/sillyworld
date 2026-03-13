@@ -1,7 +1,6 @@
 // @ts-nocheck
 import type { PositionLike, PositionNodeLike } from '../spatial/types.ts';
 
-const EPSILON = 1e-5;
 const DEFAULT_FACING_DIRECTION = Object.freeze({ x: 0, y: 0, z: -1 });
 
 export type EnemyAmbientState = 'idle' | 'lookAround' | 'patrol';
@@ -11,19 +10,16 @@ export interface EnemyAmbientBehavior {
   stateTimeRemaining: number;
   facingDirection: PositionLike;
   lookAroundAngularSpeed: number;
-  patrolSpeed: number;
   patrolPoints: PositionLike[];
+  patrolCells: { x: number; z: number }[];
   currentPatrolIndex: number;
-  patrolArrivalThreshold: number;
-}
-
-function vectorLength(vector: PositionLike): number {
-  return Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
+  patrolStepIntervalSeconds: number;
+  patrolStepAccumulatorSeconds: number;
 }
 
 function normalize(vector: PositionLike): PositionLike {
-  const length = vectorLength(vector);
-  if (length <= EPSILON) {
+  const length = Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
+  if (length <= 1e-5) {
     return { ...DEFAULT_FACING_DIRECTION };
   }
 
@@ -61,13 +57,13 @@ function nextState(behavior: EnemyAmbientBehavior): EnemyAmbientState {
   }
 
   if (behavior.state === 'lookAround') {
-    return behavior.patrolPoints.length > 0 ? 'patrol' : 'idle';
+    return (behavior.patrolCells.length > 0 || behavior.patrolPoints.length > 0) ? 'patrol' : 'idle';
   }
 
   return 'lookAround';
 }
 
-function enterState(behavior: EnemyAmbientBehavior, state: EnemyAmbientState, logger: Pick<Console, 'debug'>): void {
+function enterState(behavior: EnemyAmbientBehavior, state: EnemyAmbientState): void {
   behavior.state = state;
 
   if (state === 'idle') {
@@ -77,30 +73,24 @@ function enterState(behavior: EnemyAmbientBehavior, state: EnemyAmbientState, lo
   } else {
     behavior.stateTimeRemaining = Number.POSITIVE_INFINITY;
   }
-
-  logger.debug('[SillyRPG] Enemy ambient AI state changed.', {
-    state,
-    patrolPointIndex: behavior.currentPatrolIndex,
-    patrolPointCount: behavior.patrolPoints.length
-  });
 }
 
 export function createEnemyAmbientBehavior(options: {
   facingDirection?: PositionLike;
   patrolPoints?: PositionLike[];
-  lookAroundAngularSpeed?: number;
-  patrolSpeed?: number;
-  patrolArrivalThreshold?: number;
+  patrolCells?: { x: number; z: number }[];
+  patrolStepIntervalSeconds?: number;
 } = {}): EnemyAmbientBehavior {
   return {
     state: 'idle',
     stateTimeRemaining: 1.5,
     facingDirection: normalize(options.facingDirection ?? DEFAULT_FACING_DIRECTION),
-    lookAroundAngularSpeed: Number.isFinite(options.lookAroundAngularSpeed) ? Math.max(0.1, options.lookAroundAngularSpeed) : 0.9,
-    patrolSpeed: Number.isFinite(options.patrolSpeed) ? Math.max(0.25, options.patrolSpeed) : 1.15,
+    lookAroundAngularSpeed: 0.9,
     patrolPoints: Array.isArray(options.patrolPoints) ? [...options.patrolPoints] : [],
+    patrolCells: Array.isArray(options.patrolCells) ? [...options.patrolCells] : [],
     currentPatrolIndex: 0,
-    patrolArrivalThreshold: Number.isFinite(options.patrolArrivalThreshold) ? Math.max(0.05, options.patrolArrivalThreshold) : 0.25
+    patrolStepIntervalSeconds: Number.isFinite(options.patrolStepIntervalSeconds) ? Math.max(0.1, options.patrolStepIntervalSeconds) : 0.3,
+    patrolStepAccumulatorSeconds: 0
   };
 }
 
@@ -108,11 +98,14 @@ export function updateEnemyAmbientBehavior(params: {
   enemyRootNode?: PositionNodeLike;
   behavior: EnemyAmbientBehavior;
   deltaSeconds?: number;
-  logger?: Pick<Console, 'debug'>;
+  gridMapper?: {
+    worldToGridCell: (position: PositionLike) => { x: number; z: number };
+    gridCellToWorld: (cell: { x: number; z: number }, transform?: { resolveY?: ({ x, z }: { x: number; z: number }) => number; fallbackY?: number }) => PositionLike;
+  };
+  resolveGroundY?: ({ x, z, fallbackY }: { x: number; z: number; fallbackY?: number }) => number;
 }): EnemyAmbientBehavior {
   const behavior = params.behavior;
   const enemyRootNode = params.enemyRootNode;
-  const logger = params.logger ?? console;
   const deltaSeconds = Number.isFinite(params.deltaSeconds) ? Math.max(0, params.deltaSeconds ?? 0) : 0;
 
   if (!behavior || !enemyRootNode?.position || deltaSeconds <= 0) {
@@ -121,7 +114,7 @@ export function updateEnemyAmbientBehavior(params: {
 
   behavior.stateTimeRemaining -= deltaSeconds;
   if (behavior.stateTimeRemaining <= 0) {
-    enterState(behavior, nextState(behavior), logger);
+    enterState(behavior, nextState(behavior));
   }
 
   if (behavior.state === 'lookAround') {
@@ -132,37 +125,69 @@ export function updateEnemyAmbientBehavior(params: {
     return behavior;
   }
 
-  if (behavior.state === 'patrol' && behavior.patrolPoints.length > 0) {
+
+  if (behavior.state === 'patrol' && behavior.patrolPoints.length > 0 && !params.gridMapper) {
     const target = behavior.patrolPoints[behavior.currentPatrolIndex % behavior.patrolPoints.length];
     const toTarget = {
       x: target.x - enemyRootNode.position.x,
       y: 0,
       z: target.z - enemyRootNode.position.z
     };
-
-    const distanceToTarget = vectorLength(toTarget);
-    if (distanceToTarget <= behavior.patrolArrivalThreshold) {
+    const distance = Math.sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
+    if (distance <= 0.25) {
       behavior.currentPatrolIndex = (behavior.currentPatrolIndex + 1) % behavior.patrolPoints.length;
-      logger.debug('[SillyRPG] Enemy reached patrol point.', {
-        reachedPatrolPoint: { x: target.x, y: target.y, z: target.z },
-        nextPatrolPointIndex: behavior.currentPatrolIndex
-      });
-      enterState(behavior, 'lookAround', logger);
+      enterState(behavior, 'lookAround');
       return behavior;
     }
 
-    const stepDistance = Math.min(distanceToTarget, behavior.patrolSpeed * deltaSeconds);
     const direction = normalize(toTarget);
-    enemyRootNode.position.x += direction.x * stepDistance;
-    enemyRootNode.position.z += direction.z * stepDistance;
+    const step = Math.min(distance, 1.15 * deltaSeconds);
+    enemyRootNode.position.x += direction.x * step;
+    enemyRootNode.position.z += direction.z * step;
     behavior.facingDirection = direction;
     setRootYaw(enemyRootNode, yawFromDirection(direction));
+    return behavior;
+  }
 
-    /*logger.debug('[SillyRPG] Enemy patrol update.', {
-      patrolTarget: { x: target.x, y: target.y, z: target.z },
-      distanceToTarget,
-      patrolPointIndex: behavior.currentPatrolIndex
-    });*/
+  if (behavior.state === 'patrol' && behavior.patrolCells.length > 0 && params.gridMapper) {
+    behavior.patrolStepAccumulatorSeconds += deltaSeconds;
+    if (behavior.patrolStepAccumulatorSeconds < behavior.patrolStepIntervalSeconds) {
+      return behavior;
+    }
+
+    behavior.patrolStepAccumulatorSeconds = 0;
+
+    const currentCell = enemyRootNode.gridCell ?? params.gridMapper.worldToGridCell(enemyRootNode.position);
+    const targetCell = behavior.patrolCells[behavior.currentPatrolIndex % behavior.patrolCells.length];
+
+    if (currentCell.x === targetCell.x && currentCell.z === targetCell.z) {
+      behavior.currentPatrolIndex = (behavior.currentPatrolIndex + 1) % behavior.patrolCells.length;
+      enterState(behavior, 'lookAround');
+      return behavior;
+    }
+
+    const nextCell = {
+      x: currentCell.x,
+      z: currentCell.z
+    };
+
+    if (targetCell.x !== currentCell.x) {
+      nextCell.x += Math.sign(targetCell.x - currentCell.x);
+    } else if (targetCell.z !== currentCell.z) {
+      nextCell.z += Math.sign(targetCell.z - currentCell.z);
+    }
+
+    const toDirection = normalize({ x: nextCell.x - currentCell.x, y: 0, z: nextCell.z - currentCell.z });
+    const world = params.gridMapper.gridCellToWorld(nextCell, {
+      resolveY: ({ x, z }) => params.resolveGroundY?.({ x, z, fallbackY: enemyRootNode.position.y }) ?? enemyRootNode.position.y
+    });
+
+    enemyRootNode.position.x = world.x;
+    enemyRootNode.position.y = world.y;
+    enemyRootNode.position.z = world.z;
+    enemyRootNode.gridCell = nextCell;
+    behavior.facingDirection = toDirection;
+    setRootYaw(enemyRootNode, yawFromDirection(toDirection));
   }
 
   return behavior;

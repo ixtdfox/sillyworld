@@ -69,6 +69,10 @@ function placeUnitAtCell(runtime, unit, gridMapper, cell, options = {}) {
     worldPosition.z
   ));
   unit.gridCell = resolvedCell;
+  unit.rootNode.gridCell = resolvedCell;
+  if (unit.entity) {
+    unit.entity.gridCell = resolvedCell;
+  }
 
   console.debug('[SillyRPG] Combat unit placement applied', {
     unitId: unit.id,
@@ -110,7 +114,8 @@ function createCombatUnit(id, team, entity, initiative = 0, displayName = id) {
     rootNode: entity.rootNode,
     meshes: entity.meshes,
     skeletons: entity.skeletons,
-    animationGroups: entity.animationGroups
+    animationGroups: entity.animationGroups,
+    entity
   };
 }
 
@@ -404,6 +409,10 @@ export async function createCombatRuntime(runtime, options = {}) {
     const fromCell = unit.gridCell;
     grid.moveOccupant(fromCell, destinationCell, unit.id);
     unit.gridCell = destinationCell;
+    unit.rootNode.gridCell = destinationCell;
+    if (unit.entity) {
+      unit.entity.gridCell = destinationCell;
+    }
     unit.mp = Math.max(0, unit.mp - pathCost);
     combatState.lastActionResult = {
       success: true,

@@ -230,6 +230,10 @@ export function attachCombatPlayerMovementController(runtime, options) {
           const toCell = activePath.destinationCell;
           grid.moveOccupant(fromCell, toCell, playerUnit.id);
           playerUnit.gridCell = toCell;
+          playerUnit.rootNode.gridCell = toCell;
+          if (playerUnit.entity) {
+            playerUnit.entity.gridCell = toCell;
+          }
           playerUnit.mp -= pendingPathCost;
         }
 

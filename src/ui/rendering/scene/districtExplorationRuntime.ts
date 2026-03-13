@@ -5,6 +5,7 @@ import { loadEnemyCharacter } from '../enemy/enemyCharacterLoader.ts';
 import { spawnPlayerCharacter } from '../player/playerSpawn.ts';
 import { DEFAULT_ENEMY_PERCEPTION_SETTINGS } from '../../../world/enemy/enemyPerception.ts';
 import { createEnemyAmbientBehavior } from '../../../world/enemy/enemyAmbientBehavior.ts';
+import { createWorldGridMapper } from '../../../world/spatial/worldGrid.ts';
 import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from '../shared/runtimeContracts.ts';
 
 const DEFAULT_ENEMY_SPAWN: Readonly<{ x: number; z: number }> = Object.freeze({ x: 2, z: 2 });
@@ -26,9 +27,11 @@ interface EntityLike {
   rootNode?: PositionNodeLike & {
     position: PositionNodeLike['position'] & { copyFrom: (position: unknown) => void; y: number };
     dispose?: (doNotRecurse?: boolean, disposeMaterialAndTextures?: boolean) => void;
+    gridCell?: { x: number; z: number };
   };
   normalizationDebug?: unknown;
   gameplayDimensions?: { interactionRadius?: number };
+  gridCell?: { x: number; z: number };
 }
 
 interface DistrictExplorationOptions {
@@ -56,37 +59,41 @@ const resolveGroundY = ({ runtime, x, z, fallbackY = 0 }: { runtime: BabylonRunt
   return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 };
 
-function placeEnemyOnGround(runtime: BabylonRuntimeSubset, enemyEntity: EntityLike, spawnPreset = DEFAULT_ENEMY_SPAWN) {
+function placeEnemyOnGround(runtime: BabylonRuntimeSubset, enemyEntity: EntityLike, gridMapper, spawnPreset = DEFAULT_ENEMY_SPAWN) {
   if (!enemyEntity?.rootNode) {
     throw new Error('Cannot place enemy character without a root node.');
   }
 
-  // TODO: replace static enemy spawn presets with district encounter data.
-  const x = spawnPreset.x;
-  const z = spawnPreset.z;
-  const y = resolveGroundY({ runtime, x, z, fallbackY: 0 });
+  const spawnCell = gridMapper.worldToGridCell({ x: spawnPreset.x, z: spawnPreset.z });
+  const world = gridMapper.gridCellToWorld(spawnCell, {
+    resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 })
+  });
 
-  enemyEntity.rootNode.position.copyFrom(new runtime.BABYLON.Vector3(x, y, z));
+  enemyEntity.rootNode.position.copyFrom(new runtime.BABYLON.Vector3(world.x, world.y, world.z));
+  enemyEntity.rootNode.gridCell = spawnCell;
+  enemyEntity.gridCell = spawnCell;
   return enemyEntity.rootNode.position;
 }
 
-function resolveEnemyPatrolPoints(runtime: BabylonRuntimeSubset, spawnPreset = DEFAULT_ENEMY_SPAWN, patrolPoints?: { x: number; y?: number; z: number }[]) {
-  if (Array.isArray(patrolPoints) && patrolPoints.length > 0) {
-    return patrolPoints.map((point) => ({
-      x: point.x,
-      y: Number.isFinite(point.y) ? point.y : resolveGroundY({ runtime, x: point.x, z: point.z, fallbackY: 0 }),
-      z: point.z
-    }));
-  }
+function resolveEnemyPatrolData(runtime: BabylonRuntimeSubset, gridMapper, spawnPreset = DEFAULT_ENEMY_SPAWN, patrolPoints?: { x: number; y?: number; z: number }[]) {
+  const rawRoute = Array.isArray(patrolPoints) && patrolPoints.length > 0
+    ? patrolPoints.map((point) => ({ x: point.x, z: point.z }))
+    : [
+        { x: spawnPreset.x + 1.75, z: spawnPreset.z + 0.5 },
+        { x: spawnPreset.x + 1, z: spawnPreset.z + 2.25 },
+        { x: spawnPreset.x - 1.5, z: spawnPreset.z + 1.25 },
+        { x: spawnPreset.x - 0.75, z: spawnPreset.z - 1 }
+      ];
 
-  const route = [
-    { x: spawnPreset.x + 1.75, z: spawnPreset.z + 0.5 },
-    { x: spawnPreset.x + 1, z: spawnPreset.z + 2.25 },
-    { x: spawnPreset.x - 1.5, z: spawnPreset.z + 1.25 },
-    { x: spawnPreset.x - 0.75, z: spawnPreset.z - 1 }
-  ];
+  const patrolCells = rawRoute.map((point) => gridMapper.worldToGridCell({ x: point.x, z: point.z }));
+  const patrolPointsWorld = patrolCells.map((cell) => gridMapper.gridCellToWorld(cell, {
+    resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 })
+  }));
 
-  return route.map((point) => ({ x: point.x, y: resolveGroundY({ runtime, x: point.x, z: point.z, fallbackY: 0 }), z: point.z }));
+  return {
+    patrolCells,
+    patrolPointsWorld
+  };
 }
 
 export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSubset, options: DistrictExplorationOptions = {}) {
@@ -96,12 +103,14 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     resolveAssetPath: options.resolveAssetPath
   });
 
+  const gridMapper = createWorldGridMapper();
+
   const playerEntity = (await loadPlayerCharacter(runtime, {
     playerFile: options.playerFile,
     playerNormalizationId: options.playerNormalizationId,
     resolveAssetPath: options.resolveAssetPath
   })) as EntityLike;
-  spawnPlayerCharacter(runtime, playerEntity);
+  spawnPlayerCharacter(runtime, playerEntity, { gridMapper });
 
   const enemyEntity = (await loadEnemyCharacter(runtime, {
     enemyFile: options.enemyFile,
@@ -109,17 +118,13 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     enemyArchetypeId: options.enemyArchetypeId,
     resolveAssetPath: options.resolveAssetPath
   })) as EntityLike;
-  const enemyPosition = placeEnemyOnGround(runtime, enemyEntity, options.enemySpawn);
-  const patrolPoints = resolveEnemyPatrolPoints(runtime, options.enemySpawn, options.enemyPatrolPoints);
+  const enemyPosition = placeEnemyOnGround(runtime, enemyEntity, gridMapper, options.enemySpawn);
+  const patrolData = resolveEnemyPatrolData(runtime, gridMapper, options.enemySpawn, options.enemyPatrolPoints);
   const initialFacingDirection = options.enemyFacingDirection ?? { x: 0, y: 0, z: -1 };
   const enemyAmbientBehavior = createEnemyAmbientBehavior({
     facingDirection: initialFacingDirection,
-    patrolPoints
-  });
-
-  console.debug('[SillyRPG] Enemy ambient behavior initialized.', {
-    spawnPosition: { x: enemyPosition.x, y: enemyPosition.y, z: enemyPosition.z },
-    patrolPoints
+    patrolPoints: patrolData.patrolPointsWorld,
+    patrolCells: patrolData.patrolCells
   });
 
   const dispose: RuntimeDispose = () => {
@@ -136,6 +141,7 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     playerMeshRoot: playerEntity.rootNode,
     enemyEntity,
     enemyMeshRoot: enemyEntity.rootNode,
+    worldGridMapper: gridMapper,
     enemyPerception: {
       visionAngleDegrees: Number.isFinite(options.enemyVisionAngleDegrees)
         ? Math.max(0, options.enemyVisionAngleDegrees)
@@ -146,6 +152,7 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
       facingDirection: { ...enemyAmbientBehavior.facingDirection }
     },
     enemyAmbientBehavior,
+    resolveGroundY: ({ x, z, fallbackY = 0 }) => resolveGroundY({ runtime, x, z, fallbackY }),
     dispose
   };
 }

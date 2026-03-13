@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { createMovementTargetState } from '../../../world/movement/movementTargetState.ts';
+import { createWorldGridMapper } from '../../../world/spatial/worldGrid.ts';
 import { createPlayerAnimationController } from '../player/playerAnimationController.ts';
 import { PlayerMovementController } from '../player/playerMovementController.ts';
 import { SceneGroundMovementInput } from './sceneGroundMovementInput.ts';
@@ -12,10 +13,17 @@ export interface ExplorationControlsBinder {
   isAttached: () => boolean;
 }
 
+function resolveGroundY(runtime, x: number, z: number, fallbackY = 0): number {
+  const origin = new runtime.BABYLON.Vector3(x, fallbackY + 25, z);
+  const ray = new runtime.BABYLON.Ray(origin, new runtime.BABYLON.Vector3(0, -1, 0), 200);
+  const hit = runtime.scene.pickWithRay(ray, (mesh) => mesh?.isEnabled?.() && mesh.isVisible);
+  return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
+}
+
 export function createExplorationControlsBinder(
   runtime,
   explorationRuntime: {
-    playerEntity: { rootNode: PositionNodeLike & { position: PositionLike } };
+    playerEntity: { rootNode: PositionNodeLike & { position: PositionLike }; gridCell?: { x: number; z: number } | null };
     playerMeshRoot: PositionNodeLike & { position: PositionLike };
   }
 ): ExplorationControlsBinder {
@@ -24,15 +32,20 @@ export function createExplorationControlsBinder(
 
   const playerAnimationController = createPlayerAnimationController(explorationRuntime.playerEntity);
   const movementTargetState = createMovementTargetState();
+  const gridMapper = createWorldGridMapper();
   const movementController = new PlayerMovementController(
     runtime,
     explorationRuntime.playerEntity,
     movementTargetState,
     {
+      moveSpeed: 4,
+      gridMapper,
+      resolveGroundY: ({ x, z, fallbackY }) => resolveGroundY(runtime, x, z, fallbackY),
+      BABYLON: runtime.BABYLON,
       onMovingStateChange: (isMoving: boolean) => playerAnimationController.setMoving(isMoving)
     }
   );
-  const groundClickInput = new SceneGroundMovementInput(runtime, movementTargetState);
+  const groundClickInput = new SceneGroundMovementInput(runtime, movementTargetState, gridMapper);
 
   return {
     attach: () => {
