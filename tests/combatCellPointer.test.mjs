@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { isCombatGuiPick, pickCombatCellAtPointer, tryResolveCellFromPick } from '../src/ui/rendering/combatCellPointer.ts';
+import { isCombatGuiPick, pickCombatCellAtPointer, tryResolveCellFromPick } from '../src/ui/rendering/combat/combatCellPointer.ts';
 
 test('resolves grid cell from highlight mesh name', () => {
   const cell = tryResolveCellFromPick({

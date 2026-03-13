@@ -8,7 +8,7 @@ import {
   placeEntityOnGround,
   readEntityBoundingBox,
   refreshEntityWorldMatrices
-} from '../src/ui/rendering/entityVisualBounds.ts';
+} from '../src/ui/rendering/shared/entityVisualBounds.ts';
 
 test('refreshEntityWorldMatrices updates root descendants and child meshes', () => {
   let rootComputeCount = 0;

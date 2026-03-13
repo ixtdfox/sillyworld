@@ -6,7 +6,7 @@ import {
   createEntityNormalizationConfigStore,
   resolvePlayerNormalizationConfigId,
   resolveEnemyNormalizationConfigId
-} from '../../world/entity/entityNormalization.ts';
+} from '../../../world/entity/entityNormalization.ts';
 import {
   getEntityVisualHeight,
   placeEntityOnGround,

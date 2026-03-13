@@ -1,7 +1,7 @@
 import { resolveCatalogAssetPath } from '../../../platform/browser/assetResolver.ts';
 import type { RegionId } from '../../../shared/types.ts';
 import { createAtlasImage, createInteractiveAtlasButton } from '../../components/interactiveAtlasButton.ts';
-import { createBabylonUiRuntime, ensureBabylonRuntime } from '../../rendering/babylonRuntime.ts';
+import { createBabylonUiRuntime, ensureBabylonRuntime } from '../../rendering/scene/babylonRuntime.ts';
 import { Screen } from '../screenSystem.ts';
 import { PHONE_DISPLAY_BOUNDS } from './phoneDisplayLayout.ts';
 import { PHONE_UI_ATLAS } from './phoneSpriteAtlas.ts';

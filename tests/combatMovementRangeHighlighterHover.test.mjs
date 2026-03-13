@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createCombatMovementRangeHighlighter } from '../src/ui/rendering/combatMovementRangeHighlighter.ts';
+import { createCombatMovementRangeHighlighter } from '../src/ui/rendering/combat/combatMovementRangeHighlighter.ts';
 
 function createObservable() {
   let observer = null;

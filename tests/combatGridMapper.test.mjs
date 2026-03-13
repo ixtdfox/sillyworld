@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createCombatGridMapper } from '../src/ui/rendering/combatGridMapper.ts';
+import { createCombatGridMapper } from '../src/ui/rendering/combat/combatGridMapper.ts';
 
 test('maps world positions to grid and back with 1.5 cell size', () => {
   const mapper = createCombatGridMapper({ cellSize: 1.5, originWorldX: 0, originWorldZ: 0 });

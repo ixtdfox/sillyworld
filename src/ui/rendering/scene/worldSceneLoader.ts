@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { ASSET_PATHS } from '../../core/assets/assetCatalog.ts';
+import { ASSET_PATHS } from '../../../core/assets/assetCatalog.ts';
 
 const SCENE_FILE = ASSET_PATHS.scenes.districtExploration;
 const GROUND_MESH_NAME = 'Ground';
