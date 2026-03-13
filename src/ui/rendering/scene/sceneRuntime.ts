@@ -1,139 +1,26 @@
 // @ts-nocheck
 import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.ts';
-import { createMovementTargetState } from '../../../world/movement/movementTargetState.ts';
-import { createPlayerAnimationController } from '../player/playerAnimationController.ts';
-import { PlayerMovementController } from '../player/playerMovementController.ts';
-import { SceneGroundClickInput } from '../input/sceneGroundClickInput.ts';
-import { attachGameplayIsometricCamera } from '../camera/gameplayCameraController.ts';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.ts';
 import { ENCOUNTER_INTERACTION_DISTANCE } from '../../../world/encounter/encounterRules.ts';
-import { evaluateEnemyPerceptionPipeline } from '../../../world/enemy/enemyPerception.ts';
-import { updateEnemyAmbientBehavior } from '../../../world/enemy/enemyAmbientBehavior.ts';
 import { createCombatRuntime } from '../combat/combatRuntime.ts';
-import { createCombatDebugShell } from '../debug/combatDebugShell.ts';
-import { createEnemyVisionGridDebugOverlay } from '../debug/enemyVisionGridDebugOverlay.ts';
-import { createCombatGridMapper } from '../../../world/combat/combatGridMapper.ts';
+import { EncounterCoordinator } from './encounterCoordinator.ts';
+import { SceneModeController } from './sceneModeController.ts';
+import {
+  RuntimeDebugStateEmitter,
+  type CombatRuntimeLike,
+  type ExplorationRuntimeLike
+} from './runtimeDebugStateEmitter.ts';
+import { createExplorationControlsBinder, type ExplorationControlsBinder } from './explorationControlsBinder.ts';
+import { createBabylonLineOfSightAdapter } from './babylonLineOfSightAdapter.ts';
+import { createPerceptionObserverBinder } from './perceptionObserverBinder.ts';
+import { setupExplorationDebugShell } from './explorationDebugShellSetup.ts';
 import type {
   CombatStateLike,
   EncounterStartPayload,
-  PositionLike,
-  PositionNodeLike,
-  RuntimeDebugState as RuntimeDebugSnapshot,
   RuntimeDispose,
-  RuntimeMode,
-  RuntimeNormalizationState,
   SceneRuntimeMount,
   SceneRuntimeMountOptions
 } from '../shared/runtimeContracts.ts';
-
-interface ExplorationRuntimeLike {
-  districtScene?: { sceneContainer?: unknown; cameras?: unknown[] };
-  playerEntity?: { normalizationDebug?: RuntimeNormalizationState['player']; gameplayDimensions?: { interactionRadius?: number }; rootNode?: PositionNodeLike };
-  enemyEntity?: { normalizationDebug?: RuntimeNormalizationState['enemy']; gameplayDimensions?: { interactionRadius?: number }; rootNode?: PositionNodeLike };
-  enemyPerception?: { visionAngleDegrees?: number; visionDistance?: number; facingDirection?: PositionLike };
-  enemyAmbientBehavior?: { state?: string; facingDirection?: PositionLike; patrolPoints?: PositionLike[] };
-  playerMeshRoot?: PositionNodeLike & { position: PositionLike };
-  enemyMeshRoot?: PositionNodeLike & { position: PositionLike };
-  dispose?: RuntimeDispose;
-}
-
-interface CombatRuntimeLike {
-  combatState?: CombatStateLike;
-  dispose?: RuntimeDispose;
-}
-
-class RuntimeDebugState {
-  readonly #options: SceneRuntimeMountOptions;
-  readonly #runtime: ReturnType<typeof createBabylonWorldRuntime>;
-  #mode: RuntimeMode = 'loading';
-
-  constructor(runtime: ReturnType<typeof createBabylonWorldRuntime>, options: SceneRuntimeMountOptions) {
-    this.#runtime = runtime;
-    this.#options = options;
-  }
-
-  public setMode(mode: RuntimeMode): void {
-    this.#mode = mode;
-  }
-
-  public emit(state: { explorationRuntime: ExplorationRuntimeLike | null; combatRuntime: CombatRuntimeLike | null; combatTransitionStarted: boolean; interactionDistance: number; perceptionResult?: { canSeePlayer?: boolean; reason?: string | null; distanceToPlayer?: number; angleToPlayerDegrees?: number } | null }): void {
-    if (this.#options.debugEnabled !== true || !this.#options.onDebugStateChange) {
-      return;
-    }
-
-    const { explorationRuntime, combatRuntime, combatTransitionStarted, interactionDistance, perceptionResult } = state;
-
-    const normalizationSnapshot: RuntimeNormalizationState | null = explorationRuntime
-      ? {
-          player: explorationRuntime.playerEntity?.normalizationDebug ?? null,
-          enemy: explorationRuntime.enemyEntity?.normalizationDebug ?? null
-        }
-      : null;
-
-    if (this.#mode === 'combat' && combatRuntime?.combatState) {
-      const combatState = combatRuntime.combatState;
-      const activeUnit = combatState.getActiveUnit?.() ?? null;
-      this.#options.onDebugStateChange({
-        mode: this.#mode,
-        combat: {
-          state: combatState.status ?? null,
-          phase: combatState.phase ?? null,
-          round: combatState.turn?.roundNumber ?? null,
-          activeUnit: activeUnit ? `${activeUnit.id}:${activeUnit.displayName ?? activeUnit.id}` : null,
-          turnOwner: activeUnit?.team ?? null,
-          actionMode: combatState.inputMode ?? null,
-          activeUnitAp: activeUnit?.ap ?? null,
-          activeUnitMp: activeUnit?.mp ?? null,
-          playerHp: combatState.units?.player?.hp ?? null,
-          playerAp: combatState.units?.player?.ap ?? null,
-          playerMp: combatState.units?.player?.mp ?? null,
-          enemyHp: combatState.units?.enemy?.hp ?? null,
-          enemyAp: combatState.units?.enemy?.ap ?? null,
-          enemyMp: combatState.units?.enemy?.mp ?? null
-        }
-      });
-      return;
-    }
-
-    if (explorationRuntime?.playerMeshRoot && explorationRuntime?.enemyMeshRoot) {
-      const playerPosition = SceneRuntime.toPositionSnapshot(explorationRuntime.playerMeshRoot);
-      const enemyPosition = SceneRuntime.toPositionSnapshot(explorationRuntime.enemyMeshRoot);
-      const distanceToEnemy = this.#runtime.BABYLON.Vector3.Distance(
-        explorationRuntime.playerMeshRoot.position,
-        explorationRuntime.enemyMeshRoot.position
-      );
-
-      const currentPatrolIndex = Number.isFinite(explorationRuntime.enemyAmbientBehavior?.currentPatrolIndex)
-        ? explorationRuntime.enemyAmbientBehavior.currentPatrolIndex
-        : null;
-      const patrolPoints = explorationRuntime.enemyAmbientBehavior?.patrolPoints ?? [];
-      const patrolTarget = currentPatrolIndex !== null && patrolPoints.length > 0
-        ? patrolPoints[currentPatrolIndex % patrolPoints.length]
-        : null;
-
-      this.#options.onDebugStateChange({
-        mode: this.#mode,
-        exploration: {
-          playerPosition,
-          enemyPosition,
-          distanceToEnemy,
-          enemyInteractionAllowed: !combatTransitionStarted && distanceToEnemy <= interactionDistance,
-          enemyPerceptionDetected: perceptionResult?.canSeePlayer ?? false,
-          enemyPerceptionReason: perceptionResult?.reason ?? null,
-          enemyPerceptionDistance: Number.isFinite(perceptionResult?.distanceToPlayer) ? perceptionResult.distanceToPlayer : null,
-          enemyPerceptionAngle: Number.isFinite(perceptionResult?.angleToPlayerDegrees) ? perceptionResult.angleToPlayerDegrees : null,
-          enemyAiState: explorationRuntime.enemyAmbientBehavior?.state ?? null,
-          enemyPatrolPointIndex: currentPatrolIndex,
-          enemyPatrolTarget: patrolTarget,
-          normalization: normalizationSnapshot
-        }
-      });
-      return;
-    }
-
-    this.#options.onDebugStateChange({ mode: this.#mode, normalization: normalizationSnapshot } as RuntimeDebugSnapshot);
-  }
-}
 
 class SceneMountSession {
   #cleanup: RuntimeDispose[] = [];
@@ -150,86 +37,41 @@ class SceneMountSession {
   }
 }
 
-class EncounterCoordinator {
-  readonly #onEncounterStart?: (payload: EncounterStartPayload) => void;
-  #started = false;
-
-  constructor(onEncounterStart?: (payload: EncounterStartPayload) => void) {
-    this.#onEncounterStart = onEncounterStart;
-  }
-
-  public canStartCombat(): boolean {
-    return !this.#started;
-  }
-
-  public notifyCombatStarted(payload: EncounterStartPayload): void {
-    this.#started = true;
-    this.#onEncounterStart?.(payload);
-  }
-
-  public reset(): void {
-    this.#started = false;
-  }
-}
-
-class WorldModeController {
-  #mode: RuntimeMode = 'loading';
-
-  public getMode(): RuntimeMode {
-    return this.#mode;
-  }
-
-  public enterExplorationMode() {
-    this.#mode = 'exploration';
-  }
-
-  public enterCombatMode() {
-    this.#mode = 'combat';
-  }
-
-  public enterTransitionMode() {
-    this.#mode = 'transitioning';
-  }
-}
-
 export class SceneRuntime {
   readonly #runtime: ReturnType<typeof createBabylonWorldRuntime>;
   readonly #options: SceneRuntimeMountOptions;
-  readonly #debugState: RuntimeDebugState;
+  readonly #debugState: RuntimeDebugStateEmitter;
   readonly #mountSession = new SceneMountSession();
   readonly #encounterCoordinator: EncounterCoordinator;
-  readonly #modeController = new WorldModeController();
+  readonly #modeController = new SceneModeController();
 
   #explorationRuntime: ExplorationRuntimeLike | null = null;
   #combatRuntime: CombatRuntimeLike | null = null;
   #combatExitInProgress = false;
   #combatExitCooldownUntil = 0;
   #interactionDistance: number;
-  #detachExplorationInputs: RuntimeDispose = () => {};
-  #attachExplorationControls: (() => void) | null = null;
-  #explorationControlsAttached = false;
-  #perceptionObserver: unknown | null = null;
+  #explorationControls: ExplorationControlsBinder | null = null;
+  #perceptionBinder: { attach: () => void; detach: () => void } | null = null;
   #lastPerceptionResult: { canSeePlayer?: boolean; reason?: string | null; distanceToPlayer?: number; angleToPlayerDegrees?: number } | null = null;
   #explorationDebugShell: { dispose?: RuntimeDispose } | null = null;
+  #hasLineOfSight: (args: any) => boolean;
 
   constructor(canvas: HTMLCanvasElement, options: SceneRuntimeMountOptions = {}) {
     this.#runtime = createBabylonWorldRuntime(canvas);
     this.#options = options;
-    this.#debugState = new RuntimeDebugState(this.#runtime, this.#options);
+    this.#debugState = new RuntimeDebugStateEmitter(this.#runtime, this.#options);
     this.#encounterCoordinator = new EncounterCoordinator(this.#options.onEncounterStart);
     this.#interactionDistance = options.interactionDistance ?? ENCOUNTER_INTERACTION_DISTANCE;
+    this.#hasLineOfSight = createBabylonLineOfSightAdapter(this.#runtime, () => ({
+      enemyRoot: this.#explorationRuntime?.enemyMeshRoot,
+      playerRoot: this.#explorationRuntime?.playerMeshRoot
+    }));
   }
 
   public async mount(): Promise<RuntimeDispose> {
     const debugObserver = this.#options.debugEnabled === true
       ? this.#runtime.scene.onBeforeRenderObservable.add(() => {
-          this.#debugState.emit({
-            explorationRuntime: this.#explorationRuntime,
-            combatRuntime: this.#combatRuntime,
-            combatTransitionStarted: !this.#encounterCoordinator.canStartCombat(),
-            interactionDistance: this.#interactionDistance,
-            perceptionResult: this.#lastPerceptionResult
-          });
+          this.#emitDebugState();
         })
       : null;
 
@@ -256,16 +98,14 @@ export class SceneRuntime {
     return () => this.#mountSession.dispose();
   }
 
-  static toPositionSnapshot(node?: PositionNodeLike | null): PositionLike | null {
-    if (!node?.position) {
-      return null;
-    }
-
-    return {
-      x: node.position.x,
-      y: node.position.y,
-      z: node.position.z
-    };
+  #emitDebugState(): void {
+    this.#debugState.emit({
+      explorationRuntime: this.#explorationRuntime,
+      combatRuntime: this.#combatRuntime,
+      combatTransitionStarted: !this.#encounterCoordinator.canStartCombat(),
+      interactionDistance: this.#interactionDistance,
+      perceptionResult: this.#lastPerceptionResult
+    });
   }
 
   #disposeCombatRuntime(): void {
@@ -274,13 +114,21 @@ export class SceneRuntime {
   }
 
   #disposeExplorationControls(): void {
-    this.#detachExplorationInputs?.();
-    this.#detachExplorationInputs = () => {};
+    this.#explorationControls?.dispose?.();
+    this.#explorationControls = null;
   }
 
   #disposeExplorationDebugShell(): void {
     this.#explorationDebugShell?.dispose?.();
     this.#explorationDebugShell = null;
+  }
+
+  #detachPerceptionObserver(): void {
+    this.#perceptionBinder?.detach();
+  }
+
+  #attachEnemyPerceptionObserver(): void {
+    this.#perceptionBinder?.attach();
   }
 
   async #setupExplorationRuntime(): Promise<void> {
@@ -315,79 +163,43 @@ export class SceneRuntime {
       throw new Error('Exploration runtime must expose player and enemy mesh roots.');
     }
 
-    const playerAnimationController = createPlayerAnimationController(explorationRuntime.playerEntity);
-    const movementTargetState = createMovementTargetState();
-    const movementController = new PlayerMovementController(
-      this.#runtime,
-      explorationRuntime.playerEntity as { rootNode: PositionNodeLike & { position: PositionLike } },
-      movementTargetState,
-      {
-        onMovingStateChange: (isMoving: boolean) => playerAnimationController.setMoving(isMoving)
-      }
-    );
-    const groundClickInput = new SceneGroundClickInput(this.#runtime, movementTargetState);
+    this.#explorationControls = createExplorationControlsBinder(this.#runtime, {
+      playerEntity: explorationRuntime.playerEntity,
+      playerMeshRoot: explorationRuntime.playerMeshRoot
+    });
+    this.#explorationControls.attach();
 
-    this.#attachExplorationControls = () => {
-      if (this.#explorationControlsAttached) {
-        return;
-      }
+    if (this.#options.debugEnabled) {
+      this.#disposeExplorationDebugShell();
+      this.#explorationDebugShell = setupExplorationDebugShell(this.#runtime, {
+        getExplorationRuntime: () => this.#explorationRuntime,
+        hasLineOfSight: this.#hasLineOfSight
+      });
+    }
 
-      this.#explorationControlsAttached = true;
-      const innerDetachGroundInput = groundClickInput.attach();
-      const innerDetachMovement = movementController.attach();
-      const innerDetachCamera = attachGameplayIsometricCamera(this.#runtime, explorationRuntime.playerMeshRoot);
-
-      this.#detachExplorationInputs = () => {
-        if (!this.#explorationControlsAttached) {
+    this.#perceptionBinder = createPerceptionObserverBinder(this.#runtime, {
+      getExplorationRuntime: () => this.#explorationRuntime,
+      canRun: () => this.#encounterCoordinator.canStartCombat() && this.#modeController.getMode() === 'exploration',
+      isCooldownActive: () => Date.now() < this.#combatExitCooldownUntil,
+      hasLineOfSight: this.#hasLineOfSight,
+      onPerceptionUpdated: (perceptionResult) => {
+        this.#lastPerceptionResult = perceptionResult;
+      },
+      onCombatTriggered: ({ distanceToEnemy }) => {
+        if (!this.#explorationRuntime?.playerMeshRoot || !this.#explorationRuntime?.enemyMeshRoot) {
           return;
         }
 
-        this.#explorationControlsAttached = false;
-        innerDetachGroundInput();
-        innerDetachMovement();
-        innerDetachCamera();
-        this.#detachExplorationInputs = () => {};
-      };
-    };
-
-    this.#attachExplorationControls();
-    if (this.#options.debugEnabled) {
-      this.#disposeExplorationDebugShell();
-      const debugShell = createCombatDebugShell(this.#runtime, { runtimeKey: '__sceneDebugShellController' });
-      debugShell.registerPanel({
-        id: 'enemy-vision-grid',
-        label: 'Enemy Vision Grid',
-        initialVisible: true,
-        createPanel: () => createEnemyVisionGridDebugOverlay(this.#runtime, {
-          getEnemyActor: () => {
-            if (!this.#explorationRuntime?.enemyMeshRoot) {
-              return null;
-            }
-
-            return {
-              id: 'scene_enemy',
-              rootNode: this.#explorationRuntime.enemyMeshRoot,
-              perception: {
-                visionAngleDegrees: this.#explorationRuntime.enemyPerception?.visionAngleDegrees,
-                visionDistance: this.#explorationRuntime.enemyPerception?.visionDistance
-              },
-              facingDirection: this.#explorationRuntime.enemyPerception?.facingDirection
-            };
-          },
-          getPlayerActor: () => this.#explorationRuntime?.playerMeshRoot
-            ? { id: 'scene_player', rootNode: this.#explorationRuntime.playerMeshRoot }
-            : null,
-          resolveY: (position: PositionLike) => position?.y ?? 0,
-          hasLineOfSight: ({ enemy, targetPosition, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
-            enemy,
-            targetPosition,
-            directionToPlayer,
-            distanceToPlayer
-          })
-        })
-      });
-      this.#explorationDebugShell = debugShell;
-    }
+        this.enterCombatMode({
+          playerRoot: this.#explorationRuntime.playerMeshRoot,
+          enemyRoot: this.#explorationRuntime.enemyMeshRoot,
+          distanceToEnemy,
+          interactionDistance: this.#interactionDistance
+        }).catch((error) => {
+          console.error('[SillyRPG] Failed to enter world combat mode after enemy perception detection.', error);
+        });
+      }
+    });
     this.#attachEnemyPerceptionObserver();
 
     const previousDispose = explorationRuntime.dispose;
@@ -399,193 +211,6 @@ export class SceneRuntime {
     };
   }
 
-  #hasLineOfSight({ enemy, targetPosition, directionToPlayer, distanceToPlayer }): boolean {
-    const enemyPosition = enemy?.rootNode?.position;
-    if (!enemyPosition || !Number.isFinite(distanceToPlayer) || distanceToPlayer <= 0) {
-      return false;
-    }
-
-    const eyeHeight = 1.15;
-    const origin = new this.#runtime.BABYLON.Vector3(
-        enemyPosition.x,
-        enemyPosition.y + eyeHeight,
-        enemyPosition.z
-    );
-
-    const resolvedTarget = targetPosition ?? {
-      x: enemyPosition.x + directionToPlayer.x * distanceToPlayer,
-      y: enemyPosition.y + directionToPlayer.y * distanceToPlayer,
-      z: enemyPosition.z + directionToPlayer.z * distanceToPlayer
-    };
-
-    const target = new this.#runtime.BABYLON.Vector3(
-        resolvedTarget.x,
-        (resolvedTarget.y ?? enemyPosition.y) + eyeHeight,
-        resolvedTarget.z
-    );
-
-    const toTarget = target.subtract(origin);
-    const rayLength = Math.max(0.01, toTarget.length());
-    const rayDirection = toTarget.normalize();
-    const ray = new this.#runtime.BABYLON.Ray(origin, rayDirection, rayLength);
-
-    const enemyRoot = this.#explorationRuntime?.enemyMeshRoot;
-    const playerRoot = this.#explorationRuntime?.playerMeshRoot;
-
-    const hit = this.#runtime.scene.pickWithRay(ray, (mesh) => {
-      if (!mesh?.isEnabled?.() || mesh?.isVisible === false) {
-        return false;
-      }
-
-      if (mesh?.metadata?.isEnemyVisionDebugOverlay === true) {
-        return false;
-      }
-
-      if (isSameNodeOrDescendant(mesh, enemyRoot)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    if (!hit?.hit || !hit.pickedMesh) {
-      return true;
-    }
-
-    if (isSameNodeOrDescendant(hit.pickedMesh, playerRoot)) {
-      return true;
-    }
-
-    return false;
-  }
-
-
-
-  #detachPerceptionObserver(): void {
-    if (this.#perceptionObserver) {
-      this.#runtime.scene.onBeforeRenderObservable.remove(this.#perceptionObserver);
-      this.#perceptionObserver = null;
-    }
-  }
-
-  #attachEnemyPerceptionObserver(): void {
-    this.#detachPerceptionObserver();
-
-    const gridMapper = createCombatGridMapper();
-
-    this.#perceptionObserver = this.#runtime.scene.onBeforeRenderObservable.add(() => {
-      if (!this.#explorationRuntime?.enemyMeshRoot || !this.#explorationRuntime?.playerMeshRoot) {
-        return;
-      }
-      if (!this.#encounterCoordinator.canStartCombat()) {
-        return;
-      }
-      if (this.#modeController.getMode() !== 'exploration') {
-        return;
-      }
-      if (Date.now() < this.#combatExitCooldownUntil) {
-        return;
-      }
-
-      const deltaMs = this.#runtime.engine?.getDeltaTime?.() ?? 16;
-      const deltaSeconds = Math.max(0, deltaMs / 1000);
-
-      const updatedBehavior = this.#explorationRuntime.enemyAmbientBehavior
-        ? updateEnemyAmbientBehavior({
-            enemyRootNode: this.#explorationRuntime.enemyMeshRoot,
-            behavior: this.#explorationRuntime.enemyAmbientBehavior,
-            deltaSeconds,
-            logger: console
-          })
-        : null;
-
-      if (updatedBehavior?.facingDirection) {
-        this.#explorationRuntime.enemyPerception = this.#explorationRuntime.enemyPerception ?? {};
-        this.#explorationRuntime.enemyPerception.facingDirection = { ...updatedBehavior.facingDirection };
-      }
-
-      const enemyActor = {
-        id: 'scene_enemy',
-        rootNode: this.#explorationRuntime.enemyMeshRoot,
-        perception: {
-          visionAngleDegrees: this.#explorationRuntime.enemyPerception?.visionAngleDegrees,
-          visionDistance: this.#explorationRuntime.enemyPerception?.visionDistance
-        },
-        facingDirection: this.#explorationRuntime.enemyPerception?.facingDirection
-      };
-      const playerActor = {
-        id: 'scene_player',
-        rootNode: this.#explorationRuntime.playerMeshRoot
-      };
-
-      let pipelineResult;
-      try {
-        pipelineResult = evaluateEnemyPerceptionPipeline(enemyActor, playerActor, gridMapper, {
-          hasLineOfSight: ({ enemy, targetPosition, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
-            enemy,
-            targetPosition,
-            directionToPlayer,
-            distanceToPlayer
-          })
-        });
-      } catch (error) {
-        console.error('[SillyRPG] Enemy perception pipeline update failed.', {
-          error,
-          enemyPosition: enemyActor?.rootNode?.position ?? null,
-          playerPosition: playerActor?.rootNode?.position ?? null,
-          facingDirection: enemyActor?.facingDirection ?? null
-        });
-        return;
-      }
-
-      this.#lastPerceptionResult = {
-        ...pipelineResult.perceptionResult,
-        canSeePlayer: pipelineResult.playerCellVisible
-      };
-
-      const combatTriggerCalled = pipelineResult.playerCellVisible === true;
-
-    /*  console.debug('[SillyRPG] Enemy perception pipeline.', {
-        enemyPosition: pipelineResult.enemyPosition,
-        enemyFacingDirection: pipelineResult.facingDirection,
-        enemyCell: pipelineResult.enemyCell,
-        visibleCellsCount: pipelineResult.visibleCells.length,
-        blockedCellsCount: pipelineResult.blockedCells.length,
-        playerPosition: pipelineResult.playerPosition,
-        playerCell: pipelineResult.playerCell,
-        playerCellVisible: pipelineResult.playerCellVisible,
-        perceptionReason: pipelineResult.perceptionResult.reason,
-        perceptionCanSeePlayer: pipelineResult.perceptionResult.canSeePlayer,
-        combatTriggerCalled
-      });*/
-
-      if (combatTriggerCalled) {
-        console.info('[SillyRPG] Enemy perception triggered combat.', {
-          combatTriggerCalled: true,
-          playerCell: pipelineResult.playerCell,
-          enemyCell: pipelineResult.enemyCell,
-          visibleCellsCount: pipelineResult.visibleCells.length
-        });
-
-        this.enterCombatMode({
-          playerRoot: this.#explorationRuntime.playerMeshRoot,
-          enemyRoot: this.#explorationRuntime.enemyMeshRoot,
-          distanceToEnemy: pipelineResult.perceptionResult.distanceToPlayer,
-          interactionDistance: this.#interactionDistance
-        }).catch((error) => {
-          console.error('[SillyRPG] Failed to enter world combat mode after enemy perception detection.', error);
-        });
-      } else {
-       /* console.debug('[SillyRPG] Enemy perception did not trigger combat.', {
-          combatTriggerCalled: false,
-          playerCell: pipelineResult.playerCell,
-          visibleCellsCount: pipelineResult.visibleCells.length
-        });*/
-      }
-    });
-  }
-
-
   async exitCombatMode(): Promise<void> {
     if (this.#combatExitInProgress) {
       console.debug('[SillyRPG] Combat mode exit ignored because exit is already in progress.');
@@ -595,13 +220,7 @@ export class SceneRuntime {
     this.#combatExitInProgress = true;
     this.#modeController.enterTransitionMode();
     this.#debugState.setMode(this.#modeController.getMode());
-    this.#debugState.emit({
-      explorationRuntime: this.#explorationRuntime,
-      combatRuntime: this.#combatRuntime,
-      combatTransitionStarted: !this.#encounterCoordinator.canStartCombat(),
-      interactionDistance: this.#interactionDistance,
-      perceptionResult: this.#lastPerceptionResult
-    });
+    this.#emitDebugState();
 
     try {
       this.#disposeCombatRuntime();
@@ -625,13 +244,7 @@ export class SceneRuntime {
 
     this.#modeController.enterTransitionMode();
     this.#debugState.setMode(this.#modeController.getMode());
-    this.#debugState.emit({
-      explorationRuntime: this.#explorationRuntime,
-      combatRuntime: this.#combatRuntime,
-      combatTransitionStarted: true,
-      interactionDistance: this.#interactionDistance,
-      perceptionResult: this.#lastPerceptionResult
-    });
+    this.#emitDebugState();
 
     this.#disposeExplorationControls();
     this.#detachPerceptionObserver();
@@ -664,13 +277,7 @@ export class SceneRuntime {
     this.#combatRuntime = combatRuntime as CombatRuntimeLike;
     this.#modeController.enterCombatMode();
     this.#debugState.setMode(this.#modeController.getMode());
-    this.#debugState.emit({
-      explorationRuntime: this.#explorationRuntime,
-      combatRuntime: this.#combatRuntime,
-      combatTransitionStarted: true,
-      interactionDistance: this.#interactionDistance,
-      perceptionResult: this.#lastPerceptionResult
-    });
+    this.#emitDebugState();
 
     const combatState = (combatRuntime as CombatRuntimeLike).combatState;
     console.info('[SillyRPG] Combat mode entered');
@@ -689,47 +296,15 @@ export class SceneRuntime {
   enterExplorationMode(): void {
     this.#modeController.enterExplorationMode();
     this.#debugState.setMode(this.#modeController.getMode());
-    this.#debugState.emit({
-      explorationRuntime: this.#explorationRuntime,
-      combatRuntime: this.#combatRuntime,
-      combatTransitionStarted: !this.#encounterCoordinator.canStartCombat(),
-      interactionDistance: this.#interactionDistance,
-      perceptionResult: this.#lastPerceptionResult
-    });
+    this.#emitDebugState();
 
     if (this.#modeController.getMode() === 'exploration' && this.#explorationRuntime?.playerMeshRoot) {
-      this.#setupExplorationControlsIfMissing();
+      if (!this.#explorationControls?.isAttached()) {
+        this.#explorationControls?.attach();
+      }
       this.#attachEnemyPerceptionObserver();
     }
   }
-
-  #setupExplorationControlsIfMissing() {
-    if (this.#explorationControlsAttached) {
-      return;
-    }
-
-    this.#attachExplorationControls?.();
-  }
-}
-
-function isSameNodeOrDescendant(mesh: any, root: any): boolean {
-  if (!mesh || !root) {
-    return false;
-  }
-
-  if (mesh === root) {
-    return true;
-  }
-
-  let current = mesh.parent;
-  while (current) {
-    if (current === root) {
-      return true;
-    }
-    current = current.parent;
-  }
-
-  return false;
 }
 
 export const mountSceneRuntime: SceneRuntimeMount = async (
