@@ -174,7 +174,13 @@ function evaluateEnemyVisionTarget(
       visionAngleDegrees: settings.visionAngleDegrees
     };
   }
-
+  const logger = resolveLogger(world);
+  logger.debug('[SillyRPG] Enemy SEEE PLAYET!.', {
+    enemyId: enemy?.id ?? null,
+    playerId: player?.id ?? null,
+    distanceToPlayer: distanceToPlayer,
+    angleToPlayerDegrees: angleToPlayerDegrees
+  });
   return {
     canSeePlayer: true,
     reason: 'detected',
@@ -211,7 +217,7 @@ export function canEnemySeePlayer(
   }
 
   const result = evaluateEnemyVisionTarget(enemy, playerPosition, world, player);
-  if (result.reason === 'out-of-range') {
+  /*if (result.reason === 'out-of-range') {
     logger.debug('[SillyRPG] Enemy perception failed: player is out of range.', {
       enemyId: enemy?.id ?? null,
       playerId: player?.id ?? null,
@@ -233,7 +239,7 @@ export function canEnemySeePlayer(
       distanceToPlayer: result.distanceToPlayer,
       angleToPlayerDegrees: result.angleToPlayerDegrees
     });
-  }
+  }*/
 
   return result;
 }

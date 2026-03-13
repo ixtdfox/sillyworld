@@ -1,4 +1,4 @@
-import { MAP_LEVEL } from '../../world/constants/types.ts';
+import { MAP_LEVEL } from '../../world/constant/types.ts';
 import type {
   ContextId,
   MapLevelId,

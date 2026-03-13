@@ -158,11 +158,11 @@ export function updateEnemyAmbientBehavior(params: {
     behavior.facingDirection = direction;
     setRootYaw(enemyRootNode, yawFromDirection(direction));
 
-    logger.debug('[SillyRPG] Enemy patrol update.', {
+    /*logger.debug('[SillyRPG] Enemy patrol update.', {
       patrolTarget: { x: target.x, y: target.y, z: target.z },
       distanceToTarget,
       patrolPointIndex: behavior.currentPatrolIndex
-    });
+    });*/
   }
 
   return behavior;

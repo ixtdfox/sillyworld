@@ -2,14 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createWorldStore } from '../src/world/worldStore.ts';
-import { TIME_OF_DAY, TIME_PHASE } from '../src/world/constants/types.ts';
-import { getInventoryWeight, canTakeItem } from '../src/world/selectors/inventorySelectors.ts';
-import { advanceTime, advanceTimeBySteps, advanceToTimePhase, getStepsUntilPhase, getTimeCostForAction } from '../src/world/actions/timeActions.ts';
-import { setRelationship as setRelationshipAction } from '../src/world/actions/relationshipActions.ts';
+import { TIME_OF_DAY, TIME_PHASE } from '../src/world/constant/types.ts';
+import { getInventoryWeight, canTakeItem } from '../src/world/inventory/inventorySelectors.ts';
+import { advanceTime, advanceTimeBySteps, advanceToTimePhase, getStepsUntilPhase, getTimeCostForAction } from '../src/world/time/timeActions.ts';
+import { setRelationship as setRelationshipAction } from '../src/world/relationship/relationshipActions.ts';
 import { deserializeGameState, serializeGameState } from '../src/world/worldPersistence.ts';
-import { getDistrictById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from '../src/world/selectors/settingSelectors.ts';
-import { getLocationAvailability } from '../src/world/selectors/locationAvailabilitySelectors.ts';
-import { evaluateNpcAvailability, getNpcAvailability, getNpcsForLocation } from '../src/world/selectors/npcAvailabilitySelectors.ts';
+import { getDistrictById, getFactionsForPointOfInterest, getLocationMeta, getPointOfInterestById, getPointsOfInterestForDistrict } from '../src/world/map/settingSelectors.ts';
+import { getLocationAvailability } from '../src/world/map/locationAvailabilitySelectors.ts';
+import { evaluateNpcAvailability, getNpcAvailability, getNpcsForLocation } from '../src/world/character/npcAvailabilitySelectors.ts';
 
 const seed = JSON.parse(fs.readFileSync(new URL('../src/world/seed_world.json', import.meta.url), 'utf8'));
 

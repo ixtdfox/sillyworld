@@ -1,6 +1,6 @@
-import { SCHEMA_VERSION } from './constants/types.ts';
+import { SCHEMA_VERSION } from './constant/types.ts';
 import { createGameState } from './worldState.ts';
-import { normalizeTimePhase } from './actions/timeActions.ts';
+import { normalizeTimePhase } from './time/timeActions.ts';
 import type { GameState, GameStateSeed } from './contracts.ts';
 
 type MigratableState = Record<string, unknown> & {

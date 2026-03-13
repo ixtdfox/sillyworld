@@ -1,5 +1,5 @@
-import { TIME_PHASE } from '../constants/types.ts';
-import { advanceTimeBySteps, advanceToTimePhase } from './timeActions.ts';
+import { TIME_PHASE } from '../constant/types.ts';
+import { advanceTimeBySteps, advanceToTimePhase } from '../time/timeActions.ts';
 import type { GameState, PhaseTransitionRecord, RestActionResponse } from '../contracts.ts';
 
 const REST_ACTION = Object.freeze({
@@ -43,7 +43,7 @@ export function performRestAction(state: GameState, actionId: string) {
   if (!isAtHome(state)) {
     return {
       ok: false,
-      reason: 'Rest actions are only available at home.',
+      reason: 'Rest time are only available at home.',
       state
     };
   }

@@ -1,5 +1,5 @@
-import { TIME_OF_DAY, TIME_PHASE } from '../constants/types.ts';
-import { normalizeTimePhase } from '../actions/timeActions.ts';
+import { TIME_OF_DAY, TIME_PHASE } from '../constant/types.ts';
+import { normalizeTimePhase } from '../time/timeActions.ts';
 import type { GameStateSeed, TimePhase, TimeOfDay, WorldState, WorldPhaseTransitionState } from '../contracts.ts';
 
 const PHASE_TO_TIME_OF_DAY: Record<TimePhase, TimeOfDay> = Object.freeze({
