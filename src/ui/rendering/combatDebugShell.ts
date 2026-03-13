@@ -1,5 +1,5 @@
 // @ts-nocheck
-const SHELL_RUNTIME_KEY = '__combatDebugShellController';
+const DEFAULT_SHELL_RUNTIME_KEY = '__combatDebugShellController';
 
 function createPrimitiveButton(runtime, label, onClick) {
   const button = new runtime.BABYLON.GUI.Rectangle();
@@ -49,9 +49,13 @@ function normalizePanelController(created) {
   };
 }
 
-export function createCombatDebugShell(runtime) {
-  if (runtime[SHELL_RUNTIME_KEY]) {
-    runtime[SHELL_RUNTIME_KEY].dispose();
+export function createCombatDebugShell(runtime, options = {}) {
+  const runtimeKey = typeof options.runtimeKey === 'string' && options.runtimeKey.length > 0
+    ? options.runtimeKey
+    : DEFAULT_SHELL_RUNTIME_KEY;
+
+  if (runtime[runtimeKey]) {
+    runtime[runtimeKey].dispose();
   }
 
   const texture = runtime.BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('combatDebugShell', true, runtime.scene);
@@ -187,8 +191,8 @@ export function createCombatDebugShell(runtime) {
     panels.clear();
     texture.dispose();
 
-    if (runtime[SHELL_RUNTIME_KEY] === shell) {
-      delete runtime[SHELL_RUNTIME_KEY];
+    if (runtime[runtimeKey] === shell) {
+      delete runtime[runtimeKey];
     }
   };
 
@@ -197,6 +201,6 @@ export function createCombatDebugShell(runtime) {
     dispose
   };
 
-  runtime[SHELL_RUNTIME_KEY] = shell;
+  runtime[runtimeKey] = shell;
   return shell;
 }
