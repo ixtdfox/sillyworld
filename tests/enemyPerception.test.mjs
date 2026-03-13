@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { canEnemySeePlayer, updateEnemyPerception } from '../src/ui/rendering/enemyPerception.ts';
+import { canEnemySeePlayer, getEnemyVisionCoverage, updateEnemyPerception } from '../src/ui/rendering/enemyPerception.ts';
 
 function actor({ x, y = 0, z, perception, facingDirection } = {}) {
   return {
@@ -61,4 +61,35 @@ test('updateEnemyPerception runs same detection result', () => {
   const result = updateEnemyPerception(enemy, player);
   assert.equal(result.canSeePlayer, true);
   assert.equal(result.reason, 'detected');
+});
+
+test('getEnemyVisionCoverage returns visible cells from the same FOV constraints', () => {
+  const enemy = actor({ x: 0, z: 0, perception: { visionAngleDegrees: 90, visionDistance: 2 }, facingDirection: { x: 0, y: 0, z: 1 } });
+  const mapper = {
+    cellSize: 1,
+    worldToGridCell: ({ x, z }) => ({ x: Math.floor(x), z: Math.floor(z) }),
+    gridCellToWorld: ({ x, z }) => ({ x: x + 0.5, y: 0, z: z + 0.5 })
+  };
+
+  const coverage = getEnemyVisionCoverage(enemy, mapper);
+  const visibleKeys = new Set(coverage.visibleCells.map((cell) => `${cell.x},${cell.z}`));
+
+  assert.equal(visibleKeys.has('0,1'), true);
+  assert.equal(visibleKeys.has('0,-1'), false);
+});
+
+test('getEnemyVisionCoverage surfaces blocked cells when LOS callback blocks target cell', () => {
+  const enemy = actor({ x: 0, z: 0, perception: { visionAngleDegrees: 180, visionDistance: 3 }, facingDirection: { x: 0, y: 0, z: 1 } });
+  const mapper = {
+    cellSize: 1,
+    worldToGridCell: ({ x, z }) => ({ x: Math.floor(x), z: Math.floor(z) }),
+    gridCellToWorld: ({ x, z }) => ({ x: x + 0.5, y: 0, z: z + 0.5 })
+  };
+
+  const coverage = getEnemyVisionCoverage(enemy, mapper, {
+    hasLineOfSight: ({ targetPosition }) => !(Math.floor(targetPosition.x) === 0 && Math.floor(targetPosition.z) === 2)
+  });
+  const blockedKeys = new Set(coverage.blockedCells.map((cell) => `${cell.x},${cell.z}`));
+
+  assert.equal(blockedKeys.has('0,2'), true);
 });
