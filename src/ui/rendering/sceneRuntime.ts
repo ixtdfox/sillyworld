@@ -428,12 +428,6 @@ export class SceneRuntime {
       if (mesh?.metadata?.isEnemyVisionDebugOverlay === true) {
         return false;
       }
-      if (mesh?.metadata?.isGround === true) {
-        return false;
-      }
-      if (typeof mesh?.name === 'string' && mesh.name.toLowerCase().includes('ground')) {
-        return false;
-      }
       return true;
     });
 
@@ -500,7 +494,7 @@ export class SceneRuntime {
       };
 
       const pipelineResult = evaluateEnemyPerceptionPipeline(enemyActor, playerActor, gridMapper, {
-        hasLineOfSight: ({ enemy, targetPosition, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
+        hasLineOfSight: ({ enemy, directionToPlayer, distanceToPlayer }) => this.#hasLineOfSight({
           enemy,
           targetPosition,
           directionToPlayer,
