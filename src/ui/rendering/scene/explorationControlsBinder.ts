@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createMovementTargetState } from '../../../world/movement/movementTargetState.ts';
 import { createWorldGridMapper } from '../../../world/spatial/worldGrid.ts';
+import { createCombatGrid } from '../../../world/combat/combatGrid.ts';
 import { createPlayerAnimationController } from '../player/playerAnimationController.ts';
 import { PlayerMovementController } from '../player/playerMovementController.ts';
 import { SceneGroundMovementInput } from './sceneGroundMovementInput.ts';
@@ -33,6 +34,13 @@ export function createExplorationControlsBinder(
   const playerAnimationController = createPlayerAnimationController(explorationRuntime.playerEntity);
   const movementTargetState = createMovementTargetState();
   const gridMapper = createWorldGridMapper();
+  const worldGrid = createCombatGrid({
+    minX: gridMapper.minX,
+    maxX: gridMapper.maxX,
+    minZ: gridMapper.minZ,
+    maxZ: gridMapper.maxZ,
+    blockedCells: gridMapper.blockedCells
+  });
   const movementController = new PlayerMovementController(
     runtime,
     explorationRuntime.playerEntity,
@@ -40,12 +48,13 @@ export function createExplorationControlsBinder(
     {
       moveSpeed: 4,
       gridMapper,
+      grid: worldGrid,
       resolveGroundY: ({ x, z, fallbackY }) => resolveGroundY(runtime, x, z, fallbackY),
       BABYLON: runtime.BABYLON,
       onMovingStateChange: (isMoving: boolean) => playerAnimationController.setMoving(isMoving)
     }
   );
-  const groundClickInput = new SceneGroundMovementInput(runtime, movementTargetState, gridMapper);
+  const groundClickInput = new SceneGroundMovementInput(runtime, movementTargetState, gridMapper, worldGrid);
 
   return {
     attach: () => {

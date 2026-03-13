@@ -59,12 +59,61 @@ test('accepts Ground picks and sets movement target', () => {
     }
   });
   const movementTargetState = createMovementTargetState();
+  const gridMapper = {
+    worldToGridCell: ({ x, z }) => ({ x: Math.floor(x), z: Math.floor(z) })
+  };
 
-  attachSceneGroundMovementInput(runtime, movementTargetState);
+  attachSceneGroundMovementInput(runtime, movementTargetState, gridMapper);
   runtime.triggerPointerDown();
 
-  assert.deepEqual(movementTargetState.getTarget(), { x: 1, y: 2, z: 3 });
+  assert.deepEqual(movementTargetState.getTarget(), { x: 1, z: 3 });
   assert.equal(movementTargetState.getClearCount(), 0);
+});
+
+test('uses mesh metadata gridCell when available', () => {
+  const point = { x: 2.25, y: 0, z: 5.75, clone: () => ({ x: 2.25, y: 0, z: 5.75 }) };
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedMesh: { name: 'Ground', parent: null, metadata: { gridCell: { x: 7, z: -2 } } },
+      pickedPoint: point
+    }
+  });
+  const movementTargetState = createMovementTargetState();
+  const gridMapper = {
+    worldToGridCell: () => ({ x: 999, z: 999 })
+  };
+
+  attachSceneGroundMovementInput(runtime, movementTargetState, gridMapper);
+  runtime.triggerPointerDown();
+
+  assert.deepEqual(movementTargetState.getTarget(), { x: 7, z: -2 });
+  assert.equal(movementTargetState.getClearCount(), 0);
+});
+
+test('rejects blocked destination cell and clears stale movement target', () => {
+  const point = { x: 1.2, y: 2, z: 3.7, clone: () => ({ x: 1.2, y: 2, z: 3.7 }) };
+  const runtime = createRuntime({
+    pickResult: {
+      hit: true,
+      pickedMesh: { name: 'Ground', parent: null },
+      pickedPoint: point
+    }
+  });
+  const movementTargetState = createMovementTargetState();
+  movementTargetState.setTarget({ x: 9, z: 9 });
+  const gridMapper = {
+    worldToGridCell: ({ x, z }) => ({ x: Math.floor(x), z: Math.floor(z) })
+  };
+  const grid = {
+    isCellWalkable: ({ x, z }) => !(x === 1 && z === 3)
+  };
+
+  attachSceneGroundMovementInput(runtime, movementTargetState, gridMapper, grid);
+  runtime.triggerPointerDown();
+
+  assert.equal(movementTargetState.getTarget(), null);
+  assert.equal(movementTargetState.getClearCount(), 1);
 });
 
 test('rejects Wall picks and clears stale movement target', () => {
