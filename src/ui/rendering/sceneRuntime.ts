@@ -202,6 +202,7 @@ export class SceneRuntime {
   #explorationRuntime: ExplorationRuntimeLike | null = null;
   #combatRuntime: CombatRuntimeLike | null = null;
   #combatExitInProgress = false;
+  #combatExitCooldownUntil = 0;
   #interactionDistance: number;
   #detachExplorationInputs: RuntimeDispose = () => {};
   #attachExplorationControls: (() => void) | null = null;
@@ -437,6 +438,9 @@ export class SceneRuntime {
       if (this.#modeController.getMode() !== 'exploration') {
         return;
       }
+      if (Date.now() < this.#combatExitCooldownUntil) {
+        return;
+      }
 
       const deltaMs = this.#runtime.engine?.getDeltaTime?.() ?? 16;
       const deltaSeconds = Math.max(0, deltaMs / 1000);
@@ -512,6 +516,7 @@ export class SceneRuntime {
     try {
       this.#disposeCombatRuntime();
       this.#encounterCoordinator.reset();
+      this.#combatExitCooldownUntil = Date.now() + 750;
       this.enterExplorationMode();
       console.info('[SillyRPG] Combat mode exited');
     } finally {
@@ -541,24 +546,30 @@ export class SceneRuntime {
     this.#disposeExplorationControls();
     this.#detachPerceptionObserver();
 
-    const combatRuntime = await createCombatRuntime(this.#runtime, {
-      worldCombatMode: true,
-      sceneContainer: this.#explorationRuntime.districtScene?.sceneContainer,
-      cameras: this.#explorationRuntime.districtScene?.cameras,
-      playerEntity: this.#explorationRuntime.playerEntity,
-      enemyEntity: this.#explorationRuntime.enemyEntity,
-      enemyArchetypeId: this.#options.enemyArchetypeId,
-      attachCamera: false,
-      onCombatEnd: ({ result, combatState: resolvedCombatState }) => {
-        console.info('[SillyRPG] Combat end callback received', {
-          result: result ?? null,
-          source: resolvedCombatState?.endReason ?? 'unknown'
-        });
-        this.exitCombatMode().catch((error) => {
-          console.error('[SillyRPG] Failed to exit combat mode.', error);
-        });
-      }
-    });
+    let combatRuntime;
+    try {
+      combatRuntime = await createCombatRuntime(this.#runtime, {
+        sceneContainer: this.#explorationRuntime.districtScene?.sceneContainer,
+        cameras: this.#explorationRuntime.districtScene?.cameras,
+        playerEntity: this.#explorationRuntime.playerEntity,
+        enemyEntity: this.#explorationRuntime.enemyEntity,
+        enemyArchetypeId: this.#options.enemyArchetypeId,
+        attachCamera: false,
+        onCombatEnd: ({ result, combatState: resolvedCombatState }) => {
+          console.info('[SillyRPG] Combat end callback received', {
+            result: result ?? null,
+            source: resolvedCombatState?.endReason ?? 'unknown'
+          });
+          this.exitCombatMode().catch((error) => {
+            console.error('[SillyRPG] Failed to exit combat mode.', error);
+          });
+        }
+      });
+    } catch (error) {
+      console.error('[SillyRPG] Combat mode setup failed; restoring exploration mode.', error);
+      this.enterExplorationMode();
+      throw error;
+    }
 
     this.#combatRuntime = combatRuntime as CombatRuntimeLike;
     this.#modeController.enterCombatMode();

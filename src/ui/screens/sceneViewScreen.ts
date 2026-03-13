@@ -2,7 +2,6 @@ import { resolveAssetPath } from '../../platform/browser/assetResolver.ts';
 import { mountSceneRuntime } from '../rendering/sceneRuntime.ts';
 import { Screen } from './screenSystem.ts';
 import type {
-  EncounterStartPayload,
   NormalizationDebugInfo,
   PositionLike,
   RuntimeDebugState,
@@ -11,7 +10,6 @@ import type {
 
 export interface SceneViewScreenProps {
   districtId?: string;
-  onEncounterStart?: (details: EncounterStartPayload) => void;
 }
 
 function formatPosition(position: PositionLike | null | undefined): string {
@@ -97,7 +95,6 @@ export class SceneViewScreen extends Screen {
   #canvas: HTMLCanvasElement | null = null;
   #debugOverlay: HTMLPreElement | null = null;
   #cleanup: RuntimeDispose | null = null;
-  #combatStarted = false;
 
   constructor(props: SceneViewScreenProps = {}) {
     super();
@@ -131,7 +128,6 @@ export class SceneViewScreen extends Screen {
     const mountOptions = {
       ...(this.#props.districtId ? { districtId: this.#props.districtId } : {}),
       debugEnabled: this.#debugEnabled,
-      onEncounterStart: (details: EncounterStartPayload) => this.startCombat(details),
       onDebugStateChange: (debugState: RuntimeDebugState) => this.updateDebugOverlay(debugState),
       resolveAssetPath
     };
@@ -145,10 +141,6 @@ export class SceneViewScreen extends Screen {
       });
   }
 
-  override update(): void {
-    this.updateDebugOverlay({ mode: this.#combatStarted ? 'combat' : 'loading' });
-  }
-
   override unmount(): void {
     if (this.#cleanup) {
       this.#cleanup();
@@ -160,19 +152,6 @@ export class SceneViewScreen extends Screen {
     super.dispose();
     this.#canvas = null;
     this.#debugOverlay = null;
-    this.#combatStarted = false;
-  }
-
-  private startCombat(details: EncounterStartPayload): void {
-    if (this.#combatStarted) return;
-
-    this.#combatStarted = true;
-    if (this.root) {
-      this.root.dataset['mode'] = 'combat';
-      this.root.classList.add('sillyrpg-scene-combat-mode');
-    }
-
-    this.#props.onEncounterStart?.(details);
   }
 
   private updateDebugOverlay(debugState: RuntimeDebugState): void {
