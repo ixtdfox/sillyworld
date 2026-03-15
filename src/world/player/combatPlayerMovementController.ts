@@ -1,20 +1,12 @@
 // @ts-nocheck
-/**
- * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — состояние и поведение игрока в исследовании и связанных действиях.
- */
-import {CombatCellPicker} from '../combat/input/CombatCellPicker.ts';
+import { CombatCellPicker } from '../combat/input/CombatCellPicker.ts';
 import { isCameraOrbiting, isPrimaryPointerAction } from '../../render/shared/pointerInputGuards.ts';
-import {
-  advancePositionAlongWaypoints,
-  buildWorldWaypointPath,
-  isCellPathTraversalComplete,
-  resolveCellPath
-} from '../movement/gridMovement.ts';
+import { CellMovementEngine } from '../movement/cellMovementEngine.ts';
+import { resolveCellPath } from '../movement/gridMovement.ts';
 
 const DEFAULT_MOVE_SPEED = 3;
 const DEFAULT_STOP_DISTANCE = 0.05;
 
-/** Выполняет `calculatePathCost` в ходе выполнения связанного игрового сценария. */
 function calculatePathCost(grid, path, movementCost) {
   if (typeof grid.calculatePathCost === 'function') {
     return grid.calculatePathCost(path, { movementCost });
@@ -39,7 +31,6 @@ function calculatePathCost(grid, path, movementCost) {
   return path.length - 1;
 }
 
-/** Подключает `attachCombatPlayerMovementController` в ходе выполнения связанного игрового сценария. */
 export function attachCombatPlayerMovementController(runtime, options) {
   const {
     combatState,
@@ -57,12 +48,19 @@ export function attachCombatPlayerMovementController(runtime, options) {
 
   const getActiveUnit = () => combatState.getActiveUnit?.() ?? null;
 
-  let activePath = null;
-  let activeWaypointIndex = 0;
   let pendingPathCost = 0;
   let isMoving = false;
   let movementInputResetVersion = combatState.pendingMovementInputResetVersion ?? 0;
   combatState.playerMovementInProgress = false;
+
+  const movementEngine = new CellMovementEngine({
+    moveSpeed,
+    stopDistance,
+    gridMapper,
+    resolveGroundY,
+    grid,
+    toVector3: (world) => new runtime.BABYLON.Vector3(world.x, world.y, world.z)
+  });
 
   const setMoving = (nextMovingState) => {
     if (isMoving === nextMovingState) {
@@ -78,11 +76,10 @@ export function attachCombatPlayerMovementController(runtime, options) {
   };
 
   const clearPath = (reason = 'clear_path') => {
-    if (activePath) {
+    if (movementEngine.activePath) {
       debugLog('[combat-move] cleared pending movement path', { reason });
     }
-    activePath = null;
-    activeWaypointIndex = 0;
+    movementEngine.clear(reason);
     pendingPathCost = 0;
     setMoving(false);
   };
@@ -105,6 +102,18 @@ export function attachCombatPlayerMovementController(runtime, options) {
       && Number.isFinite(playerUnit.mp)
       && playerUnit.mp > 0;
   };
+
+  const currentCell = movementEngine.ensureCharacterCell({
+    currentCell: playerUnit.gridCell,
+    position: playerUnit.rootNode.position
+  });
+  playerUnit.gridCell = currentCell;
+  playerUnit.rootNode.gridCell = currentCell;
+  movementEngine.snapPositionToCell({
+    cell: currentCell,
+    position: playerUnit.rootNode.position,
+    fallbackY: playerUnit.rootNode.position.y
+  });
 
   const pointerObserver = runtime.scene.onPointerObservable.add((pointerInfo) => {
     syncResetVersion();
@@ -181,7 +190,6 @@ export function attachCombatPlayerMovementController(runtime, options) {
         movementCost
       }
     });
-
     if (!path || path.length <= 1) {
       debugLog('[combat-move] rejected click: path not found', { destinationCell });
       return;
@@ -193,19 +201,26 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    const waypoints = buildWorldWaypointPath({
-      pathCells: path,
-      gridMapper,
-      resolveGroundY,
-      fallbackY: playerUnit.rootNode.position.y
-    }).map((world) => new runtime.BABYLON.Vector3(world.x, world.y, world.z));
+    const queueResult = movementEngine.queueMovement({
+      currentCell: playerUnit.gridCell,
+      destinationCell,
+      position: playerUnit.rootNode.position,
+      fallbackY: playerUnit.rootNode.position.y,
+      findPathOptions: {
+        allowOccupiedByUnitId: playerUnit.id,
+        movementCost
+      },
+      resolvedPathCells: path
+    });
 
-    activePath = {
-      cells: path,
-      waypoints,
-      destinationCell
-    };
-    activeWaypointIndex = 0;
+    if (!queueResult.ok) {
+      debugLog('[combat-move] rejected click: movement queue failed', {
+        destinationCell,
+        reason: queueResult.reason
+      });
+      return;
+    }
+
     pendingPathCost = pathCost;
     setMoving(true);
     debugLog('[combat-move] queued movement', {
@@ -223,46 +238,44 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    if (!activePath || isCellPathTraversalComplete({ activeWaypointIndex, waypoints: activePath.waypoints })) {
+    if (!movementEngine.isMoving) {
       return;
     }
 
     const currentPosition = playerUnit.rootNode.position;
     const deltaTimeSeconds = runtime.engine.getDeltaTime() / 1000;
-    const advanceResult = advancePositionAlongWaypoints({
+    const advanceResult = movementEngine.tick({
       position: currentPosition,
-      waypoints: activePath.waypoints,
-      activeWaypointIndex,
-      moveSpeed,
-      deltaTimeSeconds,
-      stopDistance
+      deltaTimeSeconds
     });
 
-    if (!advanceResult.reachedWaypoint) {
-      return;
+    if (advanceResult.reachedWaypoint && advanceResult.reachedCell) {
+      playerUnit.gridCell = advanceResult.reachedCell;
+      playerUnit.rootNode.gridCell = advanceResult.reachedCell;
+      if (playerUnit.entity) {
+        playerUnit.entity.gridCell = advanceResult.reachedCell;
+      }
     }
 
-    activeWaypointIndex = advanceResult.activeWaypointIndex;
-
-    if (!isCellPathTraversalComplete({ activeWaypointIndex, waypoints: activePath.waypoints })) {
+    if (!advanceResult.movementComplete) {
       return;
     }
 
     debugLog('[combat-move] reached destination waypoint', {
-      destinationCell: activePath.destinationCell,
+      destinationCell: advanceResult.destinationCell,
       pathCost: pendingPathCost
     });
 
     if (typeof combatState.completeUnitMovement === 'function') {
       combatState.completeUnitMovement({
         unitId: playerUnit.id,
-        destinationCell: activePath.destinationCell,
+        destinationCell: advanceResult.destinationCell,
         pathCost: pendingPathCost,
         source: 'world_pointer'
       });
     } else {
       const fromCell = playerUnit.gridCell;
-      const toCell = activePath.destinationCell;
+      const toCell = advanceResult.destinationCell;
       grid.moveOccupant(fromCell, toCell, playerUnit.id);
       playerUnit.gridCell = toCell;
       playerUnit.rootNode.gridCell = toCell;
@@ -272,6 +285,13 @@ export function attachCombatPlayerMovementController(runtime, options) {
       playerUnit.mp -= pendingPathCost;
     }
 
+    movementEngine.snapPositionToCell({
+      cell: advanceResult.destinationCell,
+      position: playerUnit.rootNode.position,
+      fallbackY: playerUnit.rootNode.position.y
+    });
+
+    setMoving(false);
     combatState.resetPendingMovementInput?.('movement_complete');
     syncResetVersion();
   });

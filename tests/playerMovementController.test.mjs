@@ -157,5 +157,41 @@ test('rejects unreachable destination path and clears target safely', () => {
   runtime.renderFrames(1);
 
   assert.equal(movementTargetState.hasTarget(), false);
-  assert.deepEqual(player.gridCell, { x: 0, z: 0 });
+  assert.equal(player.gridCell.x, 0);
+  assert.equal(player.gridCell.z, 0);
+});
+
+test('same-cell target is treated as no-op and snaps to cell center', () => {
+  const runtime = createRuntime();
+  const Vector3 = runtime.BABYLON.Vector3;
+  const player = {
+    rootNode: {
+      position: new Vector3(0.2, 0, 0.4)
+    },
+    gridCell: null
+  };
+  const movementTargetState = createMovementTargetState({ x: 0, z: 0 });
+  const movingStates = [];
+  const gridMapper = {
+    worldToGridCell: ({ x, z }) => ({ x: Math.floor(x), z: Math.floor(z) }),
+    gridCellToWorld: ({ x, z }) => ({ x: x + 0.5, y: 0, z: z + 0.5 })
+  };
+
+  const controller = new PlayerMovementController(runtime, player, movementTargetState, {
+    moveSpeed: 4,
+    gridMapper,
+    resolveGroundY: ({ fallbackY = 0 }) => fallbackY,
+    BABYLON: runtime.BABYLON,
+    onMovingStateChange: (isMoving) => movingStates.push(isMoving)
+  });
+
+  controller.attach();
+  runtime.renderFrames(1);
+
+  assert.equal(movementTargetState.hasTarget(), false);
+  assert.equal(player.gridCell.x, 0);
+  assert.equal(player.gridCell.z, 0);
+  assert.equal(player.rootNode.position.x, 0.5);
+  assert.equal(player.rootNode.position.z, 0.5);
+  assert.deepEqual(movingStates, []);
 });
