@@ -16,6 +16,8 @@ import { createCombatMovementRangeHighlighter } from '../../render/combat/combat
 import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from './playerActionModeStateMachine.ts';
 import { createCombatDebugShell } from '../../render/debug/combatDebugShell.ts';
 import { mapCombatParticipantsFromWorldPositions } from './combatWorldPositionMapper.ts';
+import { manhattanDistance } from '../common/math/utils.ts';
+import { resolveGroundY } from '../common/physics/utils.ts';
 const DEFAULT_PLAYER_SPAWN_CELL = Object.freeze({ x: -1, z: 1 });
 const DEFAULT_ENEMY_SPAWN_CELL = Object.freeze({ x: 1, z: -1 });
 const DEFAULT_AP_PER_TURN = 2;
@@ -24,36 +26,10 @@ const DEFAULT_HP = 20;
 const DEFAULT_BASIC_ATTACK_DAMAGE = 4;
 const DEFAULT_FALLBACK_ATTACK_RANGE = 1;
 
-/** Выполняет `manhattanDistance` в ходе выполнения связанного игрового сценария. */
-function manhattanDistance(cellA, cellB) {
-  if (!cellA || !cellB) {
-    return Infinity;
-  }
-
-  return Math.abs(cellA.x - cellB.x) + Math.abs(cellA.z - cellB.z);
-}
 
 /** Определяет `resolveMovementCostRule` в ходе выполнения связанного игрового сценария. */
 function resolveMovementCostRule(options = {}) {
   return typeof options.movementCost === 'function' ? options.movementCost : undefined;
-}
-
-/** Определяет `resolveGroundY` в ходе выполнения связанного игрового сценария. */
-function resolveGroundY({ runtime, x, z, fallbackY = 0 }) {
-  const groundMesh = runtime?.scene?.getMeshByName?.('Ground') ?? null;
-  if (!groundMesh || groundMesh.isEnabled?.() === false || groundMesh.isVisible === false) {
-    return fallbackY;
-  }
-
-  const origin = new runtime.BABYLON.Vector3(x, fallbackY + 25, z);
-  const ray = new runtime.BABYLON.Ray(
-      origin,
-      new runtime.BABYLON.Vector3(0, -1, 0),
-      200
-  );
-
-  const hit = runtime.scene.pickWithRay(ray, (mesh) => mesh === groundMesh);
-  return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 }
 
 /** Нормализует `normalizeCell` в ходе выполнения связанного игрового сценария. */
@@ -90,18 +66,6 @@ function placeUnitAtCell(runtime, unit, gridMapper, cell, options = {}) {
   if (unit.entity) {
     unit.entity.gridCell = resolvedCell;
   }
-
-  console.debug('[SillyRPG] Combat unit placement applied', {
-    unitId: unit.id,
-    source: options.source ?? 'unknown',
-    logicalCell: resolvedCell,
-    computedWorld: worldPosition,
-    finalRootTransform: {
-      x: unit.rootNode.position.x,
-      y: unit.rootNode.position.y,
-      z: unit.rootNode.position.z
-    }
-  });
 
   return {
     cell: resolvedCell,
@@ -328,11 +292,6 @@ export async function createCombatRuntime(runtime, options = {}) {
     source: 'combat_spawn_enemy',
     fallbackCell: DEFAULT_ENEMY_SPAWN_CELL,
     fallbackY: options.enemySpawn?.y ?? 0
-  });
-
-  console.info('[SillyRPG] Combat initial cell assignment completed from world positions.', {
-    playerSpawnCell,
-    enemySpawnCell
   });
 
   grid.setOccupied(playerUnit.gridCell, playerUnit.id);
