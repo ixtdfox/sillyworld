@@ -1,11 +1,9 @@
 // @ts-nocheck
-/**
- * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
- */
 import { loadWorldScene } from './worldSceneLoader.ts';
 import { loadPlayerCharacter } from '../world/player/playerCharacterLoader.ts';
 import { loadEnemyCharacter } from '../world/enemy/enemyCharacterLoader.ts';
 import { spawnPlayerCharacter } from '../world/player/playerSpawn.ts';
+import { spawnEnemyCharacter } from '../world/enemy/enemySpawn.ts';
 import { DEFAULT_ENEMY_PERCEPTION_SETTINGS } from '../world/enemy/enemyPerception.ts';
 import { createEnemyAmbientBehavior } from '../world/enemy/enemyAmbientBehavior.ts';
 import { createWorldGridMapper } from '../world/spatial/worldGrid.ts';
@@ -13,9 +11,6 @@ import { createCombatGrid } from '../world/spatial/grid/Grid.ts';
 import { snapActorToNearestValidGridCell } from '../render/shared/gridAlignment.ts';
 import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from '../render/shared/runtimeContracts.ts';
 
-const DEFAULT_ENEMY_SPAWN: Readonly<{ x: number; z: number }> = Object.freeze({ x: 2, z: 2 });
-
-/** Определяет контракт `BabylonRuntimeSubset` для согласованного взаимодействия модулей в контексте `scene/districtExplorationRuntime`. */
 interface BabylonRuntimeSubset {
   BABYLON: {
     Vector3: new (x: number, y: number, z: number) => PositionLike;
@@ -29,7 +24,6 @@ interface BabylonRuntimeSubset {
   };
 }
 
-/** Определяет контракт `EntityLike` для согласованного взаимодействия модулей в контексте `scene/districtExplorationRuntime`. */
 interface EntityLike {
   rootNode?: PositionNodeLike & {
     position: PositionNodeLike['position'] & { copyFrom: (position: unknown) => void; y: number };
@@ -41,7 +35,6 @@ interface EntityLike {
   gridCell?: { x: number; z: number };
 }
 
-/** Определяет контракт `DistrictExplorationOptions` для согласованного взаимодействия модулей в контексте `scene/districtExplorationRuntime`. */
 interface DistrictExplorationOptions {
   districtId?: string;
   sceneFile?: string;
@@ -62,13 +55,10 @@ interface DistrictExplorationOptions {
   resolveAssetPath?: AssetResolver;
 }
 
-
-/** Выполняет `yawFromDirection` в ходе выполнения связанного игрового сценария. */
 function yawFromDirection(direction: { x: number; z: number }): number {
   return Math.atan2(direction.x, direction.z);
 }
 
-/** Обновляет `setRootYaw` в ходе выполнения связанного игрового сценария. */
 function setRootYaw(rootNode: PositionNodeLike | undefined, yaw: number): void {
   if (!rootNode || !Number.isFinite(yaw)) return;
   if (rootNode.rotationQuaternion !== undefined) {
@@ -78,6 +68,7 @@ function setRootYaw(rootNode: PositionNodeLike | undefined, yaw: number): void {
   rootNode.rotation.y = yaw;
 }
 
+// Keeps vertical grounding consistent with shared spawn helpers: X/Z snap to a cell, Y comes from terrain.
 const resolveGroundY = ({ runtime, x, z, fallbackY = 0 }) => {
   const groundMesh = runtime?.scene?.getMeshByName?.('Ground') ?? null;
   if (!groundMesh || groundMesh.isEnabled?.() === false || groundMesh.isVisible === false) {
@@ -85,35 +76,13 @@ const resolveGroundY = ({ runtime, x, z, fallbackY = 0 }) => {
   }
 
   const origin = new runtime.BABYLON.Vector3(x, fallbackY + 25, z);
-  const ray = new runtime.BABYLON.Ray(
-      origin,
-      new runtime.BABYLON.Vector3(0, -1, 0),
-      200
-  );
+  const ray = new runtime.BABYLON.Ray(origin, new runtime.BABYLON.Vector3(0, -1, 0), 200);
 
   const hit = runtime.scene.pickWithRay(ray, (mesh) => mesh === groundMesh);
   return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 };
 
-/** Выполняет `placeEnemyOnGround` в ходе выполнения связанного игрового сценария. */
-function placeEnemyOnGround(runtime: BabylonRuntimeSubset, enemyEntity: EntityLike, gridMapper, spawnPreset = DEFAULT_ENEMY_SPAWN) {
-  if (!enemyEntity?.rootNode) {
-    throw new Error('Cannot place enemy character without a root node.');
-  }
-
-  const spawnCell = gridMapper.worldToGridCell({ x: spawnPreset.x, z: spawnPreset.z });
-  const world = gridMapper.gridCellToWorld(spawnCell, {
-    resolveY: ({ x, z }) => resolveGroundY({ runtime, x, z, fallbackY: 0 })
-  });
-
-  enemyEntity.rootNode.position.copyFrom(new runtime.BABYLON.Vector3(world.x, world.y, world.z));
-  enemyEntity.rootNode.gridCell = spawnCell;
-  enemyEntity.gridCell = spawnCell;
-  return enemyEntity.rootNode.position;
-}
-
-/** Определяет `resolveEnemyPatrolData` в ходе выполнения связанного игрового сценария. */
-function resolveEnemyPatrolData(runtime: BabylonRuntimeSubset, gridMapper, spawnPreset = DEFAULT_ENEMY_SPAWN, patrolPoints?: { x: number; y?: number; z: number }[]) {
+function resolveEnemyPatrolData(runtime: BabylonRuntimeSubset, gridMapper, spawnPreset = { x: 2, z: 2 }, patrolPoints?: { x: number; y?: number; z: number }[]) {
   const rawRoute = Array.isArray(patrolPoints) && patrolPoints.length > 0
     ? patrolPoints.map((point) => ({ x: point.x, z: point.z }))
     : [
@@ -134,7 +103,6 @@ function resolveEnemyPatrolData(runtime: BabylonRuntimeSubset, gridMapper, spawn
   };
 }
 
-/** Создаёт и настраивает `createDistrictExplorationRuntime` в ходе выполнения связанного игрового сценария. */
 export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSubset, options: DistrictExplorationOptions = {}) {
   const districtScene = await loadWorldScene(runtime, {
     sceneFile: options.sceneFile,
@@ -181,7 +149,7 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     enemyArchetypeId: options.enemyArchetypeId,
     resolveAssetPath: options.resolveAssetPath
   })) as EntityLike;
-  placeEnemyOnGround(runtime, enemyEntity, gridMapper, options.enemySpawn);
+  spawnEnemyCharacter(runtime, enemyEntity, { gridMapper, spawn: options.enemySpawn });
   snapActorToNearestValidGridCell({
     runtime,
     actor: enemyEntity,

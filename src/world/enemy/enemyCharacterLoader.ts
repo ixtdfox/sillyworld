@@ -1,24 +1,30 @@
 // @ts-nocheck
-/**
- * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — поведение и восприятие противников в мире и сцене.
- */
-import { loadAndNormalizeEntityCharacter } from '../../render/shared/entityCharacterLoader.ts';
 import {
   DEFAULT_ENEMY_ARCHETYPE_ID,
   resolveEnemyArchetype
 } from '../entity/entityArchetypes.ts';
+import { CharacterAnimationController, CharacterRuntimeFactory } from '../character/characterRuntimeServices.ts';
 
-/** Загружает `loadEnemyCharacter` в ходе выполнения связанного игрового сценария. */
 export async function loadEnemyCharacter(runtime, options = {}) {
   const enemyArchetypeId = options.enemyArchetypeId ?? DEFAULT_ENEMY_ARCHETYPE_ID;
   const enemyArchetype = resolveEnemyArchetype(enemyArchetypeId);
   const enemyFile = options.enemyFile ?? enemyArchetype.modelFile;
   const normalizationConfigId = options.enemyNormalizationId ?? enemyArchetype.normalizationConfigId;
+  const factory = new CharacterRuntimeFactory(runtime);
 
-  return loadAndNormalizeEntityCharacter(runtime, {
+  const enemyRuntime = await factory.createCharacterRuntime({
     entityLabel: enemyArchetype.entityLabel,
     modelFile: enemyFile,
     normalizationConfigId,
-    resolveAssetPath: options.resolveAssetPath
+    resolveAssetPath: options.resolveAssetPath,
+    runtimeMetadata: {
+      role: 'enemy',
+      archetypeId: enemyArchetypeId,
+      controllerId: options.controllerId ?? 'enemy_ai',
+      animationProfile: 'humanoid_biped'
+    }
   });
+
+  new CharacterAnimationController(enemyRuntime).initialize({ defaultState: 'idle' });
+  return enemyRuntime;
 }
