@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   applyEntityCollisionFromDimensions,
   createEntityGameplayDimensions
-} from '../src/ui/rendering/shared/entityGameplayDimensions.ts';
+} from '../src/render/shared/entityGameplayDimensions.ts';
 
 test('createEntityGameplayDimensions maps gameplay values from normalization config', () => {
   const dimensions = createEntityGameplayDimensions({

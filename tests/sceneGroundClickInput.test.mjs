@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { attachSceneGroundMovementInput } from '../src/ui/rendering/scene/sceneGroundMovementInput.ts';
+import { attachSceneGroundMovementInput } from '../src/scene/sceneGroundMovementInput.ts';
 
 function createRuntime({ pickResult }) {
   let observer = null;

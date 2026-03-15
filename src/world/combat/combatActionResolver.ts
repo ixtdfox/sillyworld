@@ -1,11 +1,9 @@
 // @ts-nocheck
+import {manhattanDistance} from "./math/utils.ts";
+
 const DEFAULT_BASIC_ATTACK_AP_COST = 1;
 const DEFAULT_BASIC_ATTACK_RANGE = 1;
 const DEFAULT_BASIC_ATTACK_DAMAGE = 4;
-
-function manhattanDistance(cellA, cellB) {
-  return Math.abs(cellA.x - cellB.x) + Math.abs(cellA.z - cellB.z);
-}
 
 function isUnitAlive(unit) {
   return Boolean(unit) && unit.isAlive !== false && Number(unit.hp) > 0;

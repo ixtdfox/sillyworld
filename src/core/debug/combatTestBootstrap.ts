@@ -1,4 +1,4 @@
-import type { SceneRuntimeMountOptions } from '../../ui/rendering/shared/runtimeContracts.ts';
+import type { SceneRuntimeMountOptions } from '../../render/shared/runtimeContracts.ts';
 
 export interface CombatTestBootstrapConfig {
   districtId: string;
