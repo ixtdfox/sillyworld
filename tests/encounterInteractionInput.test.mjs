@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   attachSceneEncounterInteractionInput,
   ENCOUNTER_INTERACTION_DISTANCE
-} from '../src/ui/rendering/scene/sceneEncounterInteractionInput.ts';
+} from '../src/scene/sceneEncounterInteractionInput.ts';
 
 function createRuntime({ pickResult }) {
   let observer = null;

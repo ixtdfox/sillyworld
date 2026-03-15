@@ -6,7 +6,7 @@ import {
   findNearestValidGridCell,
   snapActorToNearestValidGridCell,
   validateActorAlignment
-} from '../src/ui/rendering/shared/gridAlignment.ts';
+} from '../src/render/shared/gridAlignment.ts';
 
 class FakeVector3 {
   constructor(x, y, z) {

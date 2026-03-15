@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PlayerMovementController } from '../src/ui/rendering/player/playerMovementController.ts';
+import { PlayerMovementController } from '../src/world/player/playerMovementController.ts';
 
 function createVector3Class() {
   return class Vector3 {

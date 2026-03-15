@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { attachGameplayIsometricCamera } from '../src/ui/rendering/camera/gameplayCameraController.ts';
+import { attachGameplayIsometricCamera } from '../src/core/app/camera/gameplayCameraController.ts';
 
 class Vector3 {
   constructor(x, y, z) {

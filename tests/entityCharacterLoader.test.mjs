@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { loadAndNormalizeEntityCharacter } from '../src/ui/rendering/shared/entityCharacterLoader.ts';
+import { loadAndNormalizeEntityCharacter } from '../src/render/shared/entityCharacterLoader.ts';
 
 function createRootNode(sourceHeight = 2) {
   return {
