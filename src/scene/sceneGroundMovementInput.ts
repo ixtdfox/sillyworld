@@ -3,6 +3,7 @@ import { resolveGroundClickTarget } from '../world/input/groundClickPolicy.ts';
 import { isCameraOrbiting, isPrimaryPointerAction } from '../render/shared/pointerInputGuards.ts';
 import type { RuntimeDispose } from '../render/shared/runtimeContracts.ts';
 
+/** Определяет контракт `Vector3Like` для согласованного взаимодействия модулей в контексте `scene/sceneGroundMovementInput`. */
 interface Vector3Like {
   x: number;
   y: number;
@@ -10,15 +11,18 @@ interface Vector3Like {
   clone(): Vector3Like;
 }
 
+/** Определяет контракт `MovementTargetStateLike` для согласованного взаимодействия модулей в контексте `scene/sceneGroundMovementInput`. */
 interface MovementTargetStateLike {
   clearTarget(): void;
   setTarget(nextTargetCell: { x: number; z: number }): void;
 }
 
+/** Определяет контракт `GridLike` для согласованного взаимодействия модулей в контексте `scene/sceneGroundMovementInput`. */
 interface GridLike {
   isCellWalkable?: (cell: { x: number; z: number }) => boolean;
 }
 
+/** Определяет контракт `BabylonRuntimeSubset` для согласованного взаимодействия модулей в контексте `scene/sceneGroundMovementInput`. */
 interface BabylonRuntimeSubset {
   BABYLON: { PointerEventTypes: { POINTERDOWN: number } };
   scene: {
@@ -32,6 +36,7 @@ interface BabylonRuntimeSubset {
   };
 }
 
+/** Класс `SceneGroundMovementInput` координирует соответствующий сценарий модуля `scene/sceneGroundMovementInput` и инкапсулирует связанную логику. */
 export class SceneGroundMovementInput {
   readonly #runtime: BabylonRuntimeSubset;
   readonly #movementTargetState: MovementTargetStateLike;
@@ -93,6 +98,7 @@ export class SceneGroundMovementInput {
   }
 }
 
+/** Подключает `attachSceneGroundMovementInput` в ходе выполнения связанного игрового сценария. */
 export function attachSceneGroundMovementInput(
   runtime: BabylonRuntimeSubset,
   movementTargetState: MovementTargetStateLike,

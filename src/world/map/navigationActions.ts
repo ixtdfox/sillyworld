@@ -4,15 +4,18 @@ import type { GameState, MapLevel, PhaseTransitionRecord } from '../contracts.ts
 
 const NAVIGABLE_LEVELS = new Set<MapLevel>(['district', 'building', 'room']);
 
+/** Выполняет `asPoiId` в ходе выполнения связанного игрового сценария. */
 function asPoiId(nodeId = ''): string {
   return `poi:${nodeId.split(':')[1] || nodeId}`;
 }
 
+/** Определяет контракт `MoveOptions` для согласованного взаимодействия модулей в контексте `world/map/navigationActions`. */
 interface MoveOptions {
   actionType?: string;
   timeCostSteps?: number;
 }
 
+/** Определяет контракт `MovePlayerResult` для согласованного взаимодействия модулей в контексте `world/map/navigationActions`. */
 interface MovePlayerResult {
   ok: boolean;
   state: GameState;
@@ -23,6 +26,7 @@ interface MovePlayerResult {
   transitions?: PhaseTransitionRecord[];
 }
 
+/** Выполняет `movePlayerToNode` в ходе выполнения связанного игрового сценария. */
 export function movePlayerToNode(state: GameState, targetNodeId: string, options: MoveOptions = {}): MovePlayerResult {
   const targetNode = state.maps?.nodesById?.[targetNodeId] || null;
   if (!targetNode || !NAVIGABLE_LEVELS.has(targetNode.level)) {

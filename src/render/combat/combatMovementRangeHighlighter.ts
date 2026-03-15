@@ -2,6 +2,7 @@
 import { createCombatBattlefieldVisualization } from './combatBattlefieldVisualization.ts';
 import { pickCombatCellAtPointer } from '../../world/combat/combatCellPointer.ts';
 
+/** Создаёт и настраивает `createCellSignature` в ходе выполнения связанного игрового сценария. */
 function createCellSignature(cells) {
   return cells
     .map((cell) => `${cell.x},${cell.z}`)
@@ -9,6 +10,7 @@ function createCellSignature(cells) {
     .join('|');
 }
 
+/** Выполняет `disposeHighlights` в ходе выполнения связанного игрового сценария. */
 function disposeHighlights(highlightsByCell) {
   for (const mesh of highlightsByCell.values()) {
     mesh.dispose();
@@ -16,6 +18,7 @@ function disposeHighlights(highlightsByCell) {
   highlightsByCell.clear();
 }
 
+/** Создаёт и настраивает `createPathSignature` в ходе выполнения связанного игрового сценария. */
 function createPathSignature(pathCells) {
   if (!Array.isArray(pathCells) || pathCells.length <= 1) {
     return '';
@@ -24,6 +27,7 @@ function createPathSignature(pathCells) {
   return pathCells.map((cell) => `${cell.x},${cell.z}`).join('>');
 }
 
+/** Выполняет `ensureOverlayAssets` в ходе выполнения связанного игрового сценария. */
 function ensureOverlayAssets(runtime, state, color, alpha, options = {}) {
   const key = `${color}|${alpha}|${options.namePrefix ?? 'default'}`;
   if (state.material && state.texture && state.key === key) {
@@ -78,6 +82,7 @@ function ensureOverlayAssets(runtime, state, color, alpha, options = {}) {
   return state;
 }
 
+/** Создаёт и настраивает `createHighlightMesh` в ходе выполнения связанного игрового сценария. */
 function createHighlightMesh(runtime, battlefieldView, cell, overlayState, meshConfig = {}) {
   const mapper = battlefieldView.getGridMapper();
   const cellSize = mapper.cellSize;
@@ -98,6 +103,7 @@ function createHighlightMesh(runtime, battlefieldView, cell, overlayState, meshC
   return mesh;
 }
 
+/** Создаёт и настраивает `createCombatMovementRangeHighlighter` в ходе выполнения связанного игрового сценария. */
 export function createCombatMovementRangeHighlighter(runtime, options = {}) {
   const {
     combatState,

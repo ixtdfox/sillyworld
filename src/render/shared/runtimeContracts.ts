@@ -3,12 +3,16 @@ import type { PositionLike, PositionNodeLike } from '../../world/spatial/types.t
 
 export type { PositionLike } from '../../world/spatial/types.ts';
 
+/** Описывает тип `RuntimeMode`, который формализует структуру данных в модуле `render/shared/runtimeContracts`. */
 export type RuntimeMode = 'loading' | 'transitioning' | 'exploration' | 'combat';
 
+/** Описывает тип `RuntimeDispose`, который формализует структуру данных в модуле `render/shared/runtimeContracts`. */
 export type RuntimeDispose = () => void;
 
+/** Описывает тип `AssetResolver`, который формализует структуру данных в модуле `render/shared/runtimeContracts`. */
 export type AssetResolver = (assetPath: string) => string;
 
+/** Определяет контракт `NormalizationDebugInfo` для согласованного взаимодействия модулей в контексте `render/shared/runtimeContracts`. */
 export interface NormalizationDebugInfo {
   entityId: string | null;
   targetHeight: number | null;
@@ -19,11 +23,13 @@ export interface NormalizationDebugInfo {
   attackRange: number | null;
 }
 
+/** Определяет контракт `RuntimeNormalizationState` для согласованного взаимодействия модулей в контексте `render/shared/runtimeContracts`. */
 export interface RuntimeNormalizationState {
   player: NormalizationDebugInfo | null;
   enemy: NormalizationDebugInfo | null;
 }
 
+/** Определяет контракт `ExplorationDebugState` для согласованного взаимодействия модулей в контексте `render/shared/runtimeContracts`. */
 export interface ExplorationDebugState {
   playerPosition: PositionLike | null;
   enemyPosition: PositionLike | null;
@@ -39,6 +45,7 @@ export interface ExplorationDebugState {
   normalization: RuntimeNormalizationState | null;
 }
 
+/** Определяет контракт `CombatDebugState` для согласованного взаимодействия модулей в контексте `render/shared/runtimeContracts`. */
 export interface CombatDebugState {
   state: string | null;
   phase: string | null;
@@ -56,6 +63,7 @@ export interface CombatDebugState {
   enemyMp: number | null;
 }
 
+/** Определяет контракт `RuntimeDebugState` для согласованного взаимодействия модулей в контексте `render/shared/runtimeContracts`. */
 export interface RuntimeDebugState {
   mode: RuntimeMode;
   exploration?: ExplorationDebugState;
@@ -63,6 +71,7 @@ export interface RuntimeDebugState {
   normalization?: RuntimeNormalizationState | null;
 }
 
+/** Определяет контракт `EncounterInteractionPayload` для согласованного взаимодействия модулей в контексте `render/shared/runtimeContracts`. */
 export interface EncounterInteractionPayload {
   playerRoot: PositionNodeLike;
   enemyRoot: PositionNodeLike;
@@ -70,10 +79,12 @@ export interface EncounterInteractionPayload {
   interactionDistance: number;
 }
 
+/** Определяет контракт `EncounterStartPayload` для согласованного взаимодействия модулей в контексте `render/shared/runtimeContracts`. */
 export interface EncounterStartPayload extends EncounterInteractionPayload {
   combatState?: CombatStateLike;
 }
 
+/** Определяет контракт `CombatUnitLike` для согласованного взаимодействия модулей в контексте `render/shared/runtimeContracts`. */
 export interface CombatUnitLike {
   id: string;
   displayName?: string;
@@ -83,6 +94,7 @@ export interface CombatUnitLike {
   mp?: number;
 }
 
+/** Определяет контракт `CombatStateLike` для согласованного взаимодействия модулей в контексте `render/shared/runtimeContracts`. */
 export interface CombatStateLike {
   status?: string;
   phase?: string;
@@ -95,6 +107,7 @@ export interface CombatStateLike {
   getActiveUnit?: () => CombatUnitLike | null;
 }
 
+/** Определяет контракт `SceneRuntimeMountOptions` для согласованного взаимодействия модулей в контексте `render/shared/runtimeContracts`. */
 export interface SceneRuntimeMountOptions {
   districtId?: string;
   interactionDistance?: number;
@@ -119,6 +132,7 @@ export interface SceneRuntimeMountOptions {
   onDebugStateChange?: (state: RuntimeDebugState) => void;
 }
 
+/** Описывает тип `SceneRuntimeMount`, который формализует структуру данных в модуле `render/shared/runtimeContracts`. */
 export type SceneRuntimeMount = (
   canvas: HTMLCanvasElement,
   options?: SceneRuntimeMountOptions

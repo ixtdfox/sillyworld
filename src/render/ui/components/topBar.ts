@@ -1,5 +1,6 @@
 import type { PhasePresentation } from '../../../shared/types.ts';
 
+/** Определяет контракт `TopBarProps` для согласованного взаимодействия модулей в контексте `render/ui/components/topBar`. */
 export interface TopBarProps {
   title: string;
   breadcrumb: string;
@@ -10,6 +11,7 @@ export interface TopBarProps {
   hideExit?: boolean;
 }
 
+/** Выполняет `renderTopBar` в ходе выполнения связанного игрового сценария. */
 export function renderTopBar({
   title,
   breadcrumb,

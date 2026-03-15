@@ -7,7 +7,9 @@ import { EncounterCoordinator } from './encounterCoordinator.ts';
 import { SceneModeController } from './sceneModeController.ts';
 import {
   SceneRuntimeDebugStateEmitter,
+  /** Описывает тип `CombatRuntimeLike`, который формализует структуру данных в модуле `scene/sceneRuntime`. */
   type CombatRuntimeLike,
+  /** Описывает тип `ExplorationRuntimeLike`, который формализует структуру данных в модуле `scene/sceneRuntime`. */
   type ExplorationRuntimeLike
 } from '../render/debug/sceneRuntimeDebugStateEmitter.ts';
 import { createExplorationControlsBinder, type ExplorationControlsBinder } from './explorationControlsBinder.ts';
@@ -23,6 +25,7 @@ import type {
   SceneRuntimeMountOptions
 } from '../render/shared/runtimeContracts.ts';
 
+/** Класс `SceneMountSession` координирует соответствующий сценарий модуля `scene/sceneRuntime` и инкапсулирует связанную логику. */
 class SceneMountSession {
   #cleanup: RuntimeDispose[] = [];
 
@@ -38,6 +41,7 @@ class SceneMountSession {
   }
 }
 
+/** Класс `SceneRuntime` координирует соответствующий сценарий модуля `scene/sceneRuntime` и инкапсулирует связанную логику. */
 export class SceneRuntime {
   readonly #runtime: ReturnType<typeof createBabylonWorldRuntime>;
   readonly #options: SceneRuntimeMountOptions;
@@ -242,6 +246,7 @@ export class SceneRuntime {
     };
   }
 
+  /** Выполняет `exitCombatMode` внутри жизненного цикла класса. */
   async exitCombatMode(): Promise<void> {
     if (this.#combatExitInProgress) {
       console.debug('[SillyRPG] Combat mode exit ignored because exit is already in progress.');
@@ -264,6 +269,7 @@ export class SceneRuntime {
     }
   }
 
+  /** Выполняет `enterCombatMode` внутри жизненного цикла класса. */
   async enterCombatMode(encounterDetails: EncounterStartPayload): Promise<CombatStateLike | null> {
     if (!this.#encounterCoordinator.canStartCombat()) {
       return null;
@@ -323,6 +329,7 @@ export class SceneRuntime {
     return combatState ?? null;
   }
 
+  /** Выполняет `enterExplorationMode` внутри жизненного цикла класса. */
   enterExplorationMode(): void {
     this.#modeController.enterExplorationMode();
     this.#debugState.setMode(this.#modeController.getMode());
@@ -337,6 +344,7 @@ export class SceneRuntime {
   }
 }
 
+/** Константа `mountSceneRuntime` хранит общие настройки/данные, которые переиспользуются в модуле `scene/sceneRuntime`. */
 export const mountSceneRuntime: SceneRuntimeMount = async (
   canvas: HTMLCanvasElement,
   options: SceneRuntimeMountOptions = {}

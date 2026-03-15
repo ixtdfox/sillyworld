@@ -3,6 +3,7 @@ function createCellKey(cell) {
   return `${cell.x},${cell.z}`;
 }
 
+/** Нормализует `normalizeCell` в ходе выполнения связанного игрового сценария. */
 function normalizeCell(cell) {
   return {
     x: Math.trunc(cell.x),
@@ -10,6 +11,7 @@ function normalizeCell(cell) {
   };
 }
 
+/** Выполняет `toCellMap` в ходе выполнения связанного игрового сценария. */
 function toCellMap(cells = []) {
   const map = new Set();
   for (const cell of cells) {
@@ -18,6 +20,7 @@ function toCellMap(cells = []) {
   return map;
 }
 
+/** Создаёт и настраивает `createCombatGrid` в ходе выполнения связанного игрового сценария. */
 export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) {
   const blocked = toCellMap(blockedCells);
   const occupiedByCell = new Map();

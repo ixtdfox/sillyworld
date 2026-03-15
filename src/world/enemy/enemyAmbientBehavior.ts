@@ -8,8 +8,10 @@ import {
 
 const DEFAULT_FACING_DIRECTION = Object.freeze({ x: 0, y: 0, z: -1 });
 
+/** Описывает тип `EnemyAmbientState`, который формализует структуру данных в модуле `world/enemy/enemyAmbientBehavior`. */
 export type EnemyAmbientState = 'idle' | 'lookAround' | 'patrol';
 
+/** Определяет контракт `EnemyAmbientBehavior` для согласованного взаимодействия модулей в контексте `world/enemy/enemyAmbientBehavior`. */
 export interface EnemyAmbientBehavior {
   state: EnemyAmbientState;
   stateTimeRemaining: number;
@@ -22,6 +24,7 @@ export interface EnemyAmbientBehavior {
   patrolStepAccumulatorSeconds: number;
 }
 
+/** Нормализует `normalize` в ходе выполнения связанного игрового сценария. */
 function normalize(vector: PositionLike): PositionLike {
   const length = Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
   if (length <= 1e-5) {
@@ -35,14 +38,17 @@ function normalize(vector: PositionLike): PositionLike {
   };
 }
 
+/** Выполняет `yawFromDirection` в ходе выполнения связанного игрового сценария. */
 function yawFromDirection(direction: PositionLike): number {
   return Math.atan2(direction.x, direction.z);
 }
 
+/** Выполняет `directionFromYaw` в ходе выполнения связанного игрового сценария. */
 function directionFromYaw(yaw: number): PositionLike {
   return normalize({ x: Math.sin(yaw), y: 0, z: Math.cos(yaw) });
 }
 
+/** Обновляет `setRootYaw` в ходе выполнения связанного игрового сценария. */
 function setRootYaw(rootNode: PositionNodeLike, yaw: number): void {
   if (!rootNode || !Number.isFinite(yaw)) {
     return;
@@ -56,6 +62,7 @@ function setRootYaw(rootNode: PositionNodeLike, yaw: number): void {
   rootNode.rotation.y = yaw;
 }
 
+/** Выполняет `nextState` в ходе выполнения связанного игрового сценария. */
 function nextState(behavior: EnemyAmbientBehavior): EnemyAmbientState {
   if (behavior.state === 'idle') {
     return 'lookAround';
@@ -68,6 +75,7 @@ function nextState(behavior: EnemyAmbientBehavior): EnemyAmbientState {
   return 'lookAround';
 }
 
+/** Выполняет `enterState` в ходе выполнения связанного игрового сценария. */
 function enterState(behavior: EnemyAmbientBehavior, state: EnemyAmbientState): void {
   behavior.state = state;
 
@@ -80,6 +88,7 @@ function enterState(behavior: EnemyAmbientBehavior, state: EnemyAmbientState): v
   }
 }
 
+/** Создаёт и настраивает `createEnemyAmbientBehavior` в ходе выполнения связанного игрового сценария. */
 export function createEnemyAmbientBehavior(options: {
   facingDirection?: PositionLike;
   patrolPoints?: PositionLike[];
@@ -99,6 +108,7 @@ export function createEnemyAmbientBehavior(options: {
   };
 }
 
+/** Выполняет `updateEnemyAmbientBehavior` в ходе выполнения связанного игрового сценария. */
 export function updateEnemyAmbientBehavior(params: {
   enemyRootNode?: PositionNodeLike;
   behavior: EnemyAmbientBehavior;

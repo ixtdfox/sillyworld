@@ -1,15 +1,22 @@
+/** Описывает тип `SchemaVersion`, который формализует структуру данных в модуле `world/contracts`. */
 export type SchemaVersion = 4;
 
+/** Описывает тип `TimePhase`, который формализует структуру данных в модуле `world/contracts`. */
 export type TimePhase = import('./constant/types.ts').TimePhase;
+/** Описывает тип `TimeOfDay`, который формализует структуру данных в модуле `world/contracts`. */
 export type TimeOfDay = import('./constant/types.ts').TimeOfDay;
+/** Описывает тип `MapLevel`, который формализует структуру данных в модуле `world/contracts`. */
 export type MapLevel = import('./constant/types.ts').MapLevel;
+/** Описывает тип `EquipmentSlot`, который формализует структуру данных в модуле `world/contracts`. */
 export type EquipmentSlot = import('./constant/types.ts').EquipmentSlot;
 
+/** Определяет контракт `WorldClockState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface WorldClockState {
   dayNumber: number;
   step: number;
 }
 
+/** Определяет контракт `PhaseTransitionRecord` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface PhaseTransitionRecord {
   id?: string;
   fromPhase?: TimePhase;
@@ -20,11 +27,13 @@ export interface PhaseTransitionRecord {
   [key: string]: unknown;
 }
 
+/** Определяет контракт `WorldPhaseTransitionState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface WorldPhaseTransitionState {
   pending: PhaseTransitionRecord[];
   history: PhaseTransitionRecord[];
 }
 
+/** Определяет контракт `WorldState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface WorldState {
   timePhase: TimePhase;
   timeOfDay: TimeOfDay;
@@ -32,6 +41,7 @@ export interface WorldState {
   phaseTransitions: WorldPhaseTransitionState;
 }
 
+/** Определяет контракт `RelationshipAxesState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface RelationshipAxesState {
   trust: number;
   fear: number;
@@ -41,6 +51,7 @@ export interface RelationshipAxesState {
   officialNarrativeLoyalty: number;
 }
 
+/** Определяет контракт `RelationshipState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface RelationshipState {
   level: number;
   tags: string[];
@@ -51,20 +62,24 @@ export interface RelationshipState {
   lastInteractionAt: string | number | null;
 }
 
+/** Определяет контракт `InventoryState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface InventoryState {
   items: string[];
 }
 
+/** Определяет контракт `VitalsState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface VitalsState {
   current: number;
   max: number;
 }
 
+/** Определяет контракт `PlayerResourcesState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface PlayerResourcesState {
   cash: number;
   transitCredits: number;
 }
 
+/** Определяет контракт `PlayerState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface PlayerState {
   id: string;
   name: string;
@@ -81,6 +96,7 @@ export interface PlayerState {
   relationships: Record<string, RelationshipState>;
 }
 
+/** Определяет контракт `CharacterState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface CharacterState {
   id: string;
   name: string;
@@ -89,10 +105,12 @@ export interface CharacterState {
   meta: Record<string, unknown>;
 }
 
+/** Определяет контракт `CharactersState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface CharactersState {
   byId: Record<string, CharacterState>;
 }
 
+/** Определяет контракт `MapNodeState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface MapNodeState {
   id: string;
   name?: string;
@@ -105,6 +123,7 @@ export interface MapNodeState {
   [key: string]: unknown;
 }
 
+/** Определяет контракт `MapLevelConfigState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface MapLevelConfigState {
   id: string;
   level: MapLevel;
@@ -114,11 +133,13 @@ export interface MapLevelConfigState {
   [key: string]: unknown;
 }
 
+/** Определяет контракт `MapsState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface MapsState {
   levelConfigs: Partial<Record<MapLevel, MapLevelConfigState>> & Record<string, MapLevelConfigState>;
   nodesById: Record<string, MapNodeState>;
 }
 
+/** Определяет контракт `ItemDefinitionState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface ItemDefinitionState {
   defId: string;
   name?: string;
@@ -126,6 +147,7 @@ export interface ItemDefinitionState {
   [key: string]: unknown;
 }
 
+/** Определяет контракт `ItemInstanceState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface ItemInstanceState {
   instanceId: string;
   defId: string;
@@ -133,12 +155,14 @@ export interface ItemInstanceState {
   [key: string]: unknown;
 }
 
+/** Определяет контракт `ItemsState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface ItemsState {
   defsById: Record<string, ItemDefinitionState>;
   instancesById: Record<string, ItemInstanceState>;
   nodeInventory: Record<string, string[]>;
 }
 
+/** Определяет контракт `LocationAvailabilityState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface LocationAvailabilityState {
   mode: string;
   allowedPhases: TimePhase[];
@@ -147,6 +171,7 @@ export interface LocationAvailabilityState {
   restrictedProfile: string;
 }
 
+/** Определяет контракт `LocationAvailabilityResult` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface LocationAvailabilityResult {
   available: boolean;
   preferred: boolean;
@@ -156,6 +181,7 @@ export interface LocationAvailabilityResult {
   preferredPhases: TimePhase[];
 }
 
+/** Определяет контракт `CombinedLocationAvailability` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface CombinedLocationAvailability {
   timePhase: TimePhase;
   available: boolean;
@@ -165,6 +191,7 @@ export interface CombinedLocationAvailability {
   pointOfInterest: LocationAvailabilityResult | null;
 }
 
+/** Определяет контракт `NpcAvailabilityResult` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface NpcAvailabilityResult {
   available: boolean;
   reason: string;
@@ -172,6 +199,7 @@ export interface NpcAvailabilityResult {
   timePhase: TimePhase;
 }
 
+/** Определяет контракт `LocationMetaState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface LocationMetaState {
   dangerLevel: string;
   accessRestrictions: string[];
@@ -180,6 +208,7 @@ export interface LocationMetaState {
   availability: LocationAvailabilityState;
 }
 
+/** Определяет контракт `DistrictState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface DistrictState {
   id: string;
   nodeId: string;
@@ -189,6 +218,7 @@ export interface DistrictState {
   meta: LocationMetaState;
 }
 
+/** Определяет контракт `PointOfInterestState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface PointOfInterestState {
   id: string;
   nodeId: string;
@@ -199,6 +229,7 @@ export interface PointOfInterestState {
   meta: LocationMetaState;
 }
 
+/** Определяет контракт `FactionState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface FactionState {
   id: string;
   name: string;
@@ -206,12 +237,14 @@ export interface FactionState {
   influence: string;
 }
 
+/** Определяет контракт `SettingState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface SettingState {
   districtsById: Record<string, DistrictState>;
   pointsOfInterestById: Record<string, PointOfInterestState>;
   factionsById: Record<string, FactionState>;
 }
 
+/** Определяет контракт `GameState` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface GameState {
   schemaVersion: SchemaVersion;
   world: WorldState;
@@ -223,33 +256,41 @@ export interface GameState {
   updatedAt: number;
 }
 
+/** Описывает тип `GameStateSeed`, который формализует структуру данных в модуле `world/contracts`. */
 export type GameStateSeed = Partial<GameState> & Record<string, unknown>;
+/** Определяет контракт `SavePayload` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface SavePayload extends GameState {}
 
+/** Определяет контракт `PersistenceStorage` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface PersistenceStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
 }
 
+/** Определяет контракт `RestActionResult` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface RestActionResult {
   ok: false;
   reason: string;
 }
 
+/** Определяет контракт `RestActionSuccess` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface RestActionSuccess {
   ok: true;
   timeCostSteps?: number;
   transitions: PhaseTransitionRecord[];
 }
 
+/** Описывает тип `RestActionResponse`, который формализует структуру данных в модуле `world/contracts`. */
 export type RestActionResponse = RestActionResult | RestActionSuccess;
 
+/** Определяет контракт `MovePlayerFailure` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface MovePlayerFailure {
   ok: false;
   blockedByAvailability: boolean;
   reason: string;
 }
 
+/** Определяет контракт `MovePlayerSuccess` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface MovePlayerSuccess {
   ok: true;
   timeCostSteps?: number;
@@ -257,10 +298,13 @@ export interface MovePlayerSuccess {
   transitions: PhaseTransitionRecord[];
 }
 
+/** Описывает тип `MovePlayerResponse`, который формализует структуру данных в модуле `world/contracts`. */
 export type MovePlayerResponse = MovePlayerFailure | MovePlayerSuccess;
 
+/** Описывает тип `WorldStoreListener`, который формализует структуру данных в модуле `world/contracts`. */
 export type WorldStoreListener = (state: GameState) => void;
 
+/** Определяет контракт `WorldStoreContract` для согласованного взаимодействия модулей в контексте `world/contracts`. */
 export interface WorldStoreContract {
   getState(): GameState;
   subscribe(cb: WorldStoreListener): () => boolean;

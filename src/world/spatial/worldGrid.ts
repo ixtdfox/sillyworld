@@ -11,6 +11,7 @@ export const DEFAULT_WORLD_GRID_CONFIG = Object.freeze({
   blockedCells: []
 });
 
+/** Определяет `resolveWorldGridConfig` в ходе выполнения связанного игрового сценария. */
 export function resolveWorldGridConfig(options = {}) {
   return {
     cellSize: options.cellSize ?? options.worldGridCellSize ?? options.combatGridCellSize ?? DEFAULT_WORLD_GRID_CONFIG.cellSize,
@@ -24,6 +25,7 @@ export function resolveWorldGridConfig(options = {}) {
   };
 }
 
+/** Нормализует `normalizeCell` в ходе выполнения связанного игрового сценария. */
 function normalizeCell(cell) {
   return {
     x: Math.trunc(cell.x),
@@ -31,6 +33,7 @@ function normalizeCell(cell) {
   };
 }
 
+/** Создаёт и настраивает `createWorldGridMapper` в ходе выполнения связанного игрового сценария. */
 export function createWorldGridMapper(options = {}) {
   const config = resolveWorldGridConfig(options);
   const halfCellSize = config.cellSize / 2;

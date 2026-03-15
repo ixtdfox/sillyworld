@@ -1,10 +1,12 @@
 import type { GameState } from '../contracts.ts';
 import { getRelationship } from './relationshipSelectors.ts';
 
+/** Выполняет `clamp` в ходе выполнения связанного игрового сценария. */
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+/** Обновляет `setRelationship` в ходе выполнения связанного игрового сценария. */
 export function setRelationship(
   state: GameState,
   characterId: string,

@@ -10,6 +10,7 @@ import type {
   SceneRuntimeMountOptions
 } from '../shared/runtimeContracts.ts';
 
+/** Определяет контракт `ExplorationRuntimeLike` для согласованного взаимодействия модулей в контексте `render/debug/sceneRuntimeDebugStateEmitter`. */
 export interface ExplorationRuntimeLike {
   districtScene?: { sceneContainer?: unknown; cameras?: unknown[] };
   playerEntity?: { normalizationDebug?: RuntimeNormalizationState['player']; gameplayDimensions?: { interactionRadius?: number }; rootNode?: PositionNodeLike };
@@ -21,11 +22,13 @@ export interface ExplorationRuntimeLike {
   dispose?: RuntimeDispose;
 }
 
+/** Определяет контракт `CombatRuntimeLike` для согласованного взаимодействия модулей в контексте `render/debug/sceneRuntimeDebugStateEmitter`. */
 export interface CombatRuntimeLike {
   combatState?: CombatStateLike;
   dispose?: RuntimeDispose;
 }
 
+/** Выполняет `toPositionSnapshot` в ходе выполнения связанного игрового сценария. */
 export function toPositionSnapshot(node?: PositionNodeLike | null): PositionLike | null {
   if (!node?.position) {
     return null;
@@ -38,6 +41,7 @@ export function toPositionSnapshot(node?: PositionNodeLike | null): PositionLike
   };
 }
 
+/** Класс `SceneRuntimeDebugStateEmitter` координирует соответствующий сценарий модуля `render/debug/sceneRuntimeDebugStateEmitter` и инкапсулирует связанную логику. */
 export class SceneRuntimeDebugStateEmitter {
   readonly #options: SceneRuntimeMountOptions;
   readonly #runtime: { BABYLON: { Vector3: { Distance: (a: PositionLike, b: PositionLike) => number } } };

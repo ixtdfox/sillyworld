@@ -14,10 +14,12 @@ const DEFAULT_DANGER_LEVEL = 'moderate';
 const DEFAULT_QUARANTINE_STATUS = 'clear';
 const DEFAULT_AVAILABILITY_MODE = 'always';
 
+/** Выполняет `asArray` в ходе выполнения связанного игрового сценария. */
 function asArray<T>(value: T[] | unknown): T[] {
   return Array.isArray(value) ? value : [];
 }
 
+/** Нормализует `normalizeLocationMeta` в ходе выполнения связанного игрового сценария. */
 function normalizeLocationMeta(meta: Partial<LocationMetaState> = {}): LocationMetaState {
   const allowedPhases = asArray(meta.availability?.allowedPhases ?? []) as LocationMetaState['availability']['allowedPhases'];
   const preferredPhases = asArray(meta.availability?.preferredPhases ?? []) as LocationMetaState['availability']['preferredPhases'];
@@ -40,6 +42,7 @@ function normalizeLocationMeta(meta: Partial<LocationMetaState> = {}): LocationM
   };
 }
 
+/** Нормализует `normalizeDistrict` в ходе выполнения связанного игрового сценария. */
 function normalizeDistrict(district: Partial<DistrictState>): DistrictState {
   return {
     id: district.id ?? '',
@@ -51,6 +54,7 @@ function normalizeDistrict(district: Partial<DistrictState>): DistrictState {
   };
 }
 
+/** Нормализует `normalizePointOfInterest` в ходе выполнения связанного игрового сценария. */
 function normalizePointOfInterest(poi: Partial<PointOfInterestState>): PointOfInterestState {
   return {
     id: poi.id ?? '',
@@ -63,6 +67,7 @@ function normalizePointOfInterest(poi: Partial<PointOfInterestState>): PointOfIn
   };
 }
 
+/** Нормализует `normalizeFaction` в ходе выполнения связанного игрового сценария. */
 function normalizeFaction(faction: Partial<FactionState>): FactionState {
   return {
     id: faction.id ?? '',
@@ -72,6 +77,7 @@ function normalizeFaction(faction: Partial<FactionState>): FactionState {
   };
 }
 
+/** Выполняет `inferSettingFromMaps` в ходе выполнения связанного игрового сценария. */
 function inferSettingFromMaps(maps: Partial<MapsState> = {}): SettingState {
   const nodes: MapNodeState[] = Object.values(maps.nodesById ?? {});
 
@@ -103,12 +109,14 @@ function inferSettingFromMaps(maps: Partial<MapsState> = {}): SettingState {
   };
 }
 
+/** Определяет контракт `SettingSeed` для согласованного взаимодействия модулей в контексте `world/map/setting`. */
 interface SettingSeed extends Partial<SettingState> {
   districts?: Partial<DistrictState>[];
   pointsOfInterest?: Partial<PointOfInterestState>[];
   factions?: Partial<FactionState>[];
 }
 
+/** Создаёт и настраивает `createDefaultSetting` в ходе выполнения связанного игрового сценария. */
 export function createDefaultSetting(seed: SettingSeed = {}, maps: GameState['maps'] = { levelConfigs: {}, nodesById: {} }): SettingState {
   const inferred = inferSettingFromMaps(maps);
 

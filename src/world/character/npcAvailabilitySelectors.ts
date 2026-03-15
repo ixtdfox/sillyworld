@@ -4,24 +4,29 @@ import { getTimePhase } from '../time/worldSelectors.ts';
 
 const ALL_PHASES = new Set<TimePhase>(Object.values(TIME_PHASE));
 
+/** Выполняет `isTimePhase` в ходе выполнения связанного игрового сценария. */
 function isTimePhase(value: string): value is TimePhase {
   return ALL_PHASES.has(value as TimePhase);
 }
 
+/** Определяет контракт `NpcPhaseRule` для согласованного взаимодействия модулей в контексте `world/character/npcAvailabilitySelectors`. */
 interface NpcPhaseRule {
   available: boolean;
   reason?: string;
   locationId?: string | null;
 }
 
+/** Описывает тип `NpcPhaseRules`, который формализует структуру данных в модуле `world/character/npcAvailabilitySelectors`. */
 type NpcPhaseRules = Partial<Record<TimePhase, NpcPhaseRule>>;
 
+/** Определяет контракт `NpcAvailabilityMeta` для согласованного взаимодействия модулей в контексте `world/character/npcAvailabilitySelectors`. */
 interface NpcAvailabilityMeta {
   availability?: {
     byPhase?: Record<string, boolean | NpcPhaseRule>;
   };
 }
 
+/** Определяет контракт `NpcAvailabilityResult` для согласованного взаимодействия модулей в контексте `world/character/npcAvailabilitySelectors`. */
 export interface NpcAvailabilityResult {
   available: boolean;
   reason: string;
@@ -29,6 +34,7 @@ export interface NpcAvailabilityResult {
   timePhase: TimePhase;
 }
 
+/** Нормализует `normalizePhaseRules` в ходе выполнения связанного игрового сценария. */
 function normalizePhaseRules(rules: Record<string, boolean | NpcPhaseRule> = {}): NpcPhaseRules {
   return Object.fromEntries(
     Object.entries(rules)
@@ -54,6 +60,7 @@ function normalizePhaseRules(rules: Record<string, boolean | NpcPhaseRule> = {})
   );
 }
 
+/** Выполняет `evaluateNpcAvailability` в ходе выполнения связанного игрового сценария. */
 export function evaluateNpcAvailability(
   meta: NpcAvailabilityMeta = {},
   timePhase: TimePhase,
@@ -84,6 +91,7 @@ export function evaluateNpcAvailability(
   };
 }
 
+/** Возвращает `getNpcAvailability` в ходе выполнения связанного игрового сценария. */
 export function getNpcAvailability(
   state: GameState,
   { npcNodeId = null, npcNode = null, locationNodeId = null }: { npcNodeId?: string | null; npcNode?: MapNodeState | null; locationNodeId?: string | null } = {}
@@ -102,6 +110,7 @@ export function getNpcAvailability(
   return evaluateNpcAvailability(node.meta || {}, getTimePhase(state), effectiveLocationNodeId);
 }
 
+/** Возвращает `getNpcsForLocation` в ходе выполнения связанного игрового сценария. */
 export function getNpcsForLocation(
   state: GameState,
   locationNodeId: string,

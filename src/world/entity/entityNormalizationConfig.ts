@@ -62,5 +62,7 @@ export const ENTITY_NORMALIZATION_CONFIG = Object.freeze({
   })
 });
 
+/** Константа `DEFAULT_PLAYER_NORMALIZATION_ID` хранит общие настройки/данные, которые переиспользуются в модуле `world/entity/entityNormalizationConfig`. */
 export const DEFAULT_PLAYER_NORMALIZATION_ID = 'player';
+/** Константа `DEFAULT_ENEMY_NORMALIZATION_ID` хранит общие настройки/данные, которые переиспользуются в модуле `world/entity/entityNormalizationConfig`. */
 export const DEFAULT_ENEMY_NORMALIZATION_ID = 'enemy_humanoid_raider';

@@ -2,6 +2,7 @@ import type { GameState, PhaseTransitionRecord, TimePhase, WorldState } from '..
 
 const DEFAULT_TRANSITION_TYPE = 'time.phase.changed';
 
+/** Определяет контракт `CreatePhaseTransitionInput` для согласованного взаимодействия модулей в контексте `world/map/phaseTransitionActions`. */
 interface CreatePhaseTransitionInput {
   fromPhase: TimePhase;
   toPhase: TimePhase;
@@ -10,10 +11,12 @@ interface CreatePhaseTransitionInput {
   trigger?: string;
 }
 
+/** Выполняет `toTransitionId` в ходе выполнения связанного игрового сценария. */
 function toTransitionId({ dayNumber, clockStep, fromPhase, toPhase }: CreatePhaseTransitionInput): string {
   return `${DEFAULT_TRANSITION_TYPE}:${dayNumber}:${clockStep}:${fromPhase}->${toPhase}`;
 }
 
+/** Создаёт и настраивает `createPhaseTransition` в ходе выполнения связанного игрового сценария. */
 export function createPhaseTransition({ fromPhase, toPhase, dayNumber, clockStep, trigger = 'time-advance' }: CreatePhaseTransitionInput): PhaseTransitionRecord {
   return {
     id: toTransitionId({ dayNumber, clockStep, fromPhase, toPhase }),
@@ -27,6 +30,7 @@ export function createPhaseTransition({ fromPhase, toPhase, dayNumber, clockStep
   };
 }
 
+/** Нормализует `normalizeTransitionQueue` в ходе выполнения связанного игрового сценария. */
 function normalizeTransitionQueue(world: WorldState): { pending: PhaseTransitionRecord[]; history: PhaseTransitionRecord[] } {
   const pending = Array.isArray(world.phaseTransitions?.pending) ? world.phaseTransitions.pending : [];
   const history = Array.isArray(world.phaseTransitions?.history) ? world.phaseTransitions.history : [];
@@ -37,6 +41,7 @@ function normalizeTransitionQueue(world: WorldState): { pending: PhaseTransition
   };
 }
 
+/** Выполняет `appendPhaseTransitions` в ходе выполнения связанного игрового сценария. */
 export function appendPhaseTransitions(state: GameState, transitions: PhaseTransitionRecord[] = []): GameState {
   if (!Array.isArray(transitions) || transitions.length === 0) return state;
   const queue = normalizeTransitionQueue(state.world);
@@ -54,6 +59,7 @@ export function appendPhaseTransitions(state: GameState, transitions: PhaseTrans
   };
 }
 
+/** Выполняет `consumeNextPhaseTransition` в ходе выполнения связанного игрового сценария. */
 export function consumeNextPhaseTransition(state: GameState): { state: GameState; transition: PhaseTransitionRecord | null } {
   const queue = normalizeTransitionQueue(state.world);
   const next = queue.pending[0];
@@ -80,6 +86,7 @@ export function consumeNextPhaseTransition(state: GameState): { state: GameState
   };
 }
 
+/** Возвращает `getPendingPhaseTransitions` в ходе выполнения связанного игрового сценария. */
 export function getPendingPhaseTransitions(state: GameState): PhaseTransitionRecord[] {
   const queue = normalizeTransitionQueue(state.world);
   return queue.pending;

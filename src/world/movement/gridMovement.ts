@@ -4,6 +4,7 @@ function isFiniteNumber(value) {
   return Number.isFinite(value);
 }
 
+/** Нормализует `normalizeGridCell` в ходе выполнения связанного игрового сценария. */
 export function normalizeGridCell(cell) {
   if (!cell || !isFiniteNumber(cell.x) || !isFiniteNumber(cell.z)) {
     return null;
@@ -15,6 +16,7 @@ export function normalizeGridCell(cell) {
   };
 }
 
+/** Создаёт и настраивает `createPathSignature` в ходе выполнения связанного игрового сценария. */
 export function createPathSignature(startCell, destinationCell) {
   const start = normalizeGridCell(startCell);
   const destination = normalizeGridCell(destinationCell);
@@ -24,6 +26,7 @@ export function createPathSignature(startCell, destinationCell) {
   return `${start.x},${start.z}>${destination.x},${destination.z}`;
 }
 
+/** Выполняет `stepCellTowardsTarget` в ходе выполнения связанного игрового сценария. */
 export function stepCellTowardsTarget(currentCell, targetCell) {
   const current = normalizeGridCell(currentCell);
   const target = normalizeGridCell(targetCell);
@@ -45,10 +48,12 @@ export function stepCellTowardsTarget(currentCell, targetCell) {
   return nextCell;
 }
 
+/** Выполняет `areCellsEqual` в ходе выполнения связанного игрового сценария. */
 export function areCellsEqual(a, b) {
   return Boolean(a && b && a.x === b.x && a.z === b.z);
 }
 
+/** Определяет `resolveCellPath` в ходе выполнения связанного игрового сценария. */
 export function resolveCellPath({ startCell, destinationCell, grid, findPathOptions }) {
   const start = normalizeGridCell(startCell);
   const destination = normalizeGridCell(destinationCell);
@@ -67,12 +72,14 @@ export function resolveCellPath({ startCell, destinationCell, grid, findPathOpti
   return [start, destination];
 }
 
+/** Определяет `resolveWorldPositionFromCell` в ходе выполнения связанного игрового сценария. */
 export function resolveWorldPositionFromCell({ cell, gridMapper, resolveGroundY, fallbackY = 0 }) {
   return gridMapper.gridCellToWorld(cell, {
     resolveY: ({ x, z }) => resolveGroundY?.({ x, z, fallbackY }) ?? fallbackY
   });
 }
 
+/** Собирает `buildWorldWaypointPath` в ходе выполнения связанного игрового сценария. */
 export function buildWorldWaypointPath({ pathCells, gridMapper, resolveGroundY, fallbackY = 0 }) {
   if (!Array.isArray(pathCells) || pathCells.length <= 1) {
     return [];
@@ -86,10 +93,12 @@ export function buildWorldWaypointPath({ pathCells, gridMapper, resolveGroundY, 
   }));
 }
 
+/** Выполняет `isCellPathTraversalComplete` в ходе выполнения связанного игрового сценария. */
 export function isCellPathTraversalComplete({ activeWaypointIndex = 0, waypoints = [] }) {
   return activeWaypointIndex >= waypoints.length;
 }
 
+/** Продвигает `advancePositionAlongWaypoints` в ходе выполнения связанного игрового сценария. */
 export function advancePositionAlongWaypoints({
   position,
   waypoints,

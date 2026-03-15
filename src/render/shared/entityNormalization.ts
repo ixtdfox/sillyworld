@@ -13,6 +13,7 @@ import {
   refreshEntityWorldMatrices
 } from './entityVisualBounds.ts';
 
+/** Выполняет `toRadians` в ходе выполнения связанного игрового сценария. */
 function toRadians(degrees) {
   return (degrees * Math.PI) / 180;
 }
@@ -26,6 +27,7 @@ export {
   resolveEnemyNormalizationConfigId
 };
 
+/** Выполняет `applyEntityNormalization` в ходе выполнения связанного игрового сценария. */
 export function applyEntityNormalization(runtime, entity, normalizationConfig) {
   const rootNode = entity?.rootNode;
   if (!rootNode) {
@@ -63,6 +65,7 @@ export function applyEntityNormalization(runtime, entity, normalizationConfig) {
   };
 }
 
+/** Выполняет `fitModelToHeight` в ходе выполнения связанного игрового сценария. */
 export function fitModelToHeight(entityOrRootNode, targetHeight, options = {}) {
   if (!Number.isFinite(targetHeight) || targetHeight <= 0) {
     throw new Error(`Cannot fit model to height: targetHeight must be a finite number > 0 (received ${String(targetHeight)}).`);

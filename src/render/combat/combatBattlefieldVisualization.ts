@@ -16,6 +16,7 @@ function createLayerController(render, clear) {
   };
 }
 
+/** Создаёт и настраивает `createCombatBattlefieldVisualization` в ходе выполнения связанного игрового сценария. */
 export function createCombatBattlefieldVisualization(runtime, options = {}) {
   const {
     combatState,

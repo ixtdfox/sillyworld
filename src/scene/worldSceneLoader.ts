@@ -4,6 +4,7 @@ import { ASSET_PATHS } from '../core/assets/assetCatalog.ts';
 const SCENE_FILE = ASSET_PATHS.scenes.districtExploration;
 const GROUND_MESH_NAME = 'Ground';
 
+/** Определяет `resolveSceneRoots` в ходе выполнения связанного игрового сценария. */
 function resolveSceneRoots(result) {
   const roots = [];
   for (const node of result.transformNodes) {
@@ -21,6 +22,7 @@ function resolveSceneRoots(result) {
   return roots;
 }
 
+/** Определяет `resolveGroundMesh` в ходе выполнения связанного игрового сценария. */
 function resolveGroundMesh({ scene, importedMeshes }) {
   const importedGroundMesh = importedMeshes.find((mesh) => mesh.name === GROUND_MESH_NAME);
   if (importedGroundMesh) {
@@ -30,6 +32,7 @@ function resolveGroundMesh({ scene, importedMeshes }) {
   return scene.getMeshByName(GROUND_MESH_NAME) ?? null;
 }
 
+/** Загружает `loadWorldScene` в ходе выполнения связанного игрового сценария. */
 export async function loadWorldScene(runtime, options = {}) {
   const sceneFile = options.sceneFile ?? SCENE_FILE;
   const resolveAssetPath = options.resolveAssetPath ?? ((path) => path);

@@ -3,6 +3,7 @@ import { createEntityGameplayDimensions } from '../../world/entity/entityGamepla
 
 export { createEntityGameplayDimensions };
 
+/** Выполняет `applyEntityCollisionFromDimensions` в ходе выполнения связанного игрового сценария. */
 export function applyEntityCollisionFromDimensions(runtime, rootNode, gameplayDimensions) {
   if (!runtime?.BABYLON?.Vector3 || !rootNode) {
     return;

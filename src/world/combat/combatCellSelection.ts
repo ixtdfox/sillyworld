@@ -1,14 +1,18 @@
+/** Константа `COMBAT_MOVE_HIGHLIGHT_MESH_PREFIX` хранит общие настройки/данные, которые переиспользуются в модуле `world/combat/combatCellSelection`. */
 export const COMBAT_MOVE_HIGHLIGHT_MESH_PREFIX = 'combatMoveHighlight_';
 
+/** Определяет контракт `CombatGridCellLike` для согласованного взаимодействия модулей в контексте `world/combat/combatCellSelection`. */
 export interface CombatGridCellLike {
   x: number;
   z: number;
 }
 
+/** Определяет контракт `CombatGridMapperLike` для согласованного взаимодействия модулей в контексте `world/combat/combatCellSelection`. */
 export interface CombatGridMapperLike {
   worldToGridCell: (position: { x: number; y?: number; z: number }) => CombatGridCellLike;
 }
 
+/** Выполняет `tryParseCellFromHighlightMeshName` в ходе выполнения связанного игрового сценария. */
 export function tryParseCellFromHighlightMeshName(meshName: unknown): CombatGridCellLike | null {
   if (typeof meshName !== 'string' || !meshName.startsWith(COMBAT_MOVE_HIGHLIGHT_MESH_PREFIX)) {
     return null;
@@ -22,6 +26,7 @@ export function tryParseCellFromHighlightMeshName(meshName: unknown): CombatGrid
   return { x, z };
 }
 
+/** Выполняет `tryResolveCellFromPickResult` в ходе выполнения связанного игрового сценария. */
 export function tryResolveCellFromPickResult(
   pickResult: any,
   gridMapper: CombatGridMapperLike

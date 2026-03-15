@@ -5,10 +5,12 @@ import { getTimePhase } from '../time/worldSelectors.ts';
 
 const ALL_PHASES = new Set<TimePhase>(Object.values(TIME_PHASE));
 
+/** Нормализует `normalizePhases` в ходе выполнения связанного игрового сценария. */
 function normalizePhases(phases: TimePhase[] = []): TimePhase[] {
   return phases.filter((phase): phase is TimePhase => ALL_PHASES.has(phase));
 }
 
+/** Определяет контракт `LocationAvailabilityResult` для согласованного взаимодействия модулей в контексте `world/map/locationAvailabilitySelectors`. */
 export interface LocationAvailabilityResult {
   available: boolean;
   preferred: boolean;
@@ -18,6 +20,7 @@ export interface LocationAvailabilityResult {
   preferredPhases: TimePhase[];
 }
 
+/** Определяет контракт `CombinedLocationAvailability` для согласованного взаимодействия модулей в контексте `world/map/locationAvailabilitySelectors`. */
 export interface CombinedLocationAvailability {
   timePhase: TimePhase;
   available: boolean;
@@ -27,6 +30,7 @@ export interface CombinedLocationAvailability {
   pointOfInterest: LocationAvailabilityResult | null;
 }
 
+/** Выполняет `evaluateLocationAvailability` в ходе выполнения связанного игрового сценария. */
 export function evaluateLocationAvailability(meta: LocationMetaState, timePhase: TimePhase): LocationAvailabilityResult {
   const availability = meta.availability;
   const mode = availability.mode || 'always';
@@ -73,6 +77,7 @@ export function evaluateLocationAvailability(meta: LocationMetaState, timePhase:
   };
 }
 
+/** Возвращает `getLocationAvailability` в ходе выполнения связанного игрового сценария. */
 export function getLocationAvailability(
   state: GameState,
   { districtId = null, poiId = null }: { districtId?: string | null; poiId?: string | null } = {}

@@ -15,6 +15,7 @@ import { AppController } from './core/app/AppController.ts';
 
 const APP_TITLE = 'SillyRPG';
 
+/** Класс `ApplicationSession` координирует соответствующий сценарий модуля `app` и инкапсулирует связанную логику. */
 class ApplicationSession {
   readonly #controller: AppControllerContract;
   readonly #screenManager = new ScreenManager();
@@ -23,6 +24,7 @@ class ApplicationSession {
     this.#controller = controller;
   }
 
+  /** Выполняет `start` внутри жизненного цикла класса. */
   async start(): Promise<void> {
     console.info('[SillyRPG] Mounting application root.');
     createRoot();
@@ -30,6 +32,7 @@ class ApplicationSession {
     console.info('[SillyRPG] Startup complete.');
   }
 
+  /** Выполняет `render` внутри жизненного цикла класса. */
   render(): void {
     const nav = this.#controller.navigation.getState();
     const store = this.#controller.getStore();
@@ -121,6 +124,7 @@ const controller = new AppController({
 
 const session = new ApplicationSession(controller);
 
+/** Выполняет `startApp` в ходе выполнения связанного игрового сценария. */
 export async function startApp(): Promise<void> {
   await session.start();
 }

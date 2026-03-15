@@ -30,6 +30,7 @@ const PHASE_HINTS: PhaseLabels = Object.freeze({
   night: 'Night-only routes and contacts open up, while many daytime spots close.'
 });
 
+/** Собирает `buildMapNavState` в ходе выполнения связанного игрового сценария. */
 function buildMapNavState(state: WorldStoreStateSnapshot, mapLevel: AppControllerDeps['mapLevel']): NavigationState {
   const currentNodeId = state.player.currentNodeId;
   const districtId = state.maps.nodesById[currentNodeId]?.parentId ?? null;
@@ -47,6 +48,7 @@ function buildMapNavState(state: WorldStoreStateSnapshot, mapLevel: AppControlle
   };
 }
 
+/** Класс `AppController` координирует соответствующий сценарий модуля `core/app/AppController` и инкапсулирует связанную логику. */
 export class AppController implements AppControllerContract {
   readonly navigation: NavigationController;
   readonly sceneTransitionController: SceneTransitionController;
@@ -77,10 +79,12 @@ export class AppController implements AppControllerContract {
     });
   }
 
+  /** Возвращает `getStore` внутри жизненного цикла класса. */
   getStore(): WorldStore | null {
     return this.#worldStore.get();
   }
 
+  /** Возвращает `getPhasePresentation` внутри жизненного цикла класса. */
   getPhasePresentation(): PhasePresentation | null {
     const store = this.getStore();
     if (!store) return null;
@@ -96,10 +100,12 @@ export class AppController implements AppControllerContract {
     };
   }
 
+  /** Выполняет `hasSaveData` внутри жизненного цикла класса. */
   hasSaveData(): boolean {
     return this.#persistence.hasSaveData();
   }
 
+  /** Выполняет `back` внутри жизненного цикла класса. */
   back(): void {
     const nav = this.navigation.getState();
     if (nav.screen === 'settings') {
@@ -120,6 +126,7 @@ export class AppController implements AppControllerContract {
     }
   }
 
+  /** Выполняет `startNewGame` внутри жизненного цикла класса. */
   async startNewGame(): Promise<void> {
     this.#sceneLaunchOptions = null;
     const seed = await this.loadSeedOnce();
@@ -132,6 +139,7 @@ export class AppController implements AppControllerContract {
   }
 
 
+  /** Выполняет `startCombatTest` внутри жизненного цикла класса. */
   async startCombatTest(): Promise<void> {
     const seed = await this.loadSeedOnce();
     const store = this.#worldStore.init(seed);
@@ -159,6 +167,7 @@ export class AppController implements AppControllerContract {
     this.requestRender();
   }
 
+  /** Загружает `loadAndResumeGame` внутри жизненного цикла класса. */
   async loadAndResumeGame(): Promise<void> {
     this.#sceneLaunchOptions = null;
     const seed = await this.loadSeedOnce();
@@ -171,6 +180,7 @@ export class AppController implements AppControllerContract {
     this.requestRender();
   }
 
+  /** Выполняет `consumePendingPhaseTransition` внутри жизненного цикла класса. */
   consumePendingPhaseTransition(): unknown {
     const store = this.getStore();
     if (!store) return null;
@@ -180,12 +190,14 @@ export class AppController implements AppControllerContract {
     return transition;
   }
 
+  /** Выполняет `initialize` внутри жизненного цикла класса. */
   async initialize(): Promise<void> {
     this.#sceneLaunchOptions = null;
     await this.loadSeedOnce();
     this.requestRender();
   }
 
+  /** Возвращает `getSceneLaunchOptions` внутри жизненного цикла класса. */
   getSceneLaunchOptions(): SceneLaunchOptions | null {
     return this.#sceneLaunchOptions;
   }

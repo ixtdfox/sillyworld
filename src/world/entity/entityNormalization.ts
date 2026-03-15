@@ -5,10 +5,12 @@ import {
   ENTITY_NORMALIZATION_CONFIG
 } from './entityNormalizationConfig.ts';
 
+/** Выполняет `isFiniteNumber` в ходе выполнения связанного игрового сценария. */
 function isFiniteNumber(value) {
   return Number.isFinite(value);
 }
 
+/** Выполняет `assertField` в ходе выполнения связанного игрового сценария. */
 function assertField(configId, fieldName, value, validator, expectation) {
   if (!validator(value)) {
     throw new Error(
@@ -17,6 +19,7 @@ function assertField(configId, fieldName, value, validator, expectation) {
   }
 }
 
+/** Нормализует `normalizeOrientationCorrection` в ходе выполнения связанного игрового сценария. */
 function normalizeOrientationCorrection(configId, value) {
   if (value == null) return null;
   if (typeof value !== 'object') {
@@ -36,6 +39,7 @@ function normalizeOrientationCorrection(configId, value) {
   return Object.freeze({ pitchDegrees, yawDegrees, rollDegrees });
 }
 
+/** Нормализует `normalizeConfigEntry` в ходе выполнения связанного игрового сценария. */
 function normalizeConfigEntry(configId, entry) {
   if (!entry || typeof entry !== 'object') {
     throw new Error(`Invalid entity normalization config "${configId}": entry must be an object.`);
@@ -69,6 +73,7 @@ function normalizeConfigEntry(configId, entry) {
   return Object.freeze(normalized);
 }
 
+/** Создаёт и настраивает `createEntityNormalizationConfigStore` в ходе выполнения связанного игрового сценария. */
 export function createEntityNormalizationConfigStore(rawConfig = {}) {
   if (!rawConfig || typeof rawConfig !== 'object') {
     throw new Error('Entity normalization config root must be an object.');
@@ -98,6 +103,7 @@ export function createEntityNormalizationConfigStore(rawConfig = {}) {
     }
   }
 
+  /** Определяет `resolveConfigId` в ходе выполнения связанного игрового сценария. */
   function resolveConfigId(entityId) {
     if (typeof entityId !== 'string' || entityId.length === 0) {
       throw new Error(`Entity normalization config id must be a non-empty string (received ${String(entityId)}).`);
@@ -110,10 +116,12 @@ export function createEntityNormalizationConfigStore(rawConfig = {}) {
     return configId;
   }
 
+  /** Возвращает `getEntityNormalizationConfig` в ходе выполнения связанного игрового сценария. */
   function getEntityNormalizationConfig(entityId) {
     return normalizedByConfigId.get(resolveConfigId(entityId));
   }
 
+  /** Выполняет `hasEntityNormalizationConfig` в ходе выполнения связанного игрового сценария. */
   function hasEntityNormalizationConfig(entityId) {
     if (typeof entityId !== 'string' || entityId.length === 0) return false;
     return configIdByEntityId.has(entityId);
@@ -128,22 +136,27 @@ export function createEntityNormalizationConfigStore(rawConfig = {}) {
 
 const ENTITY_NORMALIZATION_STORE = createEntityNormalizationConfigStore(ENTITY_NORMALIZATION_CONFIG);
 
+/** Возвращает `getEntityNormalizationConfig` в ходе выполнения связанного игрового сценария. */
 export function getEntityNormalizationConfig(entityId) {
   return ENTITY_NORMALIZATION_STORE.getEntityNormalizationConfig(entityId);
 }
 
+/** Выполняет `hasEntityNormalizationConfig` в ходе выполнения связанного игрового сценария. */
 export function hasEntityNormalizationConfig(entityId) {
   return ENTITY_NORMALIZATION_STORE.hasEntityNormalizationConfig(entityId);
 }
 
+/** Определяет `resolveEntityNormalizationConfig` в ходе выполнения связанного игрового сценария. */
 export function resolveEntityNormalizationConfig(configId) {
   return getEntityNormalizationConfig(configId);
 }
 
+/** Определяет `resolvePlayerNormalizationConfigId` в ходе выполнения связанного игрового сценария. */
 export function resolvePlayerNormalizationConfigId(options = {}) {
   return options.playerNormalizationId ?? DEFAULT_PLAYER_NORMALIZATION_ID;
 }
 
+/** Определяет `resolveEnemyNormalizationConfigId` в ходе выполнения связанного игрового сценария. */
 export function resolveEnemyNormalizationConfigId(options = {}) {
   return options.enemyNormalizationId ?? DEFAULT_ENEMY_NORMALIZATION_ID;
 }

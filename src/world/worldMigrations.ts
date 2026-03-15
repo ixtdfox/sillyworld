@@ -3,11 +3,13 @@ import { createGameState } from './worldState.ts';
 import { normalizeTimePhase } from './time/timeActions.ts';
 import type { GameState, GameStateSeed } from './contracts.ts';
 
+/** Описывает тип `MigratableState`, который формализует структуру данных в модуле `world/worldMigrations`. */
 type MigratableState = Record<string, unknown> & {
   schemaVersion?: number | null;
   world?: Record<string, unknown> & { timePhase?: unknown; timeOfDay?: unknown };
 };
 
+/** Выполняет `migrateV1ToV2` в ходе выполнения связанного игрового сценария. */
 function migrateV1ToV2(v1State: MigratableState, fallbackSeed: GameStateSeed): MigratableState {
   const base = createGameState(fallbackSeed) as unknown as MigratableState;
   return {
@@ -18,10 +20,12 @@ function migrateV1ToV2(v1State: MigratableState, fallbackSeed: GameStateSeed): M
   };
 }
 
+/** Выполняет `migrateV2ToV3` в ходе выполнения связанного игрового сценария. */
 function migrateV2ToV3(v2State: MigratableState): MigratableState {
   return { ...v2State, schemaVersion: 3 };
 }
 
+/** Выполняет `migrateV3ToV4` в ходе выполнения связанного игрового сценария. */
 function migrateV3ToV4(v3State: MigratableState): MigratableState {
   const currentPhase = normalizeTimePhase(
     typeof v3State?.world?.timePhase === 'string' ? v3State.world.timePhase : undefined,
@@ -37,6 +41,7 @@ function migrateV3ToV4(v3State: MigratableState): MigratableState {
   };
 }
 
+/** Выполняет `migrateGameState` в ходе выполнения связанного игрового сценария. */
 export function migrateGameState(rawState: unknown, fallbackSeed: GameStateSeed = {}): GameState | null {
   if (!rawState || typeof rawState !== 'object') return null;
   const state = rawState as MigratableState;

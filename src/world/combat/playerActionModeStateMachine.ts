@@ -5,10 +5,12 @@ const PLAYER_ACTION_MODES = Object.freeze({
   ATTACK: 'attack'
 });
 
+/** Выполняет `isKnownMode` в ходе выполнения связанного игрового сценария. */
 function isKnownMode(mode) {
   return Object.values(PLAYER_ACTION_MODES).includes(mode);
 }
 
+/** Создаёт и настраивает `createPlayerActionModeStateMachine` в ходе выполнения связанного игрового сценария. */
 export function createPlayerActionModeStateMachine(options = {}) {
   const initialMode = isKnownMode(options.initialMode) ? options.initialMode : PLAYER_ACTION_MODES.IDLE;
   let mode = initialMode;

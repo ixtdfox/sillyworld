@@ -5,6 +5,7 @@ import {
   resolveEnemyArchetype
 } from '../entity/entityArchetypes.ts';
 
+/** Загружает `loadEnemyCharacter` в ходе выполнения связанного игрового сценария. */
 export async function loadEnemyCharacter(runtime, options = {}) {
   const enemyArchetypeId = options.enemyArchetypeId ?? DEFAULT_ENEMY_ARCHETYPE_ID;
   const enemyArchetype = resolveEnemyArchetype(enemyArchetypeId);

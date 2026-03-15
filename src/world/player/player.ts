@@ -1,7 +1,9 @@
 import type { PlayerState, RelationshipState } from '../contracts.ts';
 
+/** Описывает тип `RelationshipEntrySeed`, который формализует структуру данных в модуле `world/player/player`. */
 type RelationshipEntrySeed = Partial<RelationshipState>;
 
+/** Нормализует `normalizeRelationshipEntry` в ходе выполнения связанного игрового сценария. */
 function normalizeRelationshipEntry(relationship: RelationshipEntrySeed = {}): RelationshipState {
   return {
     level: typeof relationship.level === 'number' && Number.isFinite(relationship.level) ? relationship.level : 0,
@@ -21,6 +23,7 @@ function normalizeRelationshipEntry(relationship: RelationshipEntrySeed = {}): R
   };
 }
 
+/** Нормализует `normalizeRelationships` в ходе выполнения связанного игрового сценария. */
 function normalizeRelationships(relationships: PlayerState['relationships'] = {}): PlayerState['relationships'] {
   return Object.fromEntries(
     Object.entries(relationships).map(([characterId, relationship]) => [
@@ -30,6 +33,7 @@ function normalizeRelationships(relationships: PlayerState['relationships'] = {}
   );
 }
 
+/** Создаёт и настраивает `createDefaultPlayer` в ходе выполнения связанного игрового сценария. */
 export function createDefaultPlayer(seed: Partial<PlayerState> = {}): PlayerState {
   return {
     id: seed.id ?? 'player',

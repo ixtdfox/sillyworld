@@ -5,11 +5,13 @@ const ANIMATION_STATE_WALKING = 'Walking';
 const IDLE_KEYWORDS = ['idle', 'stand', 'rest', 'breathe'];
 const WALKING_KEYWORDS = ['walk', 'run', 'locomotion', 'move'];
 
+/** Выполняет `scoreAnimationGroup` в ходе выполнения связанного игрового сценария. */
 function scoreAnimationGroup(name, keywords) {
   const lowerName = (name ?? '').toLowerCase();
   return keywords.reduce((score, keyword) => (lowerName.includes(keyword) ? score + 1 : score), 0);
 }
 
+/** Выполняет `pickBestAnimationGroup` в ходе выполнения связанного игрового сценария. */
 function pickBestAnimationGroup(animationGroups, keywords) {
   const scoredGroups = animationGroups
     .map((group) => ({ group, score: scoreAnimationGroup(group?.name, keywords) }))
@@ -19,6 +21,7 @@ function pickBestAnimationGroup(animationGroups, keywords) {
   return scoredGroups[0]?.group ?? null;
 }
 
+/** Определяет `resolveAnimationSet` в ходе выполнения связанного игрового сценария. */
 function resolveAnimationSet(animationGroups) {
   const idleGroup = pickBestAnimationGroup(animationGroups, IDLE_KEYWORDS) ?? animationGroups[0] ?? null;
   const walkingGroup = pickBestAnimationGroup(animationGroups, WALKING_KEYWORDS) ?? animationGroups[1] ?? idleGroup;
@@ -26,6 +29,7 @@ function resolveAnimationSet(animationGroups) {
   return { idleGroup, walkingGroup };
 }
 
+/** Выполняет `startAnimationGroup` в ходе выполнения связанного игрового сценария. */
 function startAnimationGroup(animationGroups, activeGroup, label) {
   for (const group of animationGroups) {
     if (group !== activeGroup) {
@@ -37,6 +41,7 @@ function startAnimationGroup(animationGroups, activeGroup, label) {
   console.log(`[SillyRPG] ${label} started`, { animationGroup: activeGroup.name });
 }
 
+/** Создаёт и настраивает `createPlayerAnimationController` в ходе выполнения связанного игрового сценария. */
 export function createPlayerAnimationController(playerCharacter) {
   const animationGroups = playerCharacter?.animationGroups ?? [];
 
@@ -79,6 +84,7 @@ export function createPlayerAnimationController(playerCharacter) {
   setState(ANIMATION_STATE_IDLE);
 
   return {
+    /** Обновляет `setMoving` внутри жизненного цикла класса. */
     setMoving(isMoving) {
       setState(isMoving ? ANIMATION_STATE_WALKING : ANIMATION_STATE_IDLE);
     }

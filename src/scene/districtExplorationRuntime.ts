@@ -11,6 +11,7 @@ import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } fr
 
 const DEFAULT_ENEMY_SPAWN: Readonly<{ x: number; z: number }> = Object.freeze({ x: 2, z: 2 });
 
+/** Определяет контракт `BabylonRuntimeSubset` для согласованного взаимодействия модулей в контексте `scene/districtExplorationRuntime`. */
 interface BabylonRuntimeSubset {
   BABYLON: {
     Vector3: new (x: number, y: number, z: number) => PositionLike;
@@ -24,6 +25,7 @@ interface BabylonRuntimeSubset {
   };
 }
 
+/** Определяет контракт `EntityLike` для согласованного взаимодействия модулей в контексте `scene/districtExplorationRuntime`. */
 interface EntityLike {
   rootNode?: PositionNodeLike & {
     position: PositionNodeLike['position'] & { copyFrom: (position: unknown) => void; y: number };
@@ -35,6 +37,7 @@ interface EntityLike {
   gridCell?: { x: number; z: number };
 }
 
+/** Определяет контракт `DistrictExplorationOptions` для согласованного взаимодействия модулей в контексте `scene/districtExplorationRuntime`. */
 interface DistrictExplorationOptions {
   districtId?: string;
   sceneFile?: string;
@@ -56,10 +59,12 @@ interface DistrictExplorationOptions {
 }
 
 
+/** Выполняет `yawFromDirection` в ходе выполнения связанного игрового сценария. */
 function yawFromDirection(direction: { x: number; z: number }): number {
   return Math.atan2(direction.x, direction.z);
 }
 
+/** Обновляет `setRootYaw` в ходе выполнения связанного игрового сценария. */
 function setRootYaw(rootNode: PositionNodeLike | undefined, yaw: number): void {
   if (!rootNode || !Number.isFinite(yaw)) return;
   if (rootNode.rotationQuaternion !== undefined) {
@@ -86,6 +91,7 @@ const resolveGroundY = ({ runtime, x, z, fallbackY = 0 }) => {
   return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 };
 
+/** Выполняет `placeEnemyOnGround` в ходе выполнения связанного игрового сценария. */
 function placeEnemyOnGround(runtime: BabylonRuntimeSubset, enemyEntity: EntityLike, gridMapper, spawnPreset = DEFAULT_ENEMY_SPAWN) {
   if (!enemyEntity?.rootNode) {
     throw new Error('Cannot place enemy character without a root node.');
@@ -102,6 +108,7 @@ function placeEnemyOnGround(runtime: BabylonRuntimeSubset, enemyEntity: EntityLi
   return enemyEntity.rootNode.position;
 }
 
+/** Определяет `resolveEnemyPatrolData` в ходе выполнения связанного игрового сценария. */
 function resolveEnemyPatrolData(runtime: BabylonRuntimeSubset, gridMapper, spawnPreset = DEFAULT_ENEMY_SPAWN, patrolPoints?: { x: number; y?: number; z: number }[]) {
   const rawRoute = Array.isArray(patrolPoints) && patrolPoints.length > 0
     ? patrolPoints.map((point) => ({ x: point.x, z: point.z }))
@@ -123,6 +130,7 @@ function resolveEnemyPatrolData(runtime: BabylonRuntimeSubset, gridMapper, spawn
   };
 }
 
+/** Создаёт и настраивает `createDistrictExplorationRuntime` в ходе выполнения связанного игрового сценария. */
 export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSubset, options: DistrictExplorationOptions = {}) {
   const districtScene = await loadWorldScene(runtime, {
     sceneFile: options.sceneFile,

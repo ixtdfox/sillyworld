@@ -4,6 +4,7 @@ import { createWorldGridMapper } from '../spatial/worldGrid.ts';
 const DEFAULT_PLAYER_SPAWN = { x: 0, y: 0, z: 0 };
 const SPAWN_MARKER_NAMES = ['PlayerSpawn', 'player_spawn', 'spawn_player'];
 
+/** Выполняет `findSpawnMarker` в ходе выполнения связанного игрового сценария. */
 function findSpawnMarker(scene) {
   for (const markerName of SPAWN_MARKER_NAMES) {
     const marker = scene.getNodeByName(markerName);
@@ -15,6 +16,7 @@ function findSpawnMarker(scene) {
   return null;
 }
 
+/** Определяет `resolveGroundY` в ходе выполнения связанного игрового сценария. */
 function resolveGroundY({ scene, BABYLON, x, z, fallbackY }) {
   const groundMesh = scene?.getMeshByName?.('Ground') ?? null;
   if (!groundMesh || groundMesh.isEnabled?.() === false || groundMesh.isVisible === false) {
@@ -32,6 +34,7 @@ function resolveGroundY({ scene, BABYLON, x, z, fallbackY }) {
   return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 }
 
+/** Определяет `resolveSpawnPosition` в ходе выполнения связанного игрового сценария. */
 function resolveSpawnPosition({ scene, BABYLON, gridMapper, forcedSpawn }) {
   const markerPosition = findSpawnMarker(scene);
   const x = forcedSpawn?.x ?? markerPosition?.x ?? DEFAULT_PLAYER_SPAWN.x;
@@ -48,6 +51,7 @@ function resolveSpawnPosition({ scene, BABYLON, gridMapper, forcedSpawn }) {
   };
 }
 
+/** Выполняет `spawnPlayerCharacter` в ходе выполнения связанного игрового сценария. */
 export function spawnPlayerCharacter(runtime, playerCharacter, options = {}) {
   if (!playerCharacter?.rootNode) {
     throw new Error('Cannot spawn player character without a root node.');

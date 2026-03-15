@@ -1,9 +1,11 @@
 import type { BabylonGuiLike, GuiControlLike, GuiSliderLike } from '../worldMapViewport.ts';
 
+/** Выполняет `clamp` в ходе выполнения связанного игрового сценария. */
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+/** Определяет контракт `InventoryScrollbarProps` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/inventory/inventoryScrollbar`. */
 export interface InventoryScrollbarProps {
   GUI: BabylonGuiLike;
   viewportHeight: number;
@@ -14,6 +16,7 @@ export interface InventoryScrollbarProps {
   onScroll: (value: number) => void;
 }
 
+/** Определяет контракт `InventoryScrollbarController` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/inventory/inventoryScrollbar`. */
 export interface InventoryScrollbarController {
   control: GuiControlLike;
   setValue: (value: number) => void;
@@ -21,6 +24,7 @@ export interface InventoryScrollbarController {
   max: () => number;
 }
 
+/** Создаёт и настраивает `createInventoryScrollbar` в ходе выполнения связанного игрового сценария. */
 export function createInventoryScrollbar({ GUI, viewportHeight, top, left, width, maxScroll, onScroll }: InventoryScrollbarProps): InventoryScrollbarController {
   const control = new GUI.Rectangle('inventory-scrollbar-root');
   control.width = `${width}px`;

@@ -7,6 +7,7 @@ import { createDefaultCharacters } from './character/characters.ts';
 import { createDefaultMaps } from './map/maps.ts';
 import { createDefaultSetting } from './map/setting.ts';
 
+/** Создаёт и настраивает `createGameState` в ходе выполнения связанного игрового сценария. */
 export function createGameState(seed: GameStateSeed = {}): GameState {
   const maps = createDefaultMaps(seed.maps);
 

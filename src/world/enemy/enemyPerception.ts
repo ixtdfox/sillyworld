@@ -4,16 +4,19 @@ import type { PositionLike, PositionNodeLike } from '../spatial/types.ts';
 const EPSILON = 1e-6;
 const DEFAULT_FACING_DIRECTION = Object.freeze({ x: 0, y: 0, z: -1 });
 
+/** Константа `DEFAULT_ENEMY_PERCEPTION_SETTINGS` хранит общие настройки/данные, которые переиспользуются в модуле `world/enemy/enemyPerception`. */
 export const DEFAULT_ENEMY_PERCEPTION_SETTINGS = Object.freeze({
   visionAngleDegrees: 70,
   visionDistance: 10
 });
 
+/** Определяет контракт `EnemyPerceptionSettings` для согласованного взаимодействия модулей в контексте `world/enemy/enemyPerception`. */
 export interface EnemyPerceptionSettings {
   visionAngleDegrees: number;
   visionDistance: number;
 }
 
+/** Определяет контракт `EnemyPerceptionActor` для согласованного взаимодействия модулей в контексте `world/enemy/enemyPerception`. */
 export interface EnemyPerceptionActor {
   id?: string;
   rootNode?: PositionNodeLike;
@@ -21,11 +24,13 @@ export interface EnemyPerceptionActor {
   facingDirection?: PositionLike;
 }
 
+/** Определяет контракт `EnemyPerceptionWorld` для согласованного взаимодействия модулей в контексте `world/enemy/enemyPerception`. */
 export interface EnemyPerceptionWorld {
   hasLineOfSight?: (params: { enemy: EnemyPerceptionActor; player?: EnemyPerceptionActor; targetPosition?: PositionLike; directionToPlayer: PositionLike; distanceToPlayer: number }) => boolean;
   logger?: Pick<Console, 'debug' | 'info'>;
 }
 
+/** Определяет контракт `EnemyPerceptionResult` для согласованного взаимодействия модулей в контексте `world/enemy/enemyPerception`. */
 export interface EnemyPerceptionResult {
   canSeePlayer: boolean;
   reason: 'detected' | 'missing-position' | 'out-of-range' | 'outside-fov' | 'blocked-line-of-sight';
@@ -35,23 +40,27 @@ export interface EnemyPerceptionResult {
   visionAngleDegrees: number;
 }
 
+/** Определяет контракт `EnemyPerceptionGridMapper` для согласованного взаимодействия модулей в контексте `world/enemy/enemyPerception`. */
 export interface EnemyPerceptionGridMapper {
   cellSize?: number;
   worldToGridCell: (position: PositionLike) => { x: number; z: number };
   gridCellToWorld: (cell: { x: number; z: number }, transform?: { fallbackY?: number }) => PositionLike;
 }
 
+/** Определяет контракт `EnemyVisionCoverageCell` для согласованного взаимодействия модулей в контексте `world/enemy/enemyPerception`. */
 export interface EnemyVisionCoverageCell {
   x: number;
   z: number;
 }
 
+/** Определяет контракт `EnemyVisionCoverage` для согласованного взаимодействия модулей в контексте `world/enemy/enemyPerception`. */
 export interface EnemyVisionCoverage {
   enemyCell: EnemyVisionCoverageCell | null;
   visibleCells: EnemyVisionCoverageCell[];
   blockedCells: EnemyVisionCoverageCell[];
 }
 
+/** Определяет контракт `EnemyPerceptionPipelineResult` для согласованного взаимодействия модулей в контексте `world/enemy/enemyPerception`. */
 export interface EnemyPerceptionPipelineResult {
   enemyPosition: PositionLike | null;
   facingDirection: PositionLike;
@@ -64,18 +73,22 @@ export interface EnemyPerceptionPipelineResult {
   perceptionResult: EnemyPerceptionResult;
 }
 
+/** Определяет `resolveLogger` в ходе выполнения связанного игрового сценария. */
 function resolveLogger(world?: EnemyPerceptionWorld): Pick<Console, 'debug' | 'info'> {
   return world?.logger ?? console;
 }
 
+/** Выполняет `toVector` в ходе выполнения связанного игрового сценария. */
 function toVector(from: PositionLike, to: PositionLike): PositionLike {
   return { x: to.x - from.x, y: to.y - from.y, z: to.z - from.z };
 }
 
+/** Выполняет `vectorLength` в ходе выполнения связанного игрового сценария. */
 function vectorLength(vector: PositionLike): number {
   return Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
 }
 
+/** Нормализует `normalize` в ходе выполнения связанного игрового сценария. */
 function normalize(vector: PositionLike): PositionLike {
   const length = vectorLength(vector);
   if (length <= EPSILON) {
@@ -85,14 +98,17 @@ function normalize(vector: PositionLike): PositionLike {
   return { x: vector.x / length, y: vector.y / length, z: vector.z / length };
 }
 
+/** Выполняет `dot` в ходе выполнения связанного игрового сценария. */
 function dot(a: PositionLike, b: PositionLike): number {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+/** Выполняет `clamp` в ходе выполнения связанного игрового сценария. */
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+/** Определяет `resolvePerceptionSettings` в ходе выполнения связанного игрового сценария. */
 function resolvePerceptionSettings(enemy: EnemyPerceptionActor): EnemyPerceptionSettings {
   const visionAngleDegrees = Number.isFinite(enemy?.perception?.visionAngleDegrees)
     ? Math.max(0, enemy.perception.visionAngleDegrees)
@@ -104,6 +120,7 @@ function resolvePerceptionSettings(enemy: EnemyPerceptionActor): EnemyPerception
   return { visionAngleDegrees, visionDistance };
 }
 
+/** Определяет `resolveFacingDirection` в ходе выполнения связанного игрового сценария. */
 function resolveFacingDirection(enemy: EnemyPerceptionActor): PositionLike {
   if (enemy?.facingDirection && vectorLength(enemy.facingDirection) > EPSILON) {
     return normalize(enemy.facingDirection);
@@ -112,6 +129,7 @@ function resolveFacingDirection(enemy: EnemyPerceptionActor): PositionLike {
   return DEFAULT_FACING_DIRECTION;
 }
 
+/** Выполняет `evaluateEnemyVisionTarget` в ходе выполнения связанного игрового сценария. */
 function evaluateEnemyVisionTarget(
   enemy: EnemyPerceptionActor,
   targetPosition: PositionLike,
@@ -184,6 +202,7 @@ function evaluateEnemyVisionTarget(
   };
 }
 
+/** Выполняет `canEnemySeePlayer` в ходе выполнения связанного игрового сценария. */
 export function canEnemySeePlayer(
   enemy: EnemyPerceptionActor,
   player: EnemyPerceptionActor,
@@ -237,6 +256,7 @@ export function canEnemySeePlayer(
   return result;
 }
 
+/** Возвращает `getEnemyVisionCoverage` в ходе выполнения связанного игрового сценария. */
 export function getEnemyVisionCoverage(
   enemy: EnemyPerceptionActor,
   gridMapper: EnemyPerceptionGridMapper,
@@ -273,6 +293,7 @@ export function getEnemyVisionCoverage(
   };
 }
 
+/** Выполняет `evaluateEnemyPerceptionPipeline` в ходе выполнения связанного игрового сценария. */
 export function evaluateEnemyPerceptionPipeline(
   enemy: EnemyPerceptionActor,
   player: EnemyPerceptionActor,
@@ -303,6 +324,7 @@ export function evaluateEnemyPerceptionPipeline(
   };
 }
 
+/** Выполняет `updateEnemyPerception` в ходе выполнения связанного игрового сценария. */
 export function updateEnemyPerception(
   enemy: EnemyPerceptionActor,
   player: EnemyPerceptionActor,

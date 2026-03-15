@@ -2,10 +2,12 @@
 
 import { normalizeGridCell } from '../movement/gridMovement.ts';
 
+/** Выполняет `toCell` в ходе выполнения связанного игрового сценария. */
 function toCell(cell) {
   return normalizeGridCell(cell);
 }
 
+/** Выполняет `mapWorldPositionToCombatCell` в ходе выполнения связанного игрового сценария. */
 export function mapWorldPositionToCombatCell({ unitId, worldPosition, gridMapper, grid, logger = console }) {
   if (!gridMapper || typeof gridMapper.worldToGridCell !== 'function') {
     throw new Error('[SillyRPG] Combat world-position mapping requires a grid mapper.');
@@ -66,6 +68,7 @@ export function mapWorldPositionToCombatCell({ unitId, worldPosition, gridMapper
   };
 }
 
+/** Выполняет `mapCombatParticipantsFromWorldPositions` в ходе выполнения связанного игрового сценария. */
 export function mapCombatParticipantsFromWorldPositions({ participants = [], gridMapper, grid, logger = console }) {
   return participants.map((participant) => {
     const canonicalGridCell = participant?.entity?.gridCell;

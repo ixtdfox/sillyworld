@@ -1,3 +1,4 @@
+/** Определяет контракт `MainMenuProps` для согласованного взаимодействия модулей в контексте `render/ui/screens/mainMenu`. */
 export interface MainMenuProps {
   onNewGame: () => void;
   onContinue: () => void;
@@ -8,6 +9,7 @@ export interface MainMenuProps {
   hasSave: boolean;
 }
 
+/** Определяет контракт `MainMenuButtonConfig` для согласованного взаимодействия модулей в контексте `render/ui/screens/mainMenu`. */
 interface MainMenuButtonConfig {
   label: string;
   onClick: () => void;
@@ -15,6 +17,7 @@ interface MainMenuButtonConfig {
   disabled?: boolean;
 }
 
+/** Выполняет `renderMainMenu` в ходе выполнения связанного игрового сценария. */
 export function renderMainMenu({ onNewGame, onContinue, onLoadGame, onSettings, onTestCombat, onExit, hasSave }: MainMenuProps): HTMLDivElement {
   const wrap = document.createElement('div');
   wrap.className = 'sillyrpg-menu';
@@ -47,10 +50,12 @@ export function renderMainMenu({ onNewGame, onContinue, onLoadGame, onSettings, 
   return wrap;
 }
 
+/** Определяет контракт `SettingsStubProps` для согласованного взаимодействия модулей в контексте `render/ui/screens/mainMenu`. */
 export interface SettingsStubProps {
   onBack: () => void;
 }
 
+/** Выполняет `renderSettingsStub` в ходе выполнения связанного игрового сценария. */
 export function renderSettingsStub({ onBack }: SettingsStubProps): HTMLDivElement {
   const section = document.createElement('div');
   section.className = 'sillyrpg-menu';

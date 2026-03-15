@@ -1,3 +1,4 @@
+/** Выполняет `indexBy` в ходе выполнения связанного игрового сценария. */
 export function indexBy<T extends object, K extends keyof T & string>(items: readonly T[] = [], key: K): Record<string, T> {
   const out: Record<string, T> = {};
   for (const item of items) {
@@ -9,6 +10,7 @@ export function indexBy<T extends object, K extends keyof T & string>(items: rea
   return out;
 }
 
+/** Выполняет `deepClone` в ходе выполнения связанного игрового сценария. */
 export function deepClone<T>(value: T): T {
   if (typeof structuredClone === 'function') return structuredClone(value);
   return JSON.parse(JSON.stringify(value)) as T;
