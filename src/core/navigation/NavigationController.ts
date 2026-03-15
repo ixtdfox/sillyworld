@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя core: связывает сценарии запуска, навигацию и инфраструктурные зависимости приложения. Фокус файла — навигация по карте и переходы между контекстами локаций.
+ */
 import { MAP_LEVEL } from '../../world/constant/types.ts';
 import type {
   ContextId,
@@ -8,7 +11,11 @@ import type {
   ScreenId
 } from '../../shared/types.ts';
 
-/** Создаёт и настраивает `createNavigationState` в ходе выполнения связанного игрового сценария. */
+/**
+ * Формирует стартовый снимок навигации UI.
+ * Нужен, чтобы экран карты и стек уровней всегда запускались в согласованном состоянии
+ * как при холодном старте, так и после загрузки сохранения.
+ */
 export function createNavigationState(seed: NavigationStateSeed = {}): NavigationState {
   return {
     screen: seed.screen ?? 'mainMenu',
@@ -18,7 +25,11 @@ export function createNavigationState(seed: NavigationStateSeed = {}): Navigatio
   };
 }
 
-/** Класс `NavigationController` координирует соответствующий сценарий модуля `core/navigation/NavigationController` и инкапсулирует связанную логику. */
+/**
+ * Хранит и изменяет состояние экранной навигации.
+ * Контроллер используется AppController и UI-слоем для переходов между главным меню,
+ * картой и сценой, а также для шага «назад» по иерархии карты.
+ */
 export class NavigationController implements NavigationStore {
   #state: NavigationState;
 
@@ -26,7 +37,7 @@ export class NavigationController implements NavigationStore {
     this.#state = createNavigationState(seed);
   }
 
-  /** Возвращает `getState` внутри жизненного цикла класса. */
+  /** Отдаёт текущий snapshot навигации, который читает слой рендера экранов. */
   getState(): NavigationState {
     return this.#state;
   }
@@ -41,7 +52,10 @@ export class NavigationController implements NavigationStore {
     this.#state = { ...this.#state, contextId: contextId ?? null };
   }
 
-  /** Выполняет `navigateToLevel` внутри жизненного цикла класса. */
+  /**
+   * Углубляет пользователя в следующий уровень карты и запоминает предыдущий контекст в стеке.
+   * Благодаря этому можно корректно вернуться назад к родительскому уровню.
+   */
   navigateToLevel(level: MapLevelId, contextId: ContextId | null): void {
     this.#state = {
       ...this.#state,
@@ -51,7 +65,10 @@ export class NavigationController implements NavigationStore {
     };
   }
 
-  /** Выполняет `navigateBackLevel` внутри жизненного цикла класса. */
+  /**
+   * Восстанавливает предыдущий уровень карты из navStack.
+   * Возвращает `false`, когда откат невозможен (стек пуст), чтобы UI не перерисовывался лишний раз.
+   */
   navigateBackLevel(): boolean {
     const previousEntry = this.#state.navStack[this.#state.navStack.length - 1];
     if (!previousEntry) return false;
@@ -65,7 +82,7 @@ export class NavigationController implements NavigationStore {
     return true;
   }
 
-  /** Выполняет `reset` внутри жизненного цикла класса. */
+  /** Полностью пересобирает навигационное состояние при новой игре, загрузке или тестовом запуске. */
   reset(seedState: NavigationStateSeed = {}): void {
     this.#state = createNavigationState(seedState);
   }

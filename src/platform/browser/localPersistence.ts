@@ -1,3 +1,6 @@
+/**
+ * Платформенный адаптер браузера: изолирует работу с окружением (URL, storage, загрузка seed/asset path).
+ */
 import type { PersistenceContract, PersistenceKeys, PersistenceStorage } from '../../shared/types.ts';
 
 /** Определяет контракт `BrowserPersistenceStorageProvider` для согласованного взаимодействия модулей в контексте `platform/browser/localPersistence`. */

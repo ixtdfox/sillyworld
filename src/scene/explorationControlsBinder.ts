@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
+ */
 import { createMovementTargetState } from '../world/movement/movementTargetState.ts';
 import { createWorldGridMapper } from '../world/spatial/worldGrid.ts';
 import { createCombatGrid } from '../world/combat/combatGrid.ts';

@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 const PRIMARY_POINTER_BUTTON = 0;
 const SECONDARY_POINTER_BUTTON = 2;
 

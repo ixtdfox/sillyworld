@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи. Фокус файла — пошаговый бой: клетки, действия, очередь ходов или управление вводом в бою.
+ */
 import { createCombatBattlefieldVisualization } from './combatBattlefieldVisualization.ts';
 import { pickCombatCellAtPointer } from '../../world/combat/combatCellPointer.ts';
 

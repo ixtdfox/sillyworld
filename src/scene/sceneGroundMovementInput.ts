@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
+ */
 import { resolveGroundClickTarget } from '../world/input/groundClickPolicy.ts';
 import { isCameraOrbiting, isPrimaryPointerAction } from '../render/shared/pointerInputGuards.ts';
 import type { RuntimeDispose } from '../render/shared/runtimeContracts.ts';

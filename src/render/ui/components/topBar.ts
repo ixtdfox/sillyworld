@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 import type { PhasePresentation } from '../../../shared/types.ts';
 
 /** Определяет контракт `TopBarProps` для согласованного взаимодействия модулей в контексте `render/ui/components/topBar`. */

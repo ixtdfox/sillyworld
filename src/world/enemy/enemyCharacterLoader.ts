@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — поведение и восприятие противников в мире и сцене.
+ */
 import { loadAndNormalizeEntityCharacter } from '../../render/shared/entityCharacterLoader.ts';
 import {
   DEFAULT_ENEMY_ARCHETYPE_ID,

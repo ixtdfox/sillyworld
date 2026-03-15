@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
+ */
 
 function isFiniteNumber(value) {
   return Number.isFinite(value);

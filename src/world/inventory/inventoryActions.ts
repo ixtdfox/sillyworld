@@ -1,3 +1,6 @@
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — инвентарь: вес, экипировка, перенос предметов и представление слотов.
+ */
 import type { EquipmentSlot, GameState } from '../contracts.ts';
 import { canTakeItem } from './inventorySelectors.ts';
 

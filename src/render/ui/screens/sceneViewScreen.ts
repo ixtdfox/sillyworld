@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 import { resolveAssetPath } from '../../../platform/browser/assetResolver.ts';
 import { mountSceneRuntime } from '../../../scene/sceneRuntime.ts';
 import { Screen } from './screenSystem.ts';

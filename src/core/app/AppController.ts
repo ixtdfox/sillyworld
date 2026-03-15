@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя core: связывает сценарии запуска, навигацию и инфраструктурные зависимости приложения.
+ */
 import { NavigationController } from '../navigation/NavigationController.ts';
 import { SceneTransitionController } from '../navigation/SceneTransitionController.ts';
 import { COMBAT_TEST_BOOTSTRAP } from '../debug/combatTestBootstrap.ts';
@@ -30,7 +33,11 @@ const PHASE_HINTS: PhaseLabels = Object.freeze({
   night: 'Night-only routes and contacts open up, while many daytime spots close.'
 });
 
-/** Собирает `buildMapNavState` в ходе выполнения связанного игрового сценария. */
+/**
+ * Строит навигационное состояние карты по данным стора мира.
+ * Используется после новой игры/загрузки, чтобы UI сразу открыл нужный узел иерархии
+ * (город → район → текущая точка игрока).
+ */
 function buildMapNavState(state: WorldStoreStateSnapshot, mapLevel: AppControllerDeps['mapLevel']): NavigationState {
   const currentNodeId = state.player.currentNodeId;
   const districtId = state.maps.nodesById[currentNodeId]?.parentId ?? null;
@@ -48,7 +55,10 @@ function buildMapNavState(state: WorldStoreStateSnapshot, mapLevel: AppControlle
   };
 }
 
-/** Класс `AppController` координирует соответствующий сценарий модуля `core/app/AppController` и инкапсулирует связанную логику. */
+/**
+ * Центральный оркестратор запуска приложения.
+ * Связывает жизненный цикл стора мира, сохранения, экранную навигацию и запуск 3D-сцены.
+ */
 export class AppController implements AppControllerContract {
   readonly navigation: NavigationController;
   readonly sceneTransitionController: SceneTransitionController;
@@ -79,12 +89,15 @@ export class AppController implements AppControllerContract {
     });
   }
 
-  /** Возвращает `getStore` внутри жизненного цикла класса. */
+  /** Возвращает активный стор мира, из которого UI и сцена читают игровое состояние. */
   getStore(): WorldStore | null {
     return this.#worldStore.get();
   }
 
-  /** Возвращает `getPhasePresentation` внутри жизненного цикла класса. */
+  /**
+   * Подготавливает презентационную модель времени суток для UI.
+   * Здесь системные фазы переводятся в человекочитаемые подписи и подсказки верхней панели.
+   */
   getPhasePresentation(): PhasePresentation | null {
     const store = this.getStore();
     if (!store) return null;
@@ -100,12 +113,15 @@ export class AppController implements AppControllerContract {
     };
   }
 
-  /** Выполняет `hasSaveData` внутри жизненного цикла класса. */
+  /** Проверяет, можно ли показать пользователю сценарий «Продолжить игру». */
   hasSaveData(): boolean {
     return this.#persistence.hasSaveData();
   }
 
-  /** Выполняет `back` внутри жизненного цикла класса. */
+  /**
+   * Реализует единый сценарий кнопки «Назад» между экранами и уровнями карты.
+   * Метод меняет навигацию и инициирует перерисовку только если состояние реально изменилось.
+   */
   back(): void {
     const nav = this.navigation.getState();
     if (nav.screen === 'settings') {
@@ -126,7 +142,10 @@ export class AppController implements AppControllerContract {
     }
   }
 
-  /** Выполняет `startNewGame` внутри жизненного цикла класса. */
+  /**
+   * Запускает новую игру: загружает seed, сбрасывает стор, формирует начальную навигацию
+   * и сразу сохраняет стартовое состояние как базовую точку восстановления.
+   */
   async startNewGame(): Promise<void> {
     this.#sceneLaunchOptions = null;
     const seed = await this.loadSeedOnce();
@@ -139,7 +158,10 @@ export class AppController implements AppControllerContract {
   }
 
 
-  /** Выполняет `startCombatTest` внутри жизненного цикла класса. */
+  /**
+   * Переводит приложение в отладочный сценарий боевого теста.
+   * Подготавливает опции автозапуска боя и навигацию прямо в район, минуя карту мира.
+   */
   async startCombatTest(): Promise<void> {
     const seed = await this.loadSeedOnce();
     const store = this.#worldStore.init(seed);
@@ -167,7 +189,10 @@ export class AppController implements AppControllerContract {
     this.requestRender();
   }
 
-  /** Загружает `loadAndResumeGame` внутри жизненного цикла класса. */
+  /**
+   * Восстанавливает сессию из persistence-слоя и синхронизирует карту с текущей позицией игрока.
+   * Если сохранение отсутствует или повреждено, UI остаётся в текущем безопасном состоянии.
+   */
   async loadAndResumeGame(): Promise<void> {
     this.#sceneLaunchOptions = null;
     const seed = await this.loadSeedOnce();
@@ -180,7 +205,10 @@ export class AppController implements AppControllerContract {
     this.requestRender();
   }
 
-  /** Выполняет `consumePendingPhaseTransition` внутри жизненного цикла класса. */
+  /**
+   * Выдаёт следующее ожидающее событие смены фазы суток и удаляет его из очереди.
+   * Это позволяет UI показывать интерстициальные уведомления ровно один раз.
+   */
   consumePendingPhaseTransition(): unknown {
     const store = this.getStore();
     if (!store) return null;
@@ -190,14 +218,17 @@ export class AppController implements AppControllerContract {
     return transition;
   }
 
-  /** Выполняет `initialize` внутри жизненного цикла класса. */
+  /**
+   * Выполняет ленивую инициализацию приложения перед первым рендером.
+   * На этом шаге только подгружается seed и подготавливается базовое состояние контроллера.
+   */
   async initialize(): Promise<void> {
     this.#sceneLaunchOptions = null;
     await this.loadSeedOnce();
     this.requestRender();
   }
 
-  /** Возвращает `getSceneLaunchOptions` внутри жизненного цикла класса. */
+  /** Отдаёт параметры следующего запуска сцены (обычный вход или тестовый бой). */
   getSceneLaunchOptions(): SceneLaunchOptions | null {
     return this.#sceneLaunchOptions;
   }

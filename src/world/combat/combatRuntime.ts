@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — пошаговый бой: клетки, действия, очередь ходов или управление вводом в бою.
+ */
 import { createCombatTurnManager } from './combatTurnManager.ts';
 import { createCombatGrid } from './combatGrid.ts';
 import { createWorldGridMapper } from '../spatial/worldGrid.ts';

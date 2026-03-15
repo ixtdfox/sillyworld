@@ -1,3 +1,6 @@
+/**
+ * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
+ */
 import type { RuntimeMode } from '../render/shared/runtimeContracts.ts';
 
 /** Класс `SceneModeController` координирует соответствующий сценарий модуля `scene/sceneModeController` и инкапсулирует связанную логику. */

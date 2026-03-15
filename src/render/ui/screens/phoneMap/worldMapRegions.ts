@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 import type { WorldMapRegion } from './worldMapViewport.ts';
 
 /** Константа `WORLD_MAP_REGIONS` хранит общие настройки/данные, которые переиспользуются в модуле `render/ui/screens/phoneMap/worldMapRegions`. */

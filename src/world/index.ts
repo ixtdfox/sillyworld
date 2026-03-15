@@ -1,3 +1,6 @@
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
+ */
 export { SCHEMA_VERSION, TIME_PHASE, TIME_PHASE_ORDER, TIME_OF_DAY, TIME_OF_DAY_ORDER, MAP_LEVEL, EQUIPMENT_SLOT } from './constant/types.ts';
 export * from './contracts.ts';
 export * from './worldStore.ts';

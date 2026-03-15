@@ -1,3 +1,6 @@
+/**
+ * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
+ */
 import type { EncounterStartPayload } from '../render/shared/runtimeContracts.ts';
 
 /** Класс `EncounterCoordinator` координирует соответствующий сценарий модуля `scene/encounterCoordinator` и инкапсулирует связанную логику. */

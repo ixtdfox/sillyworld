@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
+ */
 import type { EncounterInteractionPayload, PositionNodeLike, RuntimeDispose } from '../render/shared/runtimeContracts.ts';
 
 import { ENCOUNTER_INTERACTION_DISTANCE } from '../world/encounter/encounterRules.ts';

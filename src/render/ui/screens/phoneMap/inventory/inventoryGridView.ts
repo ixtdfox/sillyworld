@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи. Фокус файла — инвентарь: вес, экипировка, перенос предметов и представление слотов.
+ */
 import { createAtlasImage } from '../../../components/interactiveAtlasButton.ts';
 import type { BabylonGuiLike, GuiControlLike } from '../worldMapViewport.ts';
 import { INVENTORY_LAYOUT, INVENTORY_SLOT_REGION, getInventoryLayoutMetrics } from './inventoryConfig.ts';

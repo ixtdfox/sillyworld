@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 
 export const GRID_ALIGNMENT_DEFAULTS = Object.freeze({
   positionTolerance: 0.05,

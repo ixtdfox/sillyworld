@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 import { createEntityGameplayDimensions } from '../../world/entity/entityGameplayDimensions.ts';
 
 export { createEntityGameplayDimensions };

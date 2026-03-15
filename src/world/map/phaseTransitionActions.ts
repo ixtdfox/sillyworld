@@ -1,3 +1,6 @@
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — навигация по карте и переходы между контекстами локаций.
+ */
 import type { GameState, PhaseTransitionRecord, TimePhase, WorldState } from '../contracts.ts';
 
 const DEFAULT_TRANSITION_TYPE = 'time.phase.changed';

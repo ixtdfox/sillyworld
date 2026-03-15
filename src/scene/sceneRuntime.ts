@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
+ */
 import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.ts';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.ts';
 import { ENCOUNTER_INTERACTION_DISTANCE } from '../world/encounter/encounterRules.ts';
