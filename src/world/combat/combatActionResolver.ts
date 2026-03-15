@@ -1,90 +1,97 @@
 // @ts-nocheck
+// @ts-nocheck
 /**
- * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — пошаговый бой: клетки, действия, очередь ходов или управление вводом в бою.
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
+ * Фокус файла — пошаговый бой: клетки, действия, очередь ходов и управление вводом в бою.
  */
-import {manhattanDistance} from "./math/utils.ts";
+import { manhattanDistance } from "../common/math/utils.ts";
 
 const DEFAULT_BASIC_ATTACK_AP_COST = 1;
 const DEFAULT_BASIC_ATTACK_RANGE = 1;
 const DEFAULT_BASIC_ATTACK_DAMAGE = 4;
 
-/** Проверяет, что юнит ещё участвует в бою: имеет HP выше нуля и не помечен как погибший. */
-function isUnitAlive(unit) {
-  return Boolean(unit) && unit.isAlive !== false && Number(unit.hp) > 0;
-}
-
 /**
- * Проводит полную валидацию обычной атаки до изменения состояния боя.
- * Проверяет очередь хода, команду цели, AP и дистанцию по клеткам, чтобы UI мог показать причину отказа.
+ * Обрабатывает боевые действия в пошаговом режиме.
+ * Класс инкапсулирует правила валидации и применения базовой атаки,
+ * а также умеет определять завершение боя по составу живых команд.
  */
-function validateBasicAttack({ attacker, target, activeUnitId, apCost = DEFAULT_BASIC_ATTACK_AP_COST }) {
-  if (!attacker || !target) {
-    return { valid: false, reason: 'missing_unit' };
+export class CombatActionResolver {
+  basicAttackApCost;
+  basicAttackDamage;
+
+  constructor(options = {}) {
+    this.basicAttackApCost = options.basicAttackApCost ?? DEFAULT_BASIC_ATTACK_AP_COST;
+    this.basicAttackDamage = options.basicAttackDamage ?? DEFAULT_BASIC_ATTACK_DAMAGE;
   }
 
-  if (!isUnitAlive(attacker)) {
-    return { valid: false, reason: 'attacker_dead' };
+  /**
+   * Проверяет, что юнит ещё участвует в бою:
+   * не помечен как погибший и имеет HP выше нуля.
+   */
+  isUnitAlive(unit) {
+    return Boolean(unit) && unit.isAlive !== false && Number(unit.hp) > 0;
   }
 
-  if (!isUnitAlive(target)) {
-    return { valid: false, reason: 'target_dead' };
+  /**
+   * Проводит полную валидацию обычной атаки до изменения состояния боя.
+   * Проверяет наличие юнитов, очередь хода, принадлежность к команде,
+   * запас AP и достижимость цели по манхэттенской дистанции.
+   */
+  validateBasicAttack({ attacker, target, activeUnitId }) {
+    if (!attacker || !target) {
+      return { valid: false, reason: 'missing_unit' };
+    }
+
+    if (!this.isUnitAlive(attacker)) {
+      return { valid: false, reason: 'attacker_dead' };
+    }
+
+    if (!this.isUnitAlive(target)) {
+      return { valid: false, reason: 'target_dead' };
+    }
+
+    if (activeUnitId !== attacker.id) {
+      return { valid: false, reason: 'not_attackers_turn' };
+    }
+
+    if (attacker.team === target.team) {
+      return { valid: false, reason: 'invalid_target_team' };
+    }
+
+    if (attacker.ap < this.basicAttackApCost) {
+      return { valid: false, reason: 'insufficient_ap' };
+    }
+
+    const attackRange = Number.isFinite(attacker.attackRange)
+        ? attacker.attackRange
+        : DEFAULT_BASIC_ATTACK_RANGE;
+
+    const distance = manhattanDistance(attacker.gridCell, target.gridCell);
+
+    if (distance > attackRange) {
+      return {
+        valid: false,
+        reason: 'target_out_of_range',
+        details: { distance, attackRange }
+      };
+    }
+
+    return {
+      valid: true,
+      details: { distance, attackRange }
+    };
   }
 
-  if (activeUnitId !== attacker.id) {
-    return { valid: false, reason: 'not_attackers_turn' };
-  }
-
-  if (attacker.team === target.team) {
-    return { valid: false, reason: 'invalid_target_team' };
-  }
-
-  if (attacker.ap < apCost) {
-    return { valid: false, reason: 'insufficient_ap' };
-  }
-
-  const attackRange = Number.isFinite(attacker.attackRange) ? attacker.attackRange : DEFAULT_BASIC_ATTACK_RANGE;
-  const distance = manhattanDistance(attacker.gridCell, target.gridCell);
-  if (distance > attackRange) {
-    return { valid: false, reason: 'target_out_of_range', details: { distance, attackRange } };
-  }
-
-  return { valid: true, details: { distance, attackRange } };
-}
-
-/**
- * Определяет, завершён ли бой по составу живых команд.
- * Возвращает победу/поражение, когда одна из сторон полностью выбыла.
- */
-function evaluateCombatOutcome(units = []) {
-  const livingPlayers = units.filter((unit) => unit.team === 'player' && isUnitAlive(unit));
-  const livingEnemies = units.filter((unit) => unit.team === 'enemy' && isUnitAlive(unit));
-
-  if (livingPlayers.length === 0) {
-    return { ended: true, result: 'defeat' };
-  }
-
-  if (livingEnemies.length === 0) {
-    return { ended: true, result: 'victory' };
-  }
-
-  return { ended: false, result: null };
-}
-
-/**
- * Создаёт обработчик боевых действий для пошагового режима.
- * Инкапсулирует проверку и применение базовой атаки: списывает AP атакующего,
- * уменьшает HP цели и отдаёт структурированный результат для HUD и логов боя.
- */
-export function createCombatActionResolver(options = {}) {
-  const basicAttackApCost = options.basicAttackApCost ?? DEFAULT_BASIC_ATTACK_AP_COST;
-  const basicAttackDamage = options.basicAttackDamage ?? DEFAULT_BASIC_ATTACK_DAMAGE;
-
-  const resolveBasicAttack = ({ attacker, target, activeUnitId }) => {
-    const validation = validateBasicAttack({
+  /**
+   * Применяет базовую атаку к цели после успешной валидации.
+   * Списывает AP у атакующего, уменьшает HP цели и,
+   * если нужно, помечает цель погибшей.
+   */
+  resolveBasicAttack({ attacker, target, activeUnitId }) {
+    const validation = this.validateBasicAttack({
       attacker,
       target,
-      activeUnitId,
-      apCost: basicAttackApCost
+      activeUnitId
     });
 
     if (!validation.valid) {
@@ -95,10 +102,14 @@ export function createCombatActionResolver(options = {}) {
       };
     }
 
-    attacker.ap -= basicAttackApCost;
+    attacker.ap -= this.basicAttackApCost;
 
-    const damage = Number.isFinite(attacker.attackPower) ? attacker.attackPower : basicAttackDamage;
+    const damage = Number.isFinite(attacker.attackPower)
+        ? attacker.attackPower
+        : this.basicAttackDamage;
+
     target.hp = Math.max(0, target.hp - damage);
+
     if (target.hp <= 0) {
       target.isAlive = false;
     }
@@ -106,20 +117,45 @@ export function createCombatActionResolver(options = {}) {
     return {
       success: true,
       action: 'basic_attack',
-      apCost: basicAttackApCost,
+      apCost: this.basicAttackApCost,
       damage,
       attackerId: attacker.id,
       targetId: target.id,
       targetHp: target.hp,
       targetDied: target.isAlive === false
     };
-  };
+  }
 
-  return {
-    validateBasicAttack,
-    resolveBasicAttack,
-    evaluateCombatOutcome
-  };
+  /**
+   * Определяет, завершён ли бой.
+   * Бой считается завершённым, когда все живые юниты одной из сторон выбыли.
+   */
+  evaluateCombatOutcome(units = []) {
+    const livingPlayers = units.filter(
+        (unit) => unit.team === 'player' && this.isUnitAlive(unit)
+    );
+
+    const livingEnemies = units.filter(
+        (unit) => unit.team === 'enemy' && this.isUnitAlive(unit)
+    );
+
+    if (livingPlayers.length === 0) {
+      return { ended: true, result: 'defeat' };
+    }
+
+    if (livingEnemies.length === 0) {
+      return { ended: true, result: 'victory' };
+    }
+
+    return { ended: false, result: null };
+  }
 }
 
-export { evaluateCombatOutcome, validateBasicAttack };
+/**
+ * Создаёт экземпляр обработчика боевых действий.
+ * Оставлено как совместимый фабричный слой, если остальной код проекта
+ * пока ожидает создание резолвера через функцию.
+ */
+export function createCombatActionResolver(options = {}) {
+  return new CombatActionResolver(options);
+}

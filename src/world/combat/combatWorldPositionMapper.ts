@@ -29,17 +29,6 @@ export function mapWorldPositionToCombatCell({ unitId, worldPosition, gridMapper
     fallbackY: Number.isFinite(worldPosition.y) ? worldPosition.y : 0
   });
 
-  logger.info?.('[SillyRPG] Combat entry world/grid mapping resolved.', {
-    unitId: unitId ?? null,
-    worldPosition: {
-      x: worldPosition.x,
-      y: worldPosition.y,
-      z: worldPosition.z
-    },
-    resolvedCell: mappedCell,
-    expectedSnappedCellCenter: expectedSnappedWorld
-  });
-
   if (!grid) {
     return { cell: mappedCell, mappedCell, expectedSnappedWorld, isWalkable: true };
   }
@@ -54,14 +43,6 @@ export function mapWorldPositionToCombatCell({ unitId, worldPosition, gridMapper
     gridBounds: grid.bounds ?? null
   });
   }
-
-  console.assert(isWalkable, '[SillyRPG] Combat entry expected mapped tactical cell to be walkable.', {
-    unitId: unitId ?? null,
-    worldPosition,
-    mappedCell,
-    expectedSnappedCellCenter: expectedSnappedWorld,
-    gridBounds: grid.bounds ?? null
-  });
 
   return {
     cell: mappedCell,
@@ -78,13 +59,6 @@ export function mapCombatParticipantsFromWorldPositions({ participants = [], gri
     if (canonicalGridCell && Number.isFinite(canonicalGridCell.x) && Number.isFinite(canonicalGridCell.z)) {
       const normalizedCanonicalCell = toCell(canonicalGridCell);
 
-      logger.info?.('[SillyRPG] Combat participant registered from canonical grid cell.', {
-        participantId: participant?.id ?? null,
-        role: participant?.role ?? null,
-        team: participant?.team ?? null,
-        canonicalGridCell: normalizedCanonicalCell
-      });
-
       return {
         ...participant,
         mappedCell: normalizedCanonicalCell,
@@ -99,23 +73,6 @@ export function mapCombatParticipantsFromWorldPositions({ participants = [], gri
       gridMapper,
       grid,
       logger
-    });
-
-    logger.info?.('[SillyRPG] Combat participant registered from world position.', {
-      participantId: participant?.id ?? null,
-      role: participant?.role ?? null,
-      team: participant?.team ?? null,
-      worldPosition: participant?.entity?.rootNode?.position
-        ? {
-            x: participant.entity.rootNode.position.x,
-            y: participant.entity.rootNode.position.y,
-            z: participant.entity.rootNode.position.z
-          }
-        : null,
-      mappedCell: mapping.mappedCell,
-      assignedCell: mapping.cell,
-      expectedSnappedCellCenter: mapping.expectedSnappedWorld,
-      isWalkable: mapping.isWalkable
     });
 
     return {
