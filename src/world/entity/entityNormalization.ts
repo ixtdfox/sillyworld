@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
+ */
 import {
   DEFAULT_ENEMY_NORMALIZATION_ID,
   DEFAULT_PLAYER_NORMALIZATION_ID,

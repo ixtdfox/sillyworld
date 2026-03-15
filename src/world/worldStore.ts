@@ -1,3 +1,6 @@
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
+ */
 import { createGameState } from './worldState.ts';
 import type {
   CombinedLocationAvailability,
@@ -46,14 +49,14 @@ import { getNpcAvailability, getNpcsForLocation } from './character/npcAvailabil
 import { deserializeGameState, saveGameState, loadGameState, serializeGameState } from './worldPersistence.ts';
 import { consumeNextPhaseTransition, getPendingPhaseTransitions } from './map/phaseTransitionActions.ts';
 
-/** Определяет контракт `MovePlayerRawFailure` для согласованного взаимодействия модулей в контексте `world/worldStore`. */
+/** Ошибка попытки перемещения игрока: содержит причину блокировки перехода. */
 interface MovePlayerRawFailure {
   ok: false;
   blockedByAvailability?: unknown;
   reason?: unknown;
 }
 
-/** Определяет контракт `MovePlayerRawSuccess` для согласованного взаимодействия модулей в контексте `world/worldStore`. */
+/** Успешный результат перемещения с обновлённым состоянием и эффектами времени. */
 interface MovePlayerRawSuccess {
   ok: true;
   state: GameState;
@@ -62,16 +65,16 @@ interface MovePlayerRawSuccess {
   transitions?: PhaseTransitionRecord[];
 }
 
-/** Описывает тип `MovePlayerRawResult`, который формализует структуру данных в модуле `world/worldStore`. */
+/** Объединённый результат перемещения игрока до преобразования в публичный API стора. */
 type MovePlayerRawResult = MovePlayerRawFailure | MovePlayerRawSuccess;
 
-/** Определяет контракт `RestRawFailure` для согласованного взаимодействия модулей в контексте `world/worldStore`. */
+/** Ошибка выполнения действия отдыха, например при недоступной опции. */
 interface RestRawFailure {
   ok: false;
   reason?: unknown;
 }
 
-/** Определяет контракт `RestRawSuccess` для согласованного взаимодействия модулей в контексте `world/worldStore`. */
+/** Успешный результат отдыха с новым состоянием и переходами фаз времени. */
 interface RestRawSuccess {
   ok: true;
   state: GameState;
@@ -79,10 +82,14 @@ interface RestRawSuccess {
   transitions?: PhaseTransitionRecord[];
 }
 
-/** Описывает тип `RestRawResult`, который формализует структуру данных в модуле `world/worldStore`. */
+/** Внутренний union-тип результата отдыха перед адаптацией для UI. */
 type RestRawResult = RestRawFailure | RestRawSuccess;
 
-/** Класс `WorldStore` координирует соответствующий сценарий модуля `world/worldStore` и инкапсулирует связанную логику. */
+/**
+ * Главный state-container домена мира.
+ * Хранит актуальный `GameState`, применяет доменные редьюсеры и уведомляет подписчиков
+ * (UI, сцена, сервисы сохранений) о каждом изменении.
+ */
 export class WorldStore implements WorldStoreContract {
   private readonly initialSeed: GameStateSeed;
   private state: GameState;
@@ -102,23 +109,23 @@ export class WorldStore implements WorldStoreContract {
     this.notify();
   }
 
-  /** Возвращает `getState` внутри жизненного цикла класса. */
+  /** Возвращает текущее состояние мира как единый источник правды для чтения. */
   getState(): GameState {
     return this.state;
   }
 
-  /** Выполняет `subscribe` внутри жизненного цикла класса. */
+  /** Регистрирует слушателя изменений и возвращает функцию отписки. */
   subscribe(cb: WorldStoreListener): () => boolean {
     this.listeners.add(cb);
     return () => this.listeners.delete(cb);
   }
 
-  /** Выполняет `reset` внутри жизненного цикла класса. */
+  /** Полностью пересоздаёт состояние мира из seed (новая игра/жёсткий сброс). */
   reset(nextSeed: GameStateSeed = this.initialSeed): void {
     this.apply(createGameState(deepClone(nextSeed)));
   }
 
-  /** Выполняет `hydrate` внутри жизненного цикла класса. */
+  /** Восстанавливает состояние мира из сериализованной строки сохранения. */
   hydrate(json: string): boolean {
     const nextState = deserializeGameState(json, this.initialSeed);
     if (!nextState) return false;
@@ -184,7 +191,7 @@ export class WorldStore implements WorldStoreContract {
     };
   }
 
-  /** Выполняет `consumeNextPhaseTransition` внутри жизненного цикла класса. */
+  /** Извлекает следующее непрочитанное событие смены фазы суток и подтверждает его потребление. */
   consumeNextPhaseTransition(): PhaseTransitionRecord | null {
     const result: { state: GameState; transition: PhaseTransitionRecord | null } = consumeNextPhaseTransition(this.state);
     if (!result.transition) return null;
@@ -192,7 +199,7 @@ export class WorldStore implements WorldStoreContract {
     return result.transition;
   }
 
-  /** Возвращает `getPendingPhaseTransitions` внутри жизненного цикла класса. */
+  /** Отдаёт очередь ожидающих переходов фаз, которую читает UI-слой уведомлений. */
   getPendingPhaseTransitions(): PhaseTransitionRecord[] {
     return getPendingPhaseTransitions(this.state);
   }

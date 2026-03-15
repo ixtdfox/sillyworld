@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 import type { PhaseTransitionRecord } from '../../../world/contracts.ts';
 
 /** Определяет контракт `PhaseTransitionInterstitialProps` для согласованного взаимодействия модулей в контексте `render/ui/screens/phaseTransitionInterstitial`. */

@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль слоя core: связывает сценарии запуска, навигацию и инфраструктурные зависимости приложения.
+ */
 import { isSecondaryPointerAction, setCameraOrbiting } from '../../../render/shared/pointerInputGuards.ts';
 
 const DEFAULT_CAMERA_CONFIG = {

@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 import { resolveCatalogAssetPath } from '../../../../platform/browser/assetResolver.ts';
 import type { RegionId } from '../../../../shared/types.ts';
 import { createAtlasImage, createInteractiveAtlasButton } from '../../components/interactiveAtlasButton.ts';

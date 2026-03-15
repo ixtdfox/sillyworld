@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
+ */
 import type { PositionLike } from '../render/shared/runtimeContracts.ts';
 
 /** Выполняет `isSameNodeOrDescendant` в ходе выполнения связанного игрового сценария. */

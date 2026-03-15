@@ -1,3 +1,6 @@
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
+ */
 import { TIME_PHASE } from '../constant/types.ts';
 import type { GameState, MapNodeState, TimePhase } from '../contracts.ts';
 import { getTimePhase } from '../time/worldSelectors.ts';

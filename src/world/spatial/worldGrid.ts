@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
+ */
 
 export const DEFAULT_WORLD_GRID_CONFIG = Object.freeze({
   cellSize: 1.5,

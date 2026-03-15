@@ -1,3 +1,6 @@
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
+ */
 import type { CharacterState, GameState, RelationshipState } from '../contracts.ts';
 
 /** Константа `DEFAULT_RELATIONSHIP` хранит общие настройки/данные, которые переиспользуются в модуле `world/relationship/relationshipSelectors`. */

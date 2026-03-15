@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи. Файл используется для диагностики и визуальной отладки состояния во время разработки.
+ */
 import { createCombatDebugShell } from './combatDebugShell.ts';
 import { createEnemyVisionGridDebugOverlay } from './enemyVisionGridDebugOverlay.ts';
 

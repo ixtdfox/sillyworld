@@ -1,7 +1,13 @@
 // @ts-nocheck
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — пошаговый бой: клетки, действия, очередь ходов или управление вводом в бою.
+ */
 const DEFAULT_INITIATIVE = 0;
 
-/** Нормализует `normalizeUnits` в ходе выполнения связанного игрового сценария. */
+/**
+ * Готовит список участников для очереди ходов: фиксирует инициативу и стабильный tie-breaker.
+ * Сортировка нужна, чтобы порядок хода был детерминирован даже при равной инициативе.
+ */
 function normalizeUnits(units = []) {
   return [...units]
     .map((unit, index) => ({
@@ -24,14 +30,18 @@ function normalizeUnits(units = []) {
     .map(({ tieBreaker, ...unit }) => unit);
 }
 
-/** Выполняет `assertHasUnits` в ходе выполнения связанного игрового сценария. */
+/** Защищает менеджер от некорректного запуска боя без участников. */
 function assertHasUnits(orderedUnits) {
   if (!orderedUnits.length) {
     throw new Error('[SillyRPG] Combat turn manager requires at least one combatant.');
   }
 }
 
-/** Создаёт и настраивает `createCombatTurnManager` в ходе выполнения связанного игрового сценария. */
+/**
+ * Создаёт конечный автомат очередности боя.
+ * Хранит номер раунда, активного юнита и фазу шага, чтобы остальные подсистемы
+ * (ввод, HUD, резолвер действий) синхронно работали с одним источником правды.
+ */
 export function createCombatTurnManager(units = []) {
   const orderedUnits = normalizeUnits(units);
   assertHasUnits(orderedUnits);

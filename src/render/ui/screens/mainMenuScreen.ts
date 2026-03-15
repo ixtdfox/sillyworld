@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 import { Screen } from './screenSystem.ts';
 import { renderMainMenu, type MainMenuProps } from './mainMenu.ts';
 

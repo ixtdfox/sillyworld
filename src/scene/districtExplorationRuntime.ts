@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
+ */
 import { loadWorldScene } from './worldSceneLoader.ts';
 import { loadPlayerCharacter } from '../world/player/playerCharacterLoader.ts';
 import { loadEnemyCharacter } from '../world/enemy/enemyCharacterLoader.ts';

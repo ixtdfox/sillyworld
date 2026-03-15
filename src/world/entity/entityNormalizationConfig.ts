@@ -1,5 +1,8 @@
 // @ts-nocheck
 /**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
+ */
+/**
  * Canonical per-entity normalization settings.
  * All distance values are world units where 1 unit = 1 meter.
  */

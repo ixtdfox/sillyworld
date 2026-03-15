@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 import type { RegionId } from '../../../../shared/types.ts';
 
 const MAP_NATIVE_SIZE = Object.freeze({ width: 1536, height: 1024 });

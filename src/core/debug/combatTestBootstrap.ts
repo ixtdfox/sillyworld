@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя core: связывает сценарии запуска, навигацию и инфраструктурные зависимости приложения. Файл используется для диагностики и визуальной отладки состояния во время разработки.
+ */
 import type { SceneRuntimeMountOptions } from '../../render/shared/runtimeContracts.ts';
 
 /** Определяет контракт `CombatTestBootstrapConfig` для согласованного взаимодействия модулей в контексте `core/debug/combatTestBootstrap`. */

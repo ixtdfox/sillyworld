@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — состояние и поведение игрока в исследовании и связанных действиях.
+ */
 import type { RuntimeDispose } from '../../render/shared/runtimeContracts.ts';
 import {
   advancePositionAlongWaypoints,

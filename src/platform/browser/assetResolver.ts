@@ -1,3 +1,6 @@
+/**
+ * Платформенный адаптер браузера: изолирует работу с окружением (URL, storage, загрузка seed/asset path).
+ */
 import { getAssetPath } from '../../core/assets/assetCatalog.ts';
 
 /** Определяет контракт `AssetPathResolver` для согласованного взаимодействия модулей в контексте `platform/browser/assetResolver`. */

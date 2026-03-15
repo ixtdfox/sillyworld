@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 const ROOT_ID = 'sillyrpg-root';
 const APP_HOST_SELECTOR = '#app';
 

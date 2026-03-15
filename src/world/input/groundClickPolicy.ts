@@ -1,3 +1,6 @@
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
+ */
 import type { PositionNodeLike } from '../spatial/types.ts';
 
 /** Константа `DEFAULT_GROUND_MESH_NAME` хранит общие настройки/данные, которые переиспользуются в модуле `world/input/groundClickPolicy`. */

@@ -1,3 +1,6 @@
+/**
+ * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
+ */
 import type { BabylonGuiLike, GuiControlLike } from '../screens/phoneMap/worldMapViewport.ts';
 
 /** Определяет контракт `AtlasRegion` для согласованного взаимодействия модулей в контексте `render/ui/components/interactiveAtlasButton`. */

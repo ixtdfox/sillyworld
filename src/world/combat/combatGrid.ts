@@ -1,9 +1,15 @@
 // @ts-nocheck
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — пошаговый бой: клетки, действия, очередь ходов или управление вводом в бою.
+ */
 function createCellKey(cell) {
   return `${cell.x},${cell.z}`;
 }
 
-/** Нормализует `normalizeCell` в ходе выполнения связанного игрового сценария. */
+/**
+ * Приводит произвольные координаты к дискретной клетке боевой сетки.
+ * Это устраняет дробные значения из мира рендера перед расчётом пути и занятости.
+ */
 function normalizeCell(cell) {
   return {
     x: Math.trunc(cell.x),
@@ -11,7 +17,7 @@ function normalizeCell(cell) {
   };
 }
 
-/** Выполняет `toCellMap` в ходе выполнения связанного игрового сценария. */
+/** Преобразует список заблокированных клеток в Set для быстрых проверок проходимости. */
 function toCellMap(cells = []) {
   const map = new Set();
   for (const cell of cells) {
@@ -20,7 +26,11 @@ function toCellMap(cells = []) {
   return map;
 }
 
-/** Создаёт и настраивает `createCombatGrid` в ходе выполнения связанного игрового сценария. */
+/**
+ * Собирает runtime-модель боевой сетки.
+ * Отвечает за границы поля, блокированные клетки, занятость юнитами и поиск путей/доступных клеток
+ * для подсветки перемещения и валидации действий в пошаговом бою.
+ */
 export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) {
   const blocked = toCellMap(blockedCells);
   const occupiedByCell = new Map();
@@ -28,6 +38,7 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
 
   const bounds = Object.freeze({ minX, maxX, minZ, maxZ });
 
+  /** Проверяет, что клетка попадает в прямоугольные границы текущей арены. */
   const isWithinBounds = (cell) => {
     const norm = normalizeCell(cell);
     return norm.x >= minX && norm.x <= maxX && norm.z >= minZ && norm.z <= maxZ;
@@ -39,6 +50,10 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
 
   const isOccupied = (cell) => getOccupiedUnitId(cell) !== null;
 
+  /**
+   * Определяет, можно ли пройти в клетку с учётом стен, границ и занятости юнитами.
+   * Опция allowOccupiedByUnitId нужна, чтобы разрешить клетку, где уже стоит текущий юнит.
+   */
   const isCellWalkable = (cell, options = {}) => {
     const norm = normalizeCell(cell);
     const allowOccupiedByUnitId = options.allowOccupiedByUnitId ?? null;
@@ -99,6 +114,10 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
     return 1;
   };
 
+  /**
+   * Ищет путь с минимальной стоимостью между двумя клетками (вариант Dijkstra на четырёх соседях).
+   * Возвращает последовательность клеток для анимации шага юнита или `null`, если путь недоступен.
+   */
   const findPath = (startCell, goalCell, options = {}) => {
     const start = normalizeCell(startCell);
     const goal = normalizeCell(goalCell);
@@ -180,6 +199,10 @@ export function createCombatGrid({ minX, maxX, minZ, maxZ, blockedCells = [] }) 
     return cost;
   };
 
+  /**
+   * Вычисляет все клетки, в которые юнит может дойти за доступный бюджет перемещения.
+   * Используется для боевой подсветки и ограничения интеракции курсором.
+   */
   const getReachableCells = (startCell, maxCost, options = {}) => {
     const start = normalizeCell(startCell);
     const allowOccupiedByUnitId = options.allowOccupiedByUnitId ?? null;

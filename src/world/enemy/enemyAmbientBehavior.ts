@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — поведение и восприятие противников в мире и сцене.
+ */
 import type { PositionLike, PositionNodeLike } from '../spatial/types.ts';
 import {
   areCellsEqual,

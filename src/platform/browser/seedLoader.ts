@@ -1,3 +1,6 @@
+/**
+ * Платформенный адаптер браузера: изолирует работу с окружением (URL, storage, загрузка seed/asset path).
+ */
 import type { SeedLoader as SeedLoaderContract, WorldSeed } from '../../shared/types.ts';
 
 /** Определяет контракт `SeedLoader` для согласованного взаимодействия модулей в контексте `platform/browser/seedLoader`. */

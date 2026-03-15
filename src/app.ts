@@ -1,3 +1,6 @@
+/**
+ * Модуль проекта с прикладной логикой; используется как часть общего игрового runtime.
+ */
 import { hideRoot, mountContent, createRoot } from './render/ui/mount.ts';
 import { renderTopBar } from './render/ui/components/topBar.ts';
 import { renderSettingsStub } from './render/ui/screens/mainMenu.ts';

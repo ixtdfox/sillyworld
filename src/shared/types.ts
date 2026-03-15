@@ -1,3 +1,6 @@
+/**
+ * Общие типы и контракты между слоями приложения, чтобы UI, core и world работали согласованно.
+ */
 import type { GameState, GameStateSeed, WorldStoreContract as DomainWorldStore, WorldClockState, TimePhase, PhaseTransitionRecord, PersistenceStorage as WorldPersistenceStorage } from '../world/contracts.ts';
 
 /** Идентификаторы экранов, между которыми переключается UI приложения. */
@@ -11,15 +14,15 @@ export type MapLevelId = 'global' | 'region' | 'city' | 'district' | 'building' 
 
 /** Типизированные алиасы контекстных идентификаторов на разных уровнях карты. */
 export type CityId = string;
-/** Описывает тип `RegionId`, который формализует структуру данных в модуле `shared/types`. */
+/** Идентификатор региона на мировой карте, который используется в переходе к сцене. */
 export type RegionId = string;
-/** Описывает тип `DistrictId`, который формализует структуру данных в модуле `shared/types`. */
+/** Идентификатор района города; связывает карту, сцену и игровые события района. */
 export type DistrictId = string;
-/** Описывает тип `LocationId`, который формализует структуру данных в модуле `shared/types`. */
+/** Идентификатор локации (POI), на который ссылаются маршруты и доступность контента. */
 export type LocationId = string;
-/** Описывает тип `BuildingId`, который формализует структуру данных в модуле `shared/types`. */
+/** Идентификатор здания внутри выбранной локации. */
 export type BuildingId = string;
-/** Описывает тип `RoomId`, который формализует структуру данных в модуле `shared/types`. */
+/** Идентификатор комнаты как самого глубокого уровня навигации карты. */
 export type RoomId = string;
 
 /** Унифицированный тип идентификатора контекста для записи в навигацию. */
@@ -41,7 +44,7 @@ export interface NavigationStackEntry {
   contextId: ContextId | null;
 }
 
-/** Описывает тип `MapLevelContext`, который формализует структуру данных в модуле `shared/types`. */
+/** Контекст конкретного уровня карты, который хранится в стеке навигации. */
 export type MapLevelContext = NavigationStackEntry;
 
 /** Снимок текущего состояния навигации между экранами и уровнями карты. */
@@ -52,7 +55,7 @@ export interface NavigationState {
   navStack: NavigationStackEntry[];
 }
 
-/** Описывает тип `NavigationStateSeed`, который формализует структуру данных в модуле `shared/types`. */
+/** Частичное состояние навигации для инициализации/сброса контроллера. */
 export type NavigationStateSeed = Partial<NavigationState>;
 
 /** Контракт модуля навигации, который координирует переходы между уровнями карты. */
@@ -96,7 +99,7 @@ export interface PersistenceContract {
   hasSaveData(): boolean;
 }
 
-/** Описывает тип `WorldSeed`, который формализует структуру данных в модуле `shared/types`. */
+/** Исходный seed мира, из которого создаётся первичное состояние новой игры. */
 export type WorldSeed = GameStateSeed;
 
 /** Загрузчик стартового состояния мира (из файла или внешнего источника). */
@@ -115,7 +118,7 @@ export interface WorldStore extends DomainWorldStore {
 }
 
 
-/** Описывает тип `WorldClockSnapshot`, который формализует структуру данных в модуле `shared/types`. */
+/** Снимок мировых часов (фаза суток и номер дня) для UI и сценарной логики. */
 export type WorldClockSnapshot = WorldClockState;
 
 /**

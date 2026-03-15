@@ -1,4 +1,7 @@
 // @ts-nocheck
+/**
+ * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
+ */
 import { ASSET_PATHS } from '../core/assets/assetCatalog.ts';
 
 const SCENE_FILE = ASSET_PATHS.scenes.districtExploration;
