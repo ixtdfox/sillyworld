@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createCombatGrid } from '../src/world/combat/combatGrid.ts';
+import { createCombatGrid } from '../src/world/spatial/grid/Grid.ts';
 
 test('findPath avoids blocked and occupied cells', () => {
   const grid = createCombatGrid({

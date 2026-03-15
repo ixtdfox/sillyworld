@@ -56,7 +56,7 @@
 - `src/standalone.ts`
 - `src/world/character/characters.ts`
 - `src/world/character/npcAvailabilitySelectors.ts`
-- `src/world/combat/combatActionResolver.ts`
+- `src/world/combat/ActionResolver.ts`
 - `src/world/combat/combatAttackInputController.ts`
 - `src/world/combat/combatCellPointer.ts`
 - `src/world/combat/combatGrid.ts`

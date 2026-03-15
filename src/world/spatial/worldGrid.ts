@@ -28,6 +28,19 @@ export function resolveWorldGridConfig(options = {}) {
   };
 }
 
+export function resolveCombatGridConfig(options = {}) {
+  return {
+    cellSize: options.cellSize ?? options.worldGridCellSize ?? options.combatGridCellSize ?? DEFAULT_WORLD_GRID_CONFIG.cellSize,
+    originWorldX: options.originWorldX ?? options.worldGridOriginX ?? options.combatGridOriginX ?? DEFAULT_WORLD_GRID_CONFIG.originWorldX,
+    originWorldZ: options.originWorldZ ?? options.worldGridOriginZ ?? options.combatGridOriginZ ?? DEFAULT_WORLD_GRID_CONFIG.originWorldZ,
+    minX: options.worldGridMinX ?? options.combatGridMinX ?? DEFAULT_WORLD_GRID_CONFIG.minX,
+    maxX: options.worldGridMaxX ?? options.combatGridMaxX ?? DEFAULT_WORLD_GRID_CONFIG.maxX,
+    minZ: options.worldGridMinZ ?? options.combatGridMinZ ?? DEFAULT_WORLD_GRID_CONFIG.minZ,
+    maxZ: options.worldGridMaxZ ?? options.combatGridMaxZ ?? DEFAULT_WORLD_GRID_CONFIG.maxZ,
+    blockedCells: options.worldGridBlockedCells ?? options.combatGridBlockedCells ?? DEFAULT_WORLD_GRID_CONFIG.blockedCells
+  };
+}
+
 /** Нормализует `normalizeCell` в ходе выполнения связанного игрового сценария. */
 function normalizeCell(cell) {
   return {

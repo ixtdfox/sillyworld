@@ -4,8 +4,7 @@
  */
 import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.ts';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.ts';
-import { ENCOUNTER_INTERACTION_DISTANCE } from '../world/encounter/encounterRules.ts';
-import { createCombatRuntime } from '../world/combat/combatRuntime.ts';
+import { createCombatRuntime } from '../world/combat/runtime/CombatEncounter.ts';
 import { EncounterCoordinator } from './encounterCoordinator.ts';
 import { SceneModeController } from './sceneModeController.ts';
 import {
@@ -27,6 +26,8 @@ import type {
   SceneRuntimeMount,
   SceneRuntimeMountOptions
 } from '../render/shared/runtimeContracts.ts';
+
+const ENCOUNTER_INTERACTION_DISTANCE = 2.5;
 
 /** Класс `SceneMountSession` координирует соответствующий сценарий модуля `scene/sceneRuntime` и инкапсулирует связанную логику. */
 class SceneMountSession {

@@ -4,6 +4,7 @@
  */
 import { createCombatBattlefieldVisualization } from './combatBattlefieldVisualization.ts';
 import { pickCombatCellAtPointer } from '../../world/combat/combatCellPointer.ts';
+import {CombatCellPicker} from "../../world/combat/input/CombatCellPicker.ts";
 
 /** Создаёт и настраивает `createCellSignature` в ходе выполнения связанного игрового сценария. */
 function createCellSignature(cells) {
@@ -239,7 +240,8 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
 
 
   const syncHoverPreview = (reachableCellKeySet) => {
-    const { cell: hoveredCell } = pickCombatCellAtPointer(runtime, combatState.gridMapper);
+    const picker = new CombatCellPicker();
+    const { cell: hoveredCell } = picker.pickCombatCellAtPointer(runtime, combatState.gridMapper);
 
     if (!hoveredCell || !grid.isWithinBounds?.(hoveredCell) || combatState.playerMovementInProgress) {
       clearHover();

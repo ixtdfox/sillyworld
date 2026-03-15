@@ -4,7 +4,7 @@
  */
 import { createMovementTargetState } from '../world/movement/movementTargetState.ts';
 import { createWorldGridMapper } from '../world/spatial/worldGrid.ts';
-import { createCombatGrid } from '../world/combat/combatGrid.ts';
+import { createCombatGrid } from '../world/spatial/grid/Grid.ts';
 import { createPlayerAnimationController } from '../world/player/playerAnimationController.ts';
 import { PlayerMovementController } from '../world/player/playerMovementController.ts';
 import { SceneGroundMovementInput } from './sceneGroundMovementInput.ts';
