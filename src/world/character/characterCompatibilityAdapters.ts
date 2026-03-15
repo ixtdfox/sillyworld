@@ -135,14 +135,9 @@ export function createPlayerMovementTargetControllerAdapter(
   });
 }
 
-export function createEnemyAmbientControllerAdapter(behavior: EnemyAmbientBehavior): AIController {
+export function createEnemyAmbientControllerAdapter(behavior: EnemyAmbientBehavior & { requestedDestinationCell?: { x: number; z: number } | null }): AIController {
   return new AIController((character) => {
-    const patrolCells = behavior.patrolCells;
-    if (!Array.isArray(patrolCells) || patrolCells.length <= 0) {
-      return null;
-    }
-
-    const destinationCell = patrolCells[behavior.currentPatrolIndex % patrolCells.length] ?? null;
+    const destinationCell = behavior.requestedDestinationCell ?? null;
     if (!destinationCell) {
       return null;
     }

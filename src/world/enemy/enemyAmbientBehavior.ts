@@ -1,20 +1,18 @@
 // @ts-nocheck
 /**
- * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — поведение и восприятие противников в мире и сцене.
+ * Enemy ambient behavior models AI state transitions and patrol decisions.
+ * It owns decision state, while shared movement systems execute spatial changes.
  */
 import type { PositionLike, PositionNodeLike } from '../spatial/types.ts';
 import {
   areCellsEqual,
-  resolveWorldPositionFromCell,
-  stepCellTowardsTarget
+  normalizeGridCell
 } from '../movement/gridMovement.ts';
 
 const DEFAULT_FACING_DIRECTION = Object.freeze({ x: 0, y: 0, z: -1 });
 
-/** Описывает тип `EnemyAmbientState`, который формализует структуру данных в модуле `world/enemy/enemyAmbientBehavior`. */
 export type EnemyAmbientState = 'idle' | 'lookAround' | 'patrol';
 
-/** Определяет контракт `EnemyAmbientBehavior` для согласованного взаимодействия модулей в контексте `world/enemy/enemyAmbientBehavior`. */
 export interface EnemyAmbientBehavior {
   state: EnemyAmbientState;
   stateTimeRemaining: number;
@@ -27,7 +25,6 @@ export interface EnemyAmbientBehavior {
   patrolStepAccumulatorSeconds: number;
 }
 
-/** Нормализует `normalize` в ходе выполнения связанного игрового сценария. */
 function normalize(vector: PositionLike): PositionLike {
   const length = Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
   if (length <= 1e-5) {
@@ -41,17 +38,14 @@ function normalize(vector: PositionLike): PositionLike {
   };
 }
 
-/** Выполняет `yawFromDirection` в ходе выполнения связанного игрового сценария. */
 function yawFromDirection(direction: PositionLike): number {
   return Math.atan2(direction.x, direction.z);
 }
 
-/** Выполняет `directionFromYaw` в ходе выполнения связанного игрового сценария. */
 function directionFromYaw(yaw: number): PositionLike {
   return normalize({ x: Math.sin(yaw), y: 0, z: Math.cos(yaw) });
 }
 
-/** Обновляет `setRootYaw` в ходе выполнения связанного игрового сценария. */
 function setRootYaw(rootNode: PositionNodeLike, yaw: number): void {
   if (!rootNode || !Number.isFinite(yaw)) {
     return;
@@ -65,7 +59,6 @@ function setRootYaw(rootNode: PositionNodeLike, yaw: number): void {
   rootNode.rotation.y = yaw;
 }
 
-/** Выполняет `nextState` в ходе выполнения связанного игрового сценария. */
 function nextState(behavior: EnemyAmbientBehavior): EnemyAmbientState {
   if (behavior.state === 'idle') {
     return 'lookAround';
@@ -78,7 +71,6 @@ function nextState(behavior: EnemyAmbientBehavior): EnemyAmbientState {
   return 'lookAround';
 }
 
-/** Выполняет `enterState` в ходе выполнения связанного игрового сценария. */
 function enterState(behavior: EnemyAmbientBehavior, state: EnemyAmbientState): void {
   behavior.state = state;
 
@@ -91,7 +83,25 @@ function enterState(behavior: EnemyAmbientBehavior, state: EnemyAmbientState): v
   }
 }
 
-/** Создаёт и настраивает `createEnemyAmbientBehavior` в ходе выполнения связанного игрового сценария. */
+function ensurePatrolCells(
+  behavior: EnemyAmbientBehavior,
+  gridMapper?: { worldToGridCell: (position: PositionLike) => { x: number; z: number } }
+): { x: number; z: number }[] {
+  if (behavior.patrolCells.length > 0) {
+    return behavior.patrolCells;
+  }
+
+  if (!gridMapper || behavior.patrolPoints.length <= 0) {
+    return [];
+  }
+
+  behavior.patrolCells = behavior.patrolPoints
+    .map((point) => normalizeGridCell(gridMapper.worldToGridCell(point)))
+    .filter(Boolean);
+
+  return behavior.patrolCells;
+}
+
 export function createEnemyAmbientBehavior(options: {
   facingDirection?: PositionLike;
   patrolPoints?: PositionLike[];
@@ -111,23 +121,28 @@ export function createEnemyAmbientBehavior(options: {
   };
 }
 
-/** Выполняет `updateEnemyAmbientBehavior` в ходе выполнения связанного игрового сценария. */
+/**
+ * Updates ambient AI state and returns next requested patrol cell.
+ * Returned destination is a movement intent; callers decide how movement executes.
+ */
 export function updateEnemyAmbientBehavior(params: {
   enemyRootNode?: PositionNodeLike;
   behavior: EnemyAmbientBehavior;
+  currentCell?: { x: number; z: number } | null;
   deltaSeconds?: number;
   gridMapper?: {
     worldToGridCell: (position: PositionLike) => { x: number; z: number };
-    gridCellToWorld: (cell: { x: number; z: number }, transform?: { resolveY?: ({ x, z }: { x: number; z: number }) => number; fallbackY?: number }) => PositionLike;
   };
-  resolveGroundY?: ({ x, z, fallbackY }: { x: number; z: number; fallbackY?: number }) => number;
-}): EnemyAmbientBehavior {
+}): EnemyAmbientBehavior & { requestedDestinationCell: { x: number; z: number } | null } {
   const behavior = params.behavior;
   const enemyRootNode = params.enemyRootNode;
   const deltaSeconds = Number.isFinite(params.deltaSeconds) ? Math.max(0, params.deltaSeconds ?? 0) : 0;
 
-  if (!behavior || !enemyRootNode?.position || deltaSeconds <= 0) {
-    return behavior;
+  if (!behavior || deltaSeconds <= 0) {
+    return {
+      ...behavior,
+      requestedDestinationCell: null
+    };
   }
 
   behavior.stateTimeRemaining -= deltaSeconds;
@@ -139,69 +154,67 @@ export function updateEnemyAmbientBehavior(params: {
     const currentYaw = yawFromDirection(behavior.facingDirection);
     const nextYaw = currentYaw + behavior.lookAroundAngularSpeed * deltaSeconds;
     behavior.facingDirection = directionFromYaw(nextYaw);
-    setRootYaw(enemyRootNode, nextYaw);
-    return behavior;
+    if (enemyRootNode) {
+      setRootYaw(enemyRootNode, nextYaw);
+    }
+    return {
+      ...behavior,
+      requestedDestinationCell: null
+    };
   }
 
-  if (behavior.state === 'patrol' && params.gridMapper) {
-    const patrolCells = behavior.patrolCells.length > 0
-      ? behavior.patrolCells
-      : behavior.patrolPoints.map((point) => params.gridMapper!.worldToGridCell(point));
-
-    if (patrolCells.length <= 0) {
-      enterState(behavior, 'lookAround');
-      return behavior;
-    }
-
-    if (behavior.patrolCells.length <= 0) {
-      behavior.patrolCells = patrolCells;
-    }
-
-    const currentCell = enemyRootNode.gridCell ?? params.gridMapper.worldToGridCell(enemyRootNode.position);
-    const centeredCurrentWorld = resolveWorldPositionFromCell({
-      cell: currentCell,
-      gridMapper: params.gridMapper,
-      resolveGroundY: params.resolveGroundY,
-      fallbackY: enemyRootNode.position.y
-    });
-
-    enemyRootNode.position.x = centeredCurrentWorld.x;
-    enemyRootNode.position.y = centeredCurrentWorld.y;
-    enemyRootNode.position.z = centeredCurrentWorld.z;
-    enemyRootNode.gridCell = currentCell;
-
-    behavior.patrolStepAccumulatorSeconds += deltaSeconds;
-    if (behavior.patrolStepAccumulatorSeconds < behavior.patrolStepIntervalSeconds) {
-      return behavior;
-    }
-
-    behavior.patrolStepAccumulatorSeconds = 0;
-
-    const targetCell = patrolCells[behavior.currentPatrolIndex % patrolCells.length];
-
-    if (areCellsEqual(currentCell, targetCell)) {
-      behavior.currentPatrolIndex = (behavior.currentPatrolIndex + 1) % patrolCells.length;
-      enterState(behavior, 'lookAround');
-      return behavior;
-    }
-
-    const nextCell = stepCellTowardsTarget(currentCell, targetCell) ?? currentCell;
-
-    const toDirection = normalize({ x: nextCell.x - currentCell.x, y: 0, z: nextCell.z - currentCell.z });
-    const world = resolveWorldPositionFromCell({
-      cell: nextCell,
-      gridMapper: params.gridMapper,
-      resolveGroundY: params.resolveGroundY,
-      fallbackY: enemyRootNode.position.y
-    });
-
-    enemyRootNode.position.x = world.x;
-    enemyRootNode.position.y = world.y;
-    enemyRootNode.position.z = world.z;
-    enemyRootNode.gridCell = nextCell;
-    behavior.facingDirection = toDirection;
-    setRootYaw(enemyRootNode, yawFromDirection(toDirection));
+  if (behavior.state !== 'patrol') {
+    return {
+      ...behavior,
+      requestedDestinationCell: null
+    };
   }
 
-  return behavior;
+  const patrolCells = ensurePatrolCells(behavior, params.gridMapper);
+  if (patrolCells.length <= 0) {
+    enterState(behavior, 'lookAround');
+    return {
+      ...behavior,
+      requestedDestinationCell: null
+    };
+  }
+
+  behavior.patrolStepAccumulatorSeconds += deltaSeconds;
+  if (behavior.patrolStepAccumulatorSeconds < behavior.patrolStepIntervalSeconds) {
+    return {
+      ...behavior,
+      requestedDestinationCell: null
+    };
+  }
+
+  behavior.patrolStepAccumulatorSeconds = 0;
+  const targetCell = patrolCells[behavior.currentPatrolIndex % patrolCells.length] ?? null;
+  if (!targetCell) {
+    return {
+      ...behavior,
+      requestedDestinationCell: null
+    };
+  }
+
+  const currentCell = params.currentCell ?? enemyRootNode?.gridCell ?? null;
+  if (currentCell && areCellsEqual(currentCell, targetCell)) {
+    behavior.currentPatrolIndex = (behavior.currentPatrolIndex + 1) % patrolCells.length;
+    enterState(behavior, 'lookAround');
+    return {
+      ...behavior,
+      requestedDestinationCell: null
+    };
+  }
+
+  if (currentCell) {
+    behavior.facingDirection = normalize({ x: targetCell.x - currentCell.x, y: 0, z: targetCell.z - currentCell.z });
+    if (enemyRootNode) {
+      setRootYaw(enemyRootNode, yawFromDirection(behavior.facingDirection));
+    }
+  }
+
+  return {
+    ...behavior,
+    requestedDestinationCell: targetCell
+  };
 }
