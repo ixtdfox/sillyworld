@@ -4,8 +4,14 @@
  */
 import type { EncounterInteractionPayload, PositionNodeLike, RuntimeDispose } from '../render/shared/runtimeContracts.ts';
 
-import { ENCOUNTER_INTERACTION_DISTANCE } from '../world/encounter/encounterRules.ts';
 import { isCameraOrbiting, isPrimaryPointerAction } from '../render/shared/pointerInputGuards.ts';
+
+/**
+ * Порог дистанции хранится рядом с обработчиком scene-input, потому что модуль является
+ * boundary-слоем между pointer pick и запуском encounter. Константа оставлена экспортируемой,
+ * чтобы тесты и вызывающий runtime использовали одно и то же значение без скрытых дублей.
+ */
+const ENCOUNTER_INTERACTION_DISTANCE = 2.5;
 
 export { ENCOUNTER_INTERACTION_DISTANCE };
 

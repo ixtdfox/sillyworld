@@ -2,6 +2,7 @@
 /**
  * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
  */
+import { Cell } from './cell/Cell.ts';
 
 export const DEFAULT_WORLD_GRID_CONFIG = Object.freeze({
   cellSize: 1.5,
@@ -43,10 +44,7 @@ export function resolveCombatGridConfig(options = {}) {
 
 /** Нормализует `normalizeCell` в ходе выполнения связанного игрового сценария. */
 function normalizeCell(cell) {
-  return {
-    x: Math.trunc(cell.x),
-    z: Math.trunc(cell.z)
-  };
+  return Cell.from(cell);
 }
 
 /** Создаёт и настраивает `createWorldGridMapper` в ходе выполнения связанного игрового сценария. */
@@ -54,16 +52,21 @@ export function createWorldGridMapper(options = {}) {
   const config = resolveWorldGridConfig(options);
   const halfCellSize = config.cellSize / 2;
 
+  /**
+   * Конвертация world->grid сразу возвращает `Cell`, чтобы дальше все боевые/навигационные
+   * подсистемы опирались на value-object, а не на временный plain-object.
+   */
   const worldToGridCell = (worldPosition) => normalizeCell({
     x: Math.floor((worldPosition.x - config.originWorldX) / config.cellSize),
     z: Math.floor((worldPosition.z - config.originWorldZ) / config.cellSize)
   });
 
   const gridCellToWorld = (cell, transform = {}) => {
+    const normalizedCell = Cell.from(cell);
     const anchor = transform.anchor === 'corner' ? 'corner' : 'center';
     const anchorOffset = anchor === 'center' ? halfCellSize : 0;
-    const x = config.originWorldX + cell.x * config.cellSize + anchorOffset;
-    const z = config.originWorldZ + cell.z * config.cellSize + anchorOffset;
+    const x = config.originWorldX + normalizedCell.x * config.cellSize + anchorOffset;
+    const z = config.originWorldZ + normalizedCell.z * config.cellSize + anchorOffset;
     const y = typeof transform.resolveY === 'function' ? transform.resolveY({ x, z }) : (transform.fallbackY ?? 0);
 
     return { x, y, z };

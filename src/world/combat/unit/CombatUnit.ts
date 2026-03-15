@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Cell } from '../../spatial/cell/Cell.ts';
 
 const DEFAULT_AP_PER_TURN = 2;
 const DEFAULT_MP_PER_TURN = 6;
@@ -38,14 +39,18 @@ export class CombatUnit {
     this.entity = entity;
   }
 
-  /** Синхронно обновляет боевую и world-ссылочную позицию юнита в одном вызове. */
+  /**
+   * Сохраняем позицию юнита только как `Cell`, потому что это единый формат для grid occupancy,
+   * дальности атаки и pathfinding. Legacy-входы `{x,z}` разрешены лишь как совместимость на границе.
+   */
   setGridCell(cell) {
-    this.gridCell = cell;
+    const normalizedCell = Cell.from(cell);
+    this.gridCell = normalizedCell;
     if (this.rootNode) {
-      this.rootNode.gridCell = cell;
+      this.rootNode.gridCell = normalizedCell;
     }
     if (this.entity) {
-      this.entity.gridCell = cell;
+      this.entity.gridCell = normalizedCell;
     }
   }
 

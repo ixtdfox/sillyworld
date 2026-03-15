@@ -1,3 +1,5 @@
+import { Cell } from '../../spatial/cell/Cell.ts';
+
 /**
  * Компонент выбора тактической клетки инкапсулирует input-правила:
  * как извлечь клетку из pickResult, как игнорировать HUD и как перейти
@@ -24,7 +26,7 @@ export class CombatCellPicker {
       return null;
     }
 
-    return { x, z };
+    return new Cell(x, z);
   }
 
   isCombatGuiPick(pickResult: any) {
@@ -39,10 +41,7 @@ export class CombatCellPicker {
     const mesh = pickResult.pickedMesh ?? null;
     const metadataCell = mesh?.metadata?.combatGridCell ?? mesh?.metadata?.gridCell ?? null;
     if (metadataCell && Number.isFinite(metadataCell.x) && Number.isFinite(metadataCell.z)) {
-      return {
-        x: Math.trunc(metadataCell.x),
-        z: Math.trunc(metadataCell.z)
-      };
+      return Cell.from(metadataCell);
     }
 
     const meshNamedCell = this.tryParseCellFromHighlightMeshName(mesh?.name);
@@ -50,7 +49,7 @@ export class CombatCellPicker {
       return meshNamedCell;
     }
 
-    return gridMapper.worldToGridCell(pickResult.pickedPoint);
+    return Cell.from(gridMapper.worldToGridCell(pickResult.pickedPoint));
   }
 
   pickCombatCellAtPointer(runtime: any, gridMapper: any, pointerPickInfo: any = null) {

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createCombatActionResolver } from '../src/world/combat/ActionResolver.ts';
+import { Cell } from '../src/world/spatial/cell/Cell.ts';
 
 function makeUnit(overrides = {}) {
   return {
@@ -10,7 +11,7 @@ function makeUnit(overrides = {}) {
     ap: 2,
     hp: 20,
     isAlive: true,
-    gridCell: { x: 0, z: 0 },
+    gridCell: new Cell(0, 0),
     attackRange: 1,
     attackPower: 4,
     ...overrides
@@ -20,7 +21,7 @@ function makeUnit(overrides = {}) {
 test('blocks basic attack when it is not attackers turn', () => {
   const resolver = createCombatActionResolver();
   const attacker = makeUnit({ id: 'player_1' });
-  const target = makeUnit({ id: 'enemy_1', team: 'enemy', gridCell: { x: 1, z: 0 } });
+  const target = makeUnit({ id: 'enemy_1', team: 'enemy', gridCell: new Cell(1, 0) });
 
   const result = resolver.resolveBasicAttack({
     attacker,
@@ -37,7 +38,7 @@ test('blocks basic attack when it is not attackers turn', () => {
 test('blocks basic attack when target is out of range', () => {
   const resolver = createCombatActionResolver();
   const attacker = makeUnit({ id: 'player_1' });
-  const target = makeUnit({ id: 'enemy_1', team: 'enemy', gridCell: { x: 3, z: 0 } });
+  const target = makeUnit({ id: 'enemy_1', team: 'enemy', gridCell: new Cell(3, 0) });
 
   const result = resolver.resolveBasicAttack({
     attacker,
@@ -54,7 +55,7 @@ test('blocks basic attack when target is out of range', () => {
 test('resolves basic attack, spends AP, and marks death', () => {
   const resolver = createCombatActionResolver();
   const attacker = makeUnit({ id: 'player_1', attackPower: 6 });
-  const target = makeUnit({ id: 'enemy_1', team: 'enemy', hp: 5, gridCell: { x: 1, z: 0 } });
+  const target = makeUnit({ id: 'enemy_1', team: 'enemy', hp: 5, gridCell: new Cell(1, 0) });
 
   const result = resolver.resolveBasicAttack({
     attacker,

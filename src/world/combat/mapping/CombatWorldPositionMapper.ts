@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { normalizeGridCell } from '../../movement/gridMovement.ts';
+import { Cell } from '../../spatial/cell/Cell.ts';
 
 /**
  * Сервис маппинга отделяет координатную интеграцию от runtime боя:
@@ -14,12 +14,15 @@ export class CombatWorldPositionMapper {
   }
 
   toCell(cell) {
-    return normalizeGridCell(cell);
+    return Cell.from(cell);
   }
 
   /**
    * Трансформация «позиция в мире -> клетка боя + диагностические данные снаппинга».
    * Этот метод используется на входе в бой, чтобы не стартовать encounter в невалидной позиции.
+   *
+   * Важно: после world->grid конвертации мы фиксируем координату в `Cell` и передаём её дальше
+   * как канонический доменный тип, чтобы grid/runtime не разошлись в представлении клетки.
    */
   mapWorldPositionToCombatCell({ unitId, worldPosition }) {
     if (!this.gridMapper || typeof this.gridMapper.worldToGridCell !== 'function') {

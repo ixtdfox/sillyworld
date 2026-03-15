@@ -2,6 +2,7 @@
 /**
  * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
  */
+import { Cell } from '../spatial/cell/Cell.ts';
 
 function isFiniteNumber(value) {
   return Number.isFinite(value);
@@ -13,10 +14,7 @@ export function normalizeGridCell(cell) {
     return null;
   }
 
-  return {
-    x: Math.trunc(cell.x),
-    z: Math.trunc(cell.z)
-  };
+  return Cell.from(cell);
 }
 
 /** Создаёт и настраивает `createPathSignature` в ходе выполнения связанного игрового сценария. */
@@ -26,7 +24,7 @@ export function createPathSignature(startCell, destinationCell) {
   if (!start || !destination) {
     return '';
   }
-  return `${start.x},${start.z}>${destination.x},${destination.z}`;
+  return `${start.toKey()}>${destination.toKey()}`;
 }
 
 /** Выполняет `stepCellTowardsTarget` в ходе выполнения связанного игрового сценария. */
@@ -37,23 +35,21 @@ export function stepCellTowardsTarget(currentCell, targetCell) {
     return null;
   }
 
-  const nextCell = {
-    x: current.x,
-    z: current.z
-  };
+  let nextX = current.x;
+  let nextZ = current.z;
 
   if (target.x !== current.x) {
-    nextCell.x += Math.sign(target.x - current.x);
+    nextX += Math.sign(target.x - current.x);
   } else if (target.z !== current.z) {
-    nextCell.z += Math.sign(target.z - current.z);
+    nextZ += Math.sign(target.z - current.z);
   }
 
-  return nextCell;
+  return new Cell(nextX, nextZ);
 }
 
 /** Выполняет `areCellsEqual` в ходе выполнения связанного игрового сценария. */
 export function areCellsEqual(a, b) {
-  return Boolean(a && b && a.x === b.x && a.z === b.z);
+  return Boolean(a && b && Cell.from(a).equals(b));
 }
 
 /** Определяет `resolveCellPath` в ходе выполнения связанного игрового сценария. */

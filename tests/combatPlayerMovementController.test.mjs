@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { attachCombatPlayerMovementController } from '../src/world/player/combatPlayerMovementController.ts';
+import { Cell } from '../src/world/spatial/cell/Cell.ts';
 
 class Vector3 {
   constructor(x, y, z) {
@@ -98,7 +99,7 @@ test('does not start movement when path cost exceeds MP', () => {
     isAlive: true,
     mp: 1,
     rootNode: { position: new Vector3(0, 0, 0) },
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   let moved = false;
@@ -109,11 +110,11 @@ test('does not start movement when path cost exceeds MP', () => {
     },
     playerUnit,
     gridMapper: {
-      worldToGridCell: () => ({ x: 2, z: 0 }),
+      worldToGridCell: () => new Cell(2, 0),
       gridCellToWorld: () => ({ x: 2, y: 0, z: 0 })
     },
     grid: {
-      findPath: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+      findPath: () => [new Cell(0, 0), new Cell(1, 0), new Cell(2, 0)],
       moveOccupant: () => {
         moved = true;
       }
@@ -144,7 +145,7 @@ test('moves unit along path and spends MP', () => {
     isAlive: true,
     mp: 6,
     rootNode: { position: new Vector3(0, 0, 0) },
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   let moved = false;
@@ -155,14 +156,14 @@ test('moves unit along path and spends MP', () => {
     },
     playerUnit,
     gridMapper: {
-      worldToGridCell: () => ({ x: 2, z: 0 }),
+      worldToGridCell: () => new Cell(2, 0),
       gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
     },
     grid: {
-      findPath: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+      findPath: () => [new Cell(0, 0), new Cell(1, 0), new Cell(2, 0)],
       moveOccupant: (_fromCell, toCell) => {
         moved = true;
-        assert.deepEqual(toCell, { x: 2, z: 0 });
+        assert.deepEqual(toCell, new Cell(2, 0));
       }
     },
     resolveGroundY: () => 0
@@ -175,7 +176,7 @@ test('moves unit along path and spends MP', () => {
 
   assert.equal(moved, true);
   assert.equal(playerUnit.mp, 4);
-  assert.deepEqual(playerUnit.gridCell, { x: 2, z: 0 });
+  assert.deepEqual(playerUnit.gridCell, new Cell(2, 0));
   detach();
 });
 
@@ -194,7 +195,7 @@ test('ignores unreachable tile selections returned by authoritative movement che
     isAlive: true,
     mp: 4,
     rootNode: { position: new Vector3(0, 0, 0) },
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   let completeCalled = false;
@@ -209,11 +210,11 @@ test('ignores unreachable tile selections returned by authoritative movement che
     },
     playerUnit,
     gridMapper: {
-      worldToGridCell: () => ({ x: 5, z: 0 }),
+      worldToGridCell: () => new Cell(5, 0),
       gridCellToWorld: () => ({ x: 5, y: 0, z: 0 })
     },
     grid: {
-      findPath: () => [{ x: 0, z: 0 }, { x: 5, z: 0 }],
+      findPath: () => [new Cell(0, 0), new Cell(5, 0)],
       moveOccupant: () => {
         completeCalled = true;
       }
@@ -225,7 +226,7 @@ test('ignores unreachable tile selections returned by authoritative movement che
   runtime.tick();
 
   assert.equal(playerUnit.mp, 4);
-  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  assert.deepEqual(playerUnit.gridCell, new Cell(0, 0));
   assert.equal(completeCalled, false);
   detach();
 });
@@ -244,7 +245,7 @@ test('uses authoritative movement completion when available', () => {
     isAlive: true,
     mp: 3,
     rootNode: { position: new Vector3(0, 0, 0) },
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   const moveCalls = [];
@@ -254,9 +255,9 @@ test('uses authoritative movement completion when available', () => {
       getActiveUnit: () => playerUnit,
       tryMoveActiveUnit: () => ({
         success: true,
-        path: [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+        path: [new Cell(0, 0), new Cell(1, 0), new Cell(2, 0)],
         pathCost: 3,
-        destinationCell: { x: 2, z: 0 }
+        destinationCell: new Cell(2, 0)
       }),
       completeUnitMovement: ({ unitId, destinationCell, pathCost }) => {
         moveCalls.push({ unitId, destinationCell, pathCost });
@@ -266,7 +267,7 @@ test('uses authoritative movement completion when available', () => {
     },
     playerUnit,
     gridMapper: {
-      worldToGridCell: () => ({ x: 2, z: 0 }),
+      worldToGridCell: () => new Cell(2, 0),
       gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
     },
     grid: {
@@ -288,11 +289,11 @@ test('uses authoritative movement completion when available', () => {
   assert.equal(moveCalls.length, 1);
   assert.deepEqual(moveCalls[0], {
     unitId: 'player_1',
-    destinationCell: { x: 2, z: 0 },
+    destinationCell: new Cell(2, 0),
     pathCost: 3
   });
   assert.equal(playerUnit.mp, 0);
-  assert.deepEqual(playerUnit.gridCell, { x: 2, z: 0 });
+  assert.deepEqual(playerUnit.gridCell, new Cell(2, 0));
 
   runtime.click();
   runtime.tick();
@@ -315,7 +316,7 @@ test('resolves destination cell from highlighted mesh names', () => {
     isAlive: true,
     mp: 6,
     rootNode: { position: new Vector3(0, 0, 0) },
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   let finalMove = null;
@@ -332,11 +333,11 @@ test('resolves destination cell from highlighted mesh names', () => {
     },
     playerUnit,
     gridMapper: {
-      worldToGridCell: () => ({ x: -9, z: -9 }),
+      worldToGridCell: () => new Cell(-9, -9),
       gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
     },
     grid: {
-      findPath: (_from, to) => [{ x: 0, z: 0 }, { x: to.x, z: to.z }],
+      findPath: (_from, to) => [new Cell(0, 0), Cell.from(to)],
       calculatePathCost: () => 1,
       moveOccupant: () => {}
     },
@@ -348,10 +349,10 @@ test('resolves destination cell from highlighted mesh names', () => {
   runtime.tick();
 
   assert.deepEqual(finalMove, {
-    destinationCell: { x: 2, z: 1 },
+    destinationCell: new Cell(2, 1),
     pathCost: 1
   });
-  assert.deepEqual(playerUnit.gridCell, { x: 2, z: 1 });
+  assert.deepEqual(playerUnit.gridCell, new Cell(2, 1));
   detach();
 });
 
@@ -369,7 +370,7 @@ test('ignores movement clicks when combat phase is not turn_active', () => {
     isAlive: true,
     mp: 6,
     rootNode: { position: new Vector3(0, 0, 0) },
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   let attempted = false;
@@ -401,7 +402,7 @@ test('ignores movement clicks when combat phase is not turn_active', () => {
   runtime.tick();
 
   assert.equal(attempted, false);
-  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  assert.deepEqual(playerUnit.gridCell, new Cell(0, 0));
   assert.equal(playerUnit.mp, 6);
   detach();
 });
@@ -421,7 +422,7 @@ test('does not queue movement when UI interaction guard is active', () => {
     isAlive: true,
     mp: 6,
     rootNode: { position: new Vector3(0, 0, 0) },
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   let attempted = false;
@@ -455,7 +456,7 @@ test('does not queue movement when UI interaction guard is active', () => {
   runtime.tick();
 
   assert.equal(attempted, false);
-  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  assert.deepEqual(playerUnit.gridCell, new Cell(0, 0));
   assert.equal(playerUnit.mp, 6);
   detach();
 });
@@ -474,7 +475,7 @@ test('clears queued movement when movement reset version changes', () => {
     isAlive: true,
     mp: 6,
     rootNode: { position: new Vector3(0, 0, 0) },
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   const combatState = {
@@ -484,9 +485,9 @@ test('clears queued movement when movement reset version changes', () => {
     getActiveUnit: () => playerUnit,
     tryMoveActiveUnit: () => ({
       success: true,
-      path: [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+      path: [new Cell(0, 0), new Cell(1, 0), new Cell(2, 0)],
       pathCost: 2,
-      destinationCell: { x: 2, z: 0 }
+      destinationCell: new Cell(2, 0)
     }),
     completeUnitMovement: () => {
       playerUnit.gridCell = { x: 2, z: 0 };
@@ -498,11 +499,11 @@ test('clears queued movement when movement reset version changes', () => {
     combatState,
     playerUnit,
     gridMapper: {
-      worldToGridCell: () => ({ x: 2, z: 0 }),
+      worldToGridCell: () => new Cell(2, 0),
       gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
     },
     grid: {
-      findPath: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+      findPath: () => [new Cell(0, 0), new Cell(1, 0), new Cell(2, 0)],
       moveOccupant: () => {}
     },
     resolveGroundY: () => 0
@@ -513,7 +514,7 @@ test('clears queued movement when movement reset version changes', () => {
   runtime.tick();
   runtime.tick();
 
-  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  assert.deepEqual(playerUnit.gridCell, new Cell(0, 0));
   assert.equal(playerUnit.mp, 6);
   detach();
 });
@@ -533,7 +534,7 @@ test('ignores right-click pointer input for movement selection', () => {
     isAlive: true,
     mp: 6,
     rootNode: { position: new Vector3(0, 0, 0) },
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   let moved = false;
@@ -544,11 +545,11 @@ test('ignores right-click pointer input for movement selection', () => {
     },
     playerUnit,
     gridMapper: {
-      worldToGridCell: () => ({ x: 2, z: 0 }),
+      worldToGridCell: () => new Cell(2, 0),
       gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
     },
     grid: {
-      findPath: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+      findPath: () => [new Cell(0, 0), new Cell(1, 0), new Cell(2, 0)],
       moveOccupant: () => {
         moved = true;
       }
@@ -561,7 +562,7 @@ test('ignores right-click pointer input for movement selection', () => {
 
   assert.equal(moved, false);
   assert.equal(playerUnit.mp, 6);
-  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  assert.deepEqual(playerUnit.gridCell, new Cell(0, 0));
   detach();
 });
 
@@ -580,7 +581,7 @@ test('ignores left-click movement selection while camera orbit drag is active', 
     isAlive: true,
     mp: 6,
     rootNode: { position: new Vector3(0, 0, 0) },
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   let moved = false;
@@ -591,11 +592,11 @@ test('ignores left-click movement selection while camera orbit drag is active', 
     },
     playerUnit,
     gridMapper: {
-      worldToGridCell: () => ({ x: 2, z: 0 }),
+      worldToGridCell: () => new Cell(2, 0),
       gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
     },
     grid: {
-      findPath: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 2, z: 0 }],
+      findPath: () => [new Cell(0, 0), new Cell(1, 0), new Cell(2, 0)],
       moveOccupant: () => {
         moved = true;
       }
@@ -608,6 +609,6 @@ test('ignores left-click movement selection while camera orbit drag is active', 
 
   assert.equal(moved, false);
   assert.equal(playerUnit.mp, 6);
-  assert.deepEqual(playerUnit.gridCell, { x: 0, z: 0 });
+  assert.deepEqual(playerUnit.gridCell, new Cell(0, 0));
   detach();
 });

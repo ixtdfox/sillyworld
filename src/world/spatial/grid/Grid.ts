@@ -20,6 +20,10 @@ export class Grid {
     this.occupancyRevision = 0;
   }
 
+  /**
+   * Внутри домена сетки клетка всегда приводится к `Cell`, чтобы дальше не таскать сырые `{x,z}`.
+   * Это гарантирует единый инвариант целочисленных координат при всех проверках границ.
+   */
   isWithinBounds(cell) {
     const normalized = Cell.from(cell);
     return normalized.x >= this.minX && normalized.x <= this.maxX && normalized.z >= this.minZ && normalized.z <= this.maxZ;
@@ -78,9 +82,14 @@ export class Grid {
     this.setOccupied(toCell, unitId);
   }
 
+  /**
+   * Compatibility-граница для кастомного `movementCost`: снаружи всё ещё могут ожидать plain-объект.
+   * Внутри `Grid` мы работаем с `Cell`, а в callback пробрасываем `Cell`, чтобы новый код не
+   * откатывался обратно к процедурным координатам.
+   */
   resolveMovementCost(fromCell, toCell, options = {}) {
     if (typeof options.movementCost === 'function') {
-      const resolvedCost = options.movementCost(Cell.from(fromCell).toPlain(), Cell.from(toCell).toPlain());
+      const resolvedCost = options.movementCost(Cell.from(fromCell), Cell.from(toCell));
       if (!Number.isFinite(resolvedCost) || resolvedCost <= 0) {
         return null;
       }
@@ -90,7 +99,10 @@ export class Grid {
     return 1;
   }
 
-  /** Dijkstra по 4-соседям возвращает кратчайший путь для анимации и списания MP. */
+  /**
+   * Dijkstra по 4-соседям возвращает путь как `Cell[]`, чтобы runtime/рендер не зависели от
+   * нестабильных raw-структур и могли использовать доменные методы (`equals`, `toKey`).
+   */
   findPath(startCell, goalCell, options = {}) {
     const start = Cell.from(startCell);
     const goal = Cell.from(goalCell);
@@ -120,7 +132,7 @@ export class Grid {
           walkKey = previous.toKey();
         }
 
-        return path.map((entry) => entry.toPlain());
+        return path;
       }
 
       for (const neighbor of current.getNeighbors()) {
@@ -167,6 +179,10 @@ export class Grid {
     return cost;
   }
 
+  /**
+   * Возвращаем не псевдо-клетку `{x,z,cost}`, а явную структуру `{ cell: Cell, cost }`.
+   * Это отделяет координату клетки от метаданных стоимости и упрощает типобезопасный runtime-flow.
+   */
   getReachableCells(startCell, maxCost, options = {}) {
     const start = Cell.from(startCell);
     const allowOccupiedByUnitId = options.allowOccupiedByUnitId ?? null;
@@ -210,8 +226,8 @@ export class Grid {
 
     return Array.from(bestCostByCell.entries()).map(([key, cost]) => {
       const [x, z] = key.split(',').map((value) => Number.parseInt(value, 10));
-      return { x, z, cost };
-    }).filter((cell) => cell.cost <= maxAllowedCost);
+      return { cell: new Cell(x, z), cost };
+    }).filter((entry) => entry.cost <= maxAllowedCost);
   }
 
   getOccupancyRevision() {

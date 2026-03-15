@@ -3,7 +3,6 @@
  * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи. Фокус файла — пошаговый бой: клетки, действия, очередь ходов или управление вводом в бою.
  */
 import { createCombatBattlefieldVisualization } from './combatBattlefieldVisualization.ts';
-import { pickCombatCellAtPointer } from '../../world/combat/combatCellPointer.ts';
 import {CombatCellPicker} from "../../world/combat/input/CombatCellPicker.ts";
 
 /** Создаёт и настраивает `createCellSignature` в ходе выполнения связанного игрового сценария. */
@@ -171,7 +170,7 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       return;
     }
 
-    combatState.hoveredMovementPath = pathCells.map((cell) => ({ x: cell.x, z: cell.z }));
+    combatState.hoveredMovementPath = pathCells.map((cell) => cell);
     if (nextSignature === pathPreviewSignature) {
       return;
     }
@@ -252,7 +251,7 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
     const isReachable = reachableCellKeySet.has(hoverCellKey);
 
     combatState.hoveredMovementDestination = {
-      cell: { x: hoveredCell.x, z: hoveredCell.z },
+      cell: hoveredCell,
       isReachable
     };
 
@@ -261,10 +260,6 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
         allowOccupiedByUnitId: playerUnit.id,
         movementCost
       });
-
-      const pathSignature = Array.isArray(path)
-          ? path.map((cell) => `${cell.x},${cell.z}`).join('>')
-          : 'INVALID';
 
       syncPathPreview(path);
     } else {
@@ -313,12 +308,13 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       return;
     }
 
-    const reachableCells = grid.getReachableCells(playerUnit.gridCell, playerUnit.mp, {
+    const reachableEntries = grid.getReachableCells(playerUnit.gridCell, playerUnit.mp, {
       allowOccupiedByUnitId: playerUnit.id,
       movementCost
-    }).filter((cell) => !(cell.x === playerUnit.gridCell.x && cell.z === playerUnit.gridCell.z));
+    }).filter((entry) => !entry.cell.equals(playerUnit.gridCell));
 
-    const reachableCellKeySet = new Set(reachableCells.map((cell) => grid.toCellKey(cell)));
+    const reachableCells = reachableEntries.map((entry) => entry.cell);
+    const reachableCellKeySet = new Set(reachableCells.map((cell) => cell.toKey()));
 
     const nextSignature = [
       playerUnit.gridCell.x,
@@ -334,7 +330,7 @@ export function createCombatMovementRangeHighlighter(runtime, options = {}) {
       ensureOverlayAssets(runtime, overlayState, color, alpha, { namePrefix: 'combatMoveRange' });
 
       for (const cell of reachableCells) {
-        const key = grid.toCellKey(cell);
+        const key = cell.toKey();
         const mesh = createHighlightMesh(runtime, battlefieldView, cell, overlayState);
         highlightsByCell.set(key, mesh);
       }

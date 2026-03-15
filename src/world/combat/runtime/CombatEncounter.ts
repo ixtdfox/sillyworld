@@ -13,38 +13,34 @@ import { createCombatMovementRangeHighlighter } from '../../../render/combat/com
 import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from '../playerActionModeStateMachine.ts';
 import { createCombatDebugShell } from '../../../render/debug/combatDebugShell.ts';
 import { CombatWorldPositionMapper } from '../mapping/CombatWorldPositionMapper.ts';
-import { manhattanDistance } from '../../common/math/utils.ts';
 import { resolveGroundY } from '../../common/physics/utils.ts';
 import { createCombatUnit } from '../unit/CombatUnit.ts';
+import { Cell } from '../../spatial/cell/Cell.ts';
 
-const DEFAULT_PLAYER_SPAWN_CELL = Object.freeze({ x: -1, z: 1 });
-const DEFAULT_ENEMY_SPAWN_CELL = Object.freeze({ x: 1, z: -1 });
+const DEFAULT_PLAYER_SPAWN_CELL = new Cell(-1, 1);
+const DEFAULT_ENEMY_SPAWN_CELL = new Cell(1, -1);
 const DEFAULT_BASIC_ATTACK_DAMAGE = 4;
 
 function resolveMovementCostRule(options = {}) {
   return typeof options.movementCost === 'function' ? options.movementCost : undefined;
 }
 
+/**
+ * На границе encounter принимаем legacy-координаты, но сразу приводим к `Cell`.
+ * Это не «декорация», а жёсткий инвариант: после нормализации бой оперирует только Cell-типом.
+ */
 function normalizeCell(cell, fallbackCell) {
-  if (cell && Number.isFinite(cell.x) && Number.isFinite(cell.z)) {
-    return { x: Math.trunc(cell.x), z: Math.trunc(cell.z) };
-  }
-  return { ...fallbackCell };
+  return Cell.from(cell, fallbackCell);
 }
 
 function resolveDistinctSpawnCell({ originCell, blockedCell, grid }) {
   if (!originCell || !blockedCell) {
     return originCell;
   }
-  if (originCell.x !== blockedCell.x || originCell.z !== blockedCell.z) {
+  if (!originCell.equals(blockedCell)) {
     return originCell;
   }
-  const candidates = [
-    { x: originCell.x + 1, z: originCell.z },
-    { x: originCell.x - 1, z: originCell.z },
-    { x: originCell.x, z: originCell.z + 1 },
-    { x: originCell.x, z: originCell.z - 1 }
-  ];
+  const candidates = originCell.getNeighbors();
 
   for (const candidate of candidates) {
     if (grid?.isCellWalkable?.(candidate)) {
@@ -111,7 +107,7 @@ export class CombatEncounter {
   }
 
   placeUnitAtCell(unit, gridMapper, cell, options = {}) {
-    const resolvedCell = normalizeCell(cell, options.fallbackCell ?? { x: 0, z: 0 });
+    const resolvedCell = normalizeCell(cell, Cell.from(options.fallbackCell, new Cell(0, 0)));
     const worldPosition = gridMapper.gridCellToWorld(resolvedCell, {
       resolveY: ({ x, z }) => resolveGroundY({
         runtime: this.runtime,
@@ -326,7 +322,7 @@ export class CombatEncounter {
       grid.moveOccupant(fromCell, destinationCell, unit.id);
       unit.setGridCell(destinationCell);
       unit.mp = Math.max(0, unit.mp - pathCost);
-      combatState.lastActionResult = { success: true, action: 'move', unitId: unit.id, destinationCell: { ...destinationCell }, pathCost, mpRemaining: unit.mp };
+      combatState.lastActionResult = { success: true, action: 'move', unitId: unit.id, destinationCell: Cell.from(destinationCell), pathCost, mpRemaining: unit.mp };
       combatState.resetPendingMovementInput('movement_complete');
       syncCombatHudState();
       return { success: true, unit, mpRemaining: unit.mp };
@@ -456,9 +452,9 @@ export class CombatEncounter {
         if (attackAttempt.reason !== 'target_out_of_range') break;
         if (!Number.isFinite(activeUnit.mp) || activeUnit.mp <= 0) break;
 
-        const reachableCells = grid.getReachableCells(activeUnit.gridCell, activeUnit.mp, { allowOccupiedByUnitId: activeUnit.id, movementCost });
-        const candidateCells = reachableCells
-            .map((cell) => Cell.from(cell))
+        const reachableEntries = grid.getReachableCells(activeUnit.gridCell, activeUnit.mp, { allowOccupiedByUnitId: activeUnit.id, movementCost });
+        const candidateCells = reachableEntries
+            .map((entry) => entry.cell)
             .filter((cell) => !cell.equals(activeUnit.gridCell));
 
         let selectedMove = null;
@@ -488,11 +484,11 @@ export class CombatEncounter {
 
         combatState.lastActionResult = {
           success: true, action: 'move', unitId: activeUnit.id,
-          destinationCell: { ...selectedMove.destinationCell }, pathCost: selectedMove.pathCost, mpRemaining: activeUnit.mp
+          destinationCell: Cell.from(selectedMove.destinationCell), pathCost: selectedMove.pathCost, mpRemaining: activeUnit.mp
         };
         syncCombatHudState();
 
-        if (manhattanDistance(activeUnit.gridCell, playerUnit.gridCell) <= activeUnit.attackRange) continue;
+        if (activeUnit.gridCell.manhattanDistanceTo(playerUnit.gridCell) <= activeUnit.attackRange) continue;
         if (activeUnit.mp <= 0) break;
       }
       combatState.resetPendingMovementInput('enemy_action_complete');
