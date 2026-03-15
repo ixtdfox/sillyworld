@@ -3,6 +3,7 @@ function isFiniteNumber(value) {
   return Number.isFinite(value);
 }
 
+/** Выполняет `cloneVectorLike` в ходе выполнения связанного игрового сценария. */
 function cloneVectorLike(source) {
   return {
     x: source.x,
@@ -11,6 +12,7 @@ function cloneVectorLike(source) {
   };
 }
 
+/** Определяет `resolveRootNode` в ходе выполнения связанного игрового сценария. */
 function resolveRootNode(entityOrRootNode) {
   if (!entityOrRootNode || typeof entityOrRootNode !== 'object') {
     return null;
@@ -23,6 +25,7 @@ function resolveRootNode(entityOrRootNode) {
   return entityOrRootNode;
 }
 
+/** Выполняет `refreshEntityWorldMatrices` в ходе выполнения связанного игрового сценария. */
 export function refreshEntityWorldMatrices(entityOrRootNode) {
   const rootNode = resolveRootNode(entityOrRootNode);
   if (!rootNode) {
@@ -45,6 +48,7 @@ export function refreshEntityWorldMatrices(entityOrRootNode) {
   return rootNode;
 }
 
+/** Выполняет `readEntityBoundingBox` в ходе выполнения связанного игрового сценария. */
 export function readEntityBoundingBox(entityOrRootNode) {
   const rootNode = refreshEntityWorldMatrices(entityOrRootNode);
   const bounds = rootNode.getHierarchyBoundingVectors?.(true);
@@ -61,6 +65,7 @@ export function readEntityBoundingBox(entityOrRootNode) {
   });
 }
 
+/** Возвращает `getEntityVisualHeight` в ходе выполнения связанного игрового сценария. */
 export function getEntityVisualHeight(entityOrRootNode) {
   const bounds = readEntityBoundingBox(entityOrRootNode);
   if (!bounds) return NaN;
@@ -68,11 +73,13 @@ export function getEntityVisualHeight(entityOrRootNode) {
   return bounds.max.y - bounds.min.y;
 }
 
+/** Возвращает `getEntityBottomY` в ходе выполнения связанного игрового сценария. */
 export function getEntityBottomY(entityOrRootNode) {
   const bounds = readEntityBoundingBox(entityOrRootNode);
   return bounds ? bounds.min.y : NaN;
 }
 
+/** Выполняет `placeEntityOnGround` в ходе выполнения связанного игрового сценария. */
 export function placeEntityOnGround(entityOrRootNode, options = {}) {
   const rootNode = refreshEntityWorldMatrices(entityOrRootNode);
   const currentBottomY = getEntityBottomY(rootNode);
@@ -100,4 +107,5 @@ export function placeEntityOnGround(entityOrRootNode, options = {}) {
   return rootNode.position.y;
 }
 
+/** Константа `alignEntityToGround` хранит общие настройки/данные, которые переиспользуются в модуле `render/shared/entityVisualBounds`. */
 export const alignEntityToGround = placeEntityOnGround;

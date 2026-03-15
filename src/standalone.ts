@@ -1,5 +1,6 @@
 import { startApp } from './app.ts';
 
+/** Выполняет `bootstrapStandalone` в ходе выполнения связанного игрового сценария. */
 function bootstrapStandalone(): void {
   console.info('[SillyRPG] Standalone bootstrap starting.');
   void startApp();

@@ -2,6 +2,7 @@ import { TIME_OF_DAY_ORDER, TIME_PHASE, TIME_PHASE_ORDER } from '../constant/typ
 import type { GameState, TimeOfDay, TimePhase } from '../contracts.ts';
 import { appendPhaseTransitions, createPhaseTransition } from '../map/phaseTransitionActions.ts';
 
+/** Константа `ACTION_TIME_COST_STEPS` хранит общие настройки/данные, которые переиспользуются в модуле `world/time/timeActions`. */
 export const ACTION_TIME_COST_STEPS = Object.freeze({
   navigation: 1,
   inspect: 1,
@@ -23,24 +24,29 @@ const PHASE_TO_TIME_OF_DAY: Readonly<Record<TimePhase, TimeOfDay>> = Object.free
   [TIME_PHASE.Night]: 'Night'
 });
 
+/** Выполняет `isTimePhase` в ходе выполнения связанного игрового сценария. */
 function isTimePhase(value: string): value is TimePhase {
   return TIME_PHASE_ORDER.includes(value as TimePhase);
 }
 
+/** Выполняет `isTimeOfDay` в ходе выполнения связанного игрового сценария. */
 function isTimeOfDay(value: string): value is TimeOfDay {
   return TIME_OF_DAY_ORDER.includes(value as TimeOfDay);
 }
 
+/** Нормализует `normalizeTimePhase` в ходе выполнения связанного игрового сценария. */
 export function normalizeTimePhase(value: string | null | undefined, fallback: TimePhase | null = TIME_PHASE.Morning): TimePhase | null {
   if (value && isTimePhase(value)) return value;
   if (value && isTimeOfDay(value)) return TIME_OF_DAY_TO_PHASE[value];
   return fallback;
 }
 
+/** Выполняет `toLegacyTimeOfDay` в ходе выполнения связанного игрового сценария. */
 function toLegacyTimeOfDay(phase: TimePhase): TimeOfDay {
   return PHASE_TO_TIME_OF_DAY[phase] || PHASE_TO_TIME_OF_DAY[TIME_PHASE.Morning];
 }
 
+/** Нормализует `normalizeWorldTime` в ходе выполнения связанного игрового сценария. */
 function normalizeWorldTime(state: GameState): { phase: TimePhase; timeOfDay: TimeOfDay } {
   const normalizedPhase = normalizeTimePhase(state.world.timePhase, normalizeTimePhase(state.world.timeOfDay, TIME_PHASE.Morning));
   return {
@@ -49,6 +55,7 @@ function normalizeWorldTime(state: GameState): { phase: TimePhase; timeOfDay: Ti
   };
 }
 
+/** Обновляет `setTimePhase` в ходе выполнения связанного игрового сценария. */
 export function setTimePhase(state: GameState, nextTimePhase: string): GameState {
   const normalizedPhase = normalizeTimePhase(nextTimePhase, null);
   if (!normalizedPhase) return state;
@@ -64,6 +71,7 @@ export function setTimePhase(state: GameState, nextTimePhase: string): GameState
   };
 }
 
+/** Обновляет `setTimeOfDay` в ходе выполнения связанного игрового сценария. */
 export function setTimeOfDay(state: GameState, nextTimeOfDay: string): GameState {
   if (isTimeOfDay(nextTimeOfDay)) {
     return setTimePhase(state, normalizeTimePhase(nextTimeOfDay, TIME_PHASE.Morning) || TIME_PHASE.Morning);
@@ -72,6 +80,7 @@ export function setTimeOfDay(state: GameState, nextTimeOfDay: string): GameState
   return setTimePhase(state, nextTimeOfDay);
 }
 
+/** Продвигает `advanceTime` в ходе выполнения связанного игрового сценария. */
 export function advanceTime(state: GameState, options: { trigger?: string } = {}): GameState {
   const current = normalizeWorldTime(state);
   const currentIndex = TIME_PHASE_ORDER.indexOf(current.phase);
@@ -104,6 +113,7 @@ export function advanceTime(state: GameState, options: { trigger?: string } = {}
   return appendPhaseTransitions(nextState, [transition]);
 }
 
+/** Продвигает `advanceTimeBySteps` в ходе выполнения связанного игрового сценария. */
 export function advanceTimeBySteps(state: GameState, steps = 1, options: { trigger?: string } = {}): GameState {
   const normalizedSteps = Number.isFinite(steps) ? Math.max(0, Math.floor(steps)) : 0;
   let nextState = state;
@@ -115,6 +125,7 @@ export function advanceTimeBySteps(state: GameState, steps = 1, options: { trigg
   return nextState;
 }
 
+/** Возвращает `getStepsUntilPhase` в ходе выполнения связанного игрового сценария. */
 export function getStepsUntilPhase(currentPhase: string, targetPhase: string): number {
   const normalizedCurrent = normalizeTimePhase(currentPhase, null);
   const normalizedTarget = normalizeTimePhase(targetPhase, null);
@@ -127,6 +138,7 @@ export function getStepsUntilPhase(currentPhase: string, targetPhase: string): n
   return (targetIndex - currentIndex + TIME_PHASE_ORDER.length) % TIME_PHASE_ORDER.length;
 }
 
+/** Продвигает `advanceToTimePhase` в ходе выполнения связанного игрового сценария. */
 export function advanceToTimePhase(
   state: GameState,
   targetTimePhase: string,
@@ -140,6 +152,7 @@ export function advanceToTimePhase(
   return advanceTimeBySteps(state, effectiveSteps, options);
 }
 
+/** Возвращает `getTimeCostForAction` в ходе выполнения связанного игрового сценария. */
 export function getTimeCostForAction(actionType: string, fallback = 0): number {
   if (typeof actionType !== 'string' || !actionType) return fallback;
   const configured = (ACTION_TIME_COST_STEPS as Record<string, number>)[actionType];

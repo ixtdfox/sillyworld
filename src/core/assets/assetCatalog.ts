@@ -1,3 +1,4 @@
+/** Определяет контракт `AssetCatalog` для согласованного взаимодействия модулей в контексте `core/assets/assetCatalog`. */
 interface AssetCatalog {
   scenes: Record<string, string>;
   scene?: Record<string, string>;
@@ -45,8 +46,10 @@ const assetPaths: AssetCatalog = {
 
 assetPaths.scene = assetPaths.scenes;
 
+/** Константа `ASSET_PATHS` хранит общие настройки/данные, которые переиспользуются в модуле `core/assets/assetCatalog`. */
 export const ASSET_PATHS = Object.freeze(assetPaths);
 
+/** Возвращает `getAssetPath` в ходе выполнения связанного игрового сценария. */
 export function getAssetPath(pathKey: string): string {
   if (typeof pathKey !== 'string' || pathKey.length === 0) {
     throw new Error('Asset key must be a non-empty string.');

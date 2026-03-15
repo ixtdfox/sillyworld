@@ -1,5 +1,6 @@
 import type { BabylonGuiLike, GuiControlLike } from '../screens/phoneMap/worldMapViewport.ts';
 
+/** Определяет контракт `AtlasRegion` для согласованного взаимодействия модулей в контексте `render/ui/components/interactiveAtlasButton`. */
 export interface AtlasRegion {
   x: number;
   y: number;
@@ -7,6 +8,7 @@ export interface AtlasRegion {
   height: number;
 }
 
+/** Определяет контракт `AtlasImageProps` для согласованного взаимодействия модулей в контексте `render/ui/components/interactiveAtlasButton`. */
 interface AtlasImageProps {
   GUI: BabylonGuiLike;
   textureUrl: string;
@@ -19,6 +21,7 @@ interface AtlasImageProps {
   verticalAlignment?: number;
 }
 
+/** Определяет контракт `InteractiveAtlasButtonProps` для согласованного взаимодействия модулей в контексте `render/ui/components/interactiveAtlasButton`. */
 interface InteractiveAtlasButtonProps {
   GUI: BabylonGuiLike;
   textureUrl: string;
@@ -35,6 +38,7 @@ interface InteractiveAtlasButtonProps {
 
 
 
+/** Выполняет `applyRegion` в ходе выполнения связанного игрового сценария. */
 function applyRegion(image: GuiControlLike, region: AtlasRegion): void {
   image.sourceLeft = region.x;
   image.sourceTop = region.y;
@@ -42,6 +46,7 @@ function applyRegion(image: GuiControlLike, region: AtlasRegion): void {
   image.sourceHeight = region.height;
 }
 
+/** Создаёт и настраивает `createInteractiveAtlasButton` в ходе выполнения связанного игрового сценария. */
 export function createInteractiveAtlasButton({
   GUI,
   textureUrl,
@@ -80,6 +85,7 @@ export function createInteractiveAtlasButton({
   return image;
 }
 
+/** Создаёт и настраивает `createAtlasImage` в ходе выполнения связанного игрового сценария. */
 export function createAtlasImage({
   GUI,
   textureUrl,

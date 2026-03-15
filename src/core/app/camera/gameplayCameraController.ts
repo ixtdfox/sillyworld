@@ -15,10 +15,12 @@ const DEFAULT_CAMERA_CONFIG = {
 
 const activeGameplayCameraDetachByRuntime = new WeakMap();
 
+/** Выполняет `toRadians` в ходе выполнения связанного игрового сценария. */
 function toRadians(degrees) {
   return (degrees * Math.PI) / 180;
 }
 
+/** Создаёт и настраивает `createOffsetVector` в ходе выполнения связанного игрового сценария. */
 function createOffsetVector(BABYLON, distance, elevationDegrees, yawDegrees) {
   const elevation = toRadians(elevationDegrees);
   const yaw = toRadians(yawDegrees);
@@ -31,6 +33,7 @@ function createOffsetVector(BABYLON, distance, elevationDegrees, yawDegrees) {
   return new BABYLON.Vector3(x, y, z);
 }
 
+/** Подключает `attachGameplayIsometricCamera` в ходе выполнения связанного игрового сценария. */
 export function attachGameplayIsometricCamera(runtime, followTarget, options = {}) {
   if (!followTarget?.position) {
     throw new Error('Cannot attach gameplay camera without a follow target node.');

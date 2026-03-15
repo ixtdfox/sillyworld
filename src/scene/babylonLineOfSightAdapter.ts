@@ -1,6 +1,7 @@
 // @ts-nocheck
 import type { PositionLike } from '../render/shared/runtimeContracts.ts';
 
+/** Выполняет `isSameNodeOrDescendant` в ходе выполнения связанного игрового сценария. */
 function isSameNodeOrDescendant(mesh: any, root: any): boolean {
   if (!mesh || !root) {
     return false;
@@ -21,7 +22,9 @@ function isSameNodeOrDescendant(mesh: any, root: any): boolean {
   return false;
 }
 
+/** Создаёт и настраивает `createBabylonLineOfSightAdapter` в ходе выполнения связанного игрового сценария. */
 export function createBabylonLineOfSightAdapter(runtime, getRoots: () => { enemyRoot?: any; playerRoot?: any }) {
+  /** Выполняет `return` внутри жизненного цикла класса. */
   return ({ enemy, targetPosition, directionToPlayer, distanceToPlayer }): boolean => {
     const enemyPosition = enemy?.rootNode?.position;
     if (!enemyPosition || !Number.isFinite(distanceToPlayer) || distanceToPlayer <= 0) {

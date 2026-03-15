@@ -11,6 +11,7 @@ import {
 const DEFAULT_MOVE_SPEED = 3;
 const DEFAULT_STOP_DISTANCE = 0.05;
 
+/** Выполняет `calculatePathCost` в ходе выполнения связанного игрового сценария. */
 function calculatePathCost(grid, path, movementCost) {
   if (typeof grid.calculatePathCost === 'function') {
     return grid.calculatePathCost(path, { movementCost });
@@ -35,6 +36,7 @@ function calculatePathCost(grid, path, movementCost) {
   return path.length - 1;
 }
 
+/** Подключает `attachCombatPlayerMovementController` в ходе выполнения связанного игрового сценария. */
 export function attachCombatPlayerMovementController(runtime, options) {
   const {
     combatState,

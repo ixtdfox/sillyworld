@@ -1,11 +1,13 @@
 import type { ItemDefinitionState, ItemInstanceState, ItemsState } from '../contracts.ts';
 import { indexBy } from '../utils/object.ts';
 
+/** Описывает тип `ItemsSeed`, который формализует структуру данных в модуле `world/inventory/items`. */
 type ItemsSeed = Partial<ItemsState> & {
   defs?: ItemDefinitionState[];
   instances?: ItemInstanceState[];
 };
 
+/** Создаёт и настраивает `createDefaultItems` в ходе выполнения связанного игрового сценария. */
 export function createDefaultItems(seed: ItemsSeed = {}): ItemsState {
   return {
     defsById: seed.defsById ?? indexBy(seed.defs ?? [], 'defId'),

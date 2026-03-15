@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createCombatBattlefieldVisualization } from './combatBattlefieldVisualization.ts';
 
+/** Собирает `buildGridLines` в ходе выполнения связанного игрового сценария. */
 function buildGridLines(runtime, battlefieldView, bounds) {
   const lines = [];
   const minCorner = battlefieldView.gridCellToWorld({ x: bounds.minX, z: bounds.minZ }, { anchor: 'corner' });
@@ -29,6 +30,7 @@ function buildGridLines(runtime, battlefieldView, bounds) {
   return lines;
 }
 
+/** Создаёт и настраивает `createCombatGridOverlayRenderer` в ходе выполнения связанного игрового сценария. */
 export function createCombatGridOverlayRenderer(runtime, options = {}) {
   const {
     combatState,

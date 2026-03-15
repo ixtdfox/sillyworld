@@ -1,13 +1,16 @@
 import type { PositionNodeLike } from '../spatial/types.ts';
 
+/** Константа `DEFAULT_GROUND_MESH_NAME` хранит общие настройки/данные, которые переиспользуются в модуле `world/input/groundClickPolicy`. */
 export const DEFAULT_GROUND_MESH_NAME = 'Ground';
 
+/** Определяет контракт `GroundPickLike` для согласованного взаимодействия модулей в контексте `world/input/groundClickPolicy`. */
 export interface GroundPickLike {
   hit?: boolean;
   pickedMesh?: PositionNodeLike | null;
   pickedPoint?: { x: number; y: number; z: number; clone: () => { x: number; y: number; z: number } } | null;
 }
 
+/** Определяет контракт `GroundClickResolution` для согласованного взаимодействия модулей в контексте `world/input/groundClickPolicy`. */
 export interface GroundClickResolution {
   accepted: boolean;
   reason: 'accepted' | 'no-hit' | 'blocked-mesh' | 'not-ground';
@@ -15,6 +18,7 @@ export interface GroundClickResolution {
   target: { x: number; y: number; z: number } | null;
 }
 
+/** Выполняет `isGroundNode` в ходе выполнения связанного игрового сценария. */
 function isGroundNode(node: PositionNodeLike | null | undefined, groundMeshName: string): boolean {
   let current = node;
   while (current) {
@@ -26,6 +30,7 @@ function isGroundNode(node: PositionNodeLike | null | undefined, groundMeshName:
   return false;
 }
 
+/** Определяет `resolveGroundClickTarget` в ходе выполнения связанного игрового сценария. */
 export function resolveGroundClickTarget(
   pickResult: GroundPickLike | null | undefined,
   options: { blockedMeshNames?: string[]; groundMeshName?: string } = {}

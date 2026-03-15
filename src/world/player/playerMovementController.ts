@@ -12,6 +12,7 @@ import {
 
 const DEFAULT_CELLS_PER_SECOND = 4;
 
+/** Определяет контракт `BabylonRuntimeSubset` для согласованного взаимодействия модулей в контексте `world/player/playerMovementController`. */
 interface BabylonRuntimeSubset {
   engine: { getDeltaTime?: () => number };
   scene: {
@@ -22,17 +23,20 @@ interface BabylonRuntimeSubset {
   };
 }
 
+/** Определяет контракт `PlayerCharacterLike` для согласованного взаимодействия модулей в контексте `world/player/playerMovementController`. */
 interface PlayerCharacterLike {
   rootNode: { position: { copyFrom: (position: unknown) => void; x: number; y: number; z: number } };
   gridCell?: { x: number; z: number } | null;
 }
 
+/** Определяет контракт `MovementTargetStateLike` для согласованного взаимодействия модулей в контексте `world/player/playerMovementController`. */
 interface MovementTargetStateLike {
   hasTarget(): boolean;
   getTarget(): { x: number; z: number } | null;
   clearTarget(): void;
 }
 
+/** Определяет контракт `PlayerMovementControllerOptions` для согласованного взаимодействия модулей в контексте `world/player/playerMovementController`. */
 interface PlayerMovementControllerOptions {
   moveSpeed?: number;
   stopDistance?: number;
@@ -49,6 +53,7 @@ interface PlayerMovementControllerOptions {
   };
 }
 
+/** Класс `PlayerMovementController` координирует соответствующий сценарий модуля `world/player/playerMovementController` и инкапсулирует связанную логику. */
 export class PlayerMovementController {
   readonly #runtime: BabylonRuntimeSubset;
   readonly #playerCharacter: PlayerCharacterLike;
@@ -251,6 +256,7 @@ export class PlayerMovementController {
   }
 }
 
+/** Подключает `attachPlayerMovementController` в ходе выполнения связанного игрового сценария. */
 export function attachPlayerMovementController(
   runtime: BabylonRuntimeSubset,
   playerCharacter: PlayerCharacterLike,

@@ -1,5 +1,6 @@
 import type { SceneRuntimeMountOptions } from '../../render/shared/runtimeContracts.ts';
 
+/** Определяет контракт `CombatTestBootstrapConfig` для согласованного взаимодействия модулей в контексте `core/debug/combatTestBootstrap`. */
 export interface CombatTestBootstrapConfig {
   districtId: string;
   sceneOptions: Pick<

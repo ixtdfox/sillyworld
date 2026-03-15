@@ -21,6 +21,7 @@ const DEFAULT_HP = 20;
 const DEFAULT_BASIC_ATTACK_DAMAGE = 4;
 const DEFAULT_FALLBACK_ATTACK_RANGE = 1;
 
+/** Выполняет `manhattanDistance` в ходе выполнения связанного игрового сценария. */
 function manhattanDistance(cellA, cellB) {
   if (!cellA || !cellB) {
     return Infinity;
@@ -29,10 +30,12 @@ function manhattanDistance(cellA, cellB) {
   return Math.abs(cellA.x - cellB.x) + Math.abs(cellA.z - cellB.z);
 }
 
+/** Определяет `resolveMovementCostRule` в ходе выполнения связанного игрового сценария. */
 function resolveMovementCostRule(options = {}) {
   return typeof options.movementCost === 'function' ? options.movementCost : undefined;
 }
 
+/** Определяет `resolveGroundY` в ходе выполнения связанного игрового сценария. */
 function resolveGroundY({ runtime, x, z, fallbackY = 0 }) {
   const groundMesh = runtime?.scene?.getMeshByName?.('Ground') ?? null;
   if (!groundMesh || groundMesh.isEnabled?.() === false || groundMesh.isVisible === false) {
@@ -50,6 +53,7 @@ function resolveGroundY({ runtime, x, z, fallbackY = 0 }) {
   return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 }
 
+/** Нормализует `normalizeCell` в ходе выполнения связанного игрового сценария. */
 function normalizeCell(cell, fallbackCell) {
   if (cell && Number.isFinite(cell.x) && Number.isFinite(cell.z)) {
     return {
@@ -61,6 +65,7 @@ function normalizeCell(cell, fallbackCell) {
   return { ...fallbackCell };
 }
 
+/** Выполняет `placeUnitAtCell` в ходе выполнения связанного игрового сценария. */
 function placeUnitAtCell(runtime, unit, gridMapper, cell, options = {}) {
   const resolvedCell = normalizeCell(cell, options.fallbackCell ?? { x: 0, z: 0 });
   const worldPosition = gridMapper.gridCellToWorld(resolvedCell, {
@@ -101,6 +106,7 @@ function placeUnitAtCell(runtime, unit, gridMapper, cell, options = {}) {
   };
 }
 
+/** Создаёт и настраивает `createCombatUnit` в ходе выполнения связанного игрового сценария. */
 function createCombatUnit(id, team, entity, initiative = 0, displayName = id) {
   const attackRange = entity?.gameplayDimensions?.attackRange;
 
@@ -129,6 +135,7 @@ function createCombatUnit(id, team, entity, initiative = 0, displayName = id) {
 }
 
 
+/** Определяет `resolveDistinctSpawnCell` в ходе выполнения связанного игрового сценария. */
 function resolveDistinctSpawnCell({ originCell, blockedCell, grid }) {
   if (!originCell || !blockedCell) {
     return originCell;
@@ -154,6 +161,7 @@ function resolveDistinctSpawnCell({ originCell, blockedCell, grid }) {
   return originCell;
 }
 
+/** Создаёт и настраивает `createCombatState` в ходе выполнения связанного игрового сценария. */
 function createCombatState({ combatScene, playerUnit, enemyUnit, turnManager }) {
   const turnState = turnManager.getState();
 
@@ -174,6 +182,7 @@ function createCombatState({ combatScene, playerUnit, enemyUnit, turnManager }) 
   };
 }
 
+/** Определяет `resolveEncounterParticipants` в ходе выполнения связанного игрового сценария. */
 function resolveEncounterParticipants(options = {}) {
   const playerParticipant = {
     id: 'player_1',
@@ -213,6 +222,7 @@ function resolveEncounterParticipants(options = {}) {
   };
 }
 
+/** Создаёт и настраивает `createCombatRuntime` в ходе выполнения связанного игрового сценария. */
 export async function createCombatRuntime(runtime, options = {}) {
   const combatScene = {
     sceneContainer: options.sceneContainer ?? null

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { attachCombatTargetSelectionFlow } from '../../render/combat/combatTargetSelectionFlow.ts';
 
+/** Определяет `resolveTargetEntries` в ходе выполнения связанного игрового сценария. */
 function resolveTargetEntries(options = {}) {
   if (typeof options.getPotentialTargets === 'function') {
     return options.getPotentialTargets().map((entry) => ({
@@ -19,6 +20,7 @@ function resolveTargetEntries(options = {}) {
   return [];
 }
 
+/** Подключает `attachCombatAttackInputController` в ходе выполнения связанного игрового сценария. */
 export function attachCombatAttackInputController(runtime, options = {}) {
   const {
     combatState,

@@ -6,6 +6,7 @@ import {
 } from './entityGameplayDimensions.ts';
 import { createEntityGameplayDimensions } from '../../world/entity/entityGameplayDimensions.ts';
 
+/** Определяет `resolveImportedRootNode` в ходе выполнения связанного игрового сценария. */
 export function resolveImportedRootNode(result) {
   const firstTransformNode = result.transformNodes.find((node) => !node.parent);
   if (firstTransformNode) {
@@ -16,6 +17,7 @@ export function resolveImportedRootNode(result) {
   return firstMesh ?? result.meshes[0] ?? null;
 }
 
+/** Загружает `loadAndNormalizeEntityCharacter` в ходе выполнения связанного игрового сценария. */
 export async function loadAndNormalizeEntityCharacter(runtime, options = {}) {
   const {
     entityLabel,

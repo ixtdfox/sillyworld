@@ -1,6 +1,7 @@
 // @ts-nocheck
 const HUD_RUNTIME_KEY = '__combatDebugHudController';
 
+/** Создаёт и настраивает `createValueRow` в ходе выполнения связанного игрового сценария. */
 function createValueRow(runtime, parent, label, options = {}) {
   const { labelWidth = '140px' } = options;
 
@@ -32,6 +33,7 @@ function createValueRow(runtime, parent, label, options = {}) {
   return valueText;
 }
 
+/** Создаёт и настраивает `createSection` в ходе выполнения связанного игрового сценария. */
 function createSection(runtime, titleText) {
   const section = new runtime.BABYLON.GUI.Rectangle();
   section.thickness = 1;
@@ -60,6 +62,7 @@ function createSection(runtime, titleText) {
   return { section, content };
 }
 
+/** Создаёт и настраивает `createActionButton` в ходе выполнения связанного игрового сценария. */
 function createActionButton(runtime, label, onClick, options = {}) {
   const { onPointerInteraction = () => {} } = options;
   const button = new runtime.BABYLON.GUI.Rectangle();
@@ -93,6 +96,7 @@ function createActionButton(runtime, label, onClick, options = {}) {
   return { button, buttonText };
 }
 
+/** Выполняет `formatUnitResources` в ходе выполнения связанного игрового сценария. */
 function formatUnitResources(unit) {
   if (!unit) {
     return 'HP n/a | AP n/a | MP n/a';
@@ -101,6 +105,7 @@ function formatUnitResources(unit) {
   return `HP ${unit.hp}/${unit.maxHp} | AP ${unit.ap}/${unit.maxAp} | MP ${unit.mp}/${unit.maxMp}`;
 }
 
+/** Создаёт и настраивает `createCombatDebugHud` в ходе выполнения связанного игрового сценария. */
 export function createCombatDebugHud(runtime, options = {}) {
   const { combatState } = options;
 

@@ -8,6 +8,7 @@ import type {
   RuntimeDispose
 } from '../../shared/runtimeContracts.ts';
 
+/** Определяет контракт `SceneViewScreenProps` для согласованного взаимодействия модулей в контексте `render/ui/screens/sceneViewScreen`. */
 export interface SceneViewScreenProps {
   districtId?: string;
   autoStartCombat?: boolean;
@@ -18,16 +19,19 @@ export interface SceneViewScreenProps {
   skipEnemyPatrol?: boolean;
 }
 
+/** Выполняет `formatPosition` в ходе выполнения связанного игрового сценария. */
 function formatPosition(position: PositionLike | null | undefined): string {
   if (!position) return 'n/a';
   return `x:${position.x.toFixed(2)} y:${position.y.toFixed(2)} z:${position.z.toFixed(2)}`;
 }
 
+/** Выполняет `formatNumber` в ходе выполнения связанного игрового сценария. */
 function formatNumber(value: number | null | undefined): string {
   if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
   return value.toFixed(2);
 }
 
+/** Выполняет `formatNormalizationLine` в ходе выполнения связанного игрового сценария. */
 function formatNormalizationLine(label: string, normalization: NormalizationDebugInfo | null | undefined): string {
   if (!normalization) return `${label}: n/a`;
 
@@ -42,6 +46,7 @@ function formatNormalizationLine(label: string, normalization: NormalizationDebu
   ].join(' | ');
 }
 
+/** Собирает `buildDebugLines` в ходе выполнения связанного игрового сценария. */
 function buildDebugLines(debugState: RuntimeDebugState): string[] {
   const mode = debugState?.mode ?? 'loading';
 
@@ -84,6 +89,7 @@ function buildDebugLines(debugState: RuntimeDebugState): string[] {
   return ['[Debug Overlay]', `mode: ${mode}`];
 }
 
+/** Определяет `resolveSceneDebugEnabled` в ходе выполнения связанного игрового сценария. */
 function resolveSceneDebugEnabled(): boolean {
   if (typeof window === 'undefined') return false;
 
@@ -94,6 +100,7 @@ function resolveSceneDebugEnabled(): boolean {
   return true;
 }
 
+/** Класс `SceneViewScreen` координирует соответствующий сценарий модуля `render/ui/screens/sceneViewScreen` и инкапсулирует связанную логику. */
 export class SceneViewScreen extends Screen {
   readonly #props: SceneViewScreenProps;
   readonly #debugEnabled: boolean;

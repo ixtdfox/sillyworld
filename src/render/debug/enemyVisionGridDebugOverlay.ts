@@ -2,10 +2,12 @@
 import { createWorldGridMapper } from '../../world/spatial/worldGrid.ts';
 import { getEnemyVisionCoverage } from '../../world/enemy/enemyPerception.ts';
 
+/** Выполняет `keyForCell` в ходе выполнения связанного игрового сценария. */
 function keyForCell(cell) {
   return `${cell.x},${cell.z}`;
 }
 
+/** Создаёт и настраивает `createCellMaterial` в ходе выполнения связанного игрового сценария. */
 function createCellMaterial(runtime, color, alpha, name) {
   const material = new runtime.BABYLON.StandardMaterial(name, runtime.scene);
   material.diffuseColor = runtime.BABYLON.Color3.Black();
@@ -18,6 +20,7 @@ function createCellMaterial(runtime, color, alpha, name) {
   return material;
 }
 
+/** Создаёт и настраивает `createCellMesh` в ходе выполнения связанного игрового сценария. */
 function createCellMesh(runtime, mapper, cell, y, name, yOffset = 0.045) {
   const world = mapper.gridCellToWorld(cell, { fallbackY: y });
   const mesh = runtime.BABYLON.MeshBuilder.CreateGround(name, {
@@ -37,6 +40,7 @@ function createCellMesh(runtime, mapper, cell, y, name, yOffset = 0.045) {
   return mesh;
 }
 
+/** Создаёт и настраивает `createEnemyVisionGridDebugOverlay` в ходе выполнения связанного игрового сценария. */
 export function createEnemyVisionGridDebugOverlay(runtime, options = {}) {
   const {
     getEnemyActor,

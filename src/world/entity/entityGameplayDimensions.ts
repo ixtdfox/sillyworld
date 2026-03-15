@@ -1,10 +1,12 @@
 // @ts-nocheck
 const DEFAULT_ATTACK_RANGE = 1;
 
+/** Выполняет `toFiniteOrFallback` в ходе выполнения связанного игрового сценария. */
 function toFiniteOrFallback(value, fallback) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+/** Создаёт и настраивает `createEntityGameplayDimensions` в ходе выполнения связанного игрового сценария. */
 export function createEntityGameplayDimensions(normalizationConfig) {
   if (!normalizationConfig || typeof normalizationConfig !== 'object') {
     throw new Error('Cannot create entity gameplay dimensions without a normalization config object.');

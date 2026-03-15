@@ -1,6 +1,7 @@
 // @ts-nocheck
 const DEFAULT_INITIATIVE = 0;
 
+/** Нормализует `normalizeUnits` в ходе выполнения связанного игрового сценария. */
 function normalizeUnits(units = []) {
   return [...units]
     .map((unit, index) => ({
@@ -23,12 +24,14 @@ function normalizeUnits(units = []) {
     .map(({ tieBreaker, ...unit }) => unit);
 }
 
+/** Выполняет `assertHasUnits` в ходе выполнения связанного игрового сценария. */
 function assertHasUnits(orderedUnits) {
   if (!orderedUnits.length) {
     throw new Error('[SillyRPG] Combat turn manager requires at least one combatant.');
   }
 }
 
+/** Создаёт и настраивает `createCombatTurnManager` в ходе выполнения связанного игрового сценария. */
 export function createCombatTurnManager(units = []) {
   const orderedUnits = normalizeUnits(units);
   assertHasUnits(orderedUnits);

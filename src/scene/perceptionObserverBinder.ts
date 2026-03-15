@@ -3,6 +3,7 @@ import { evaluateEnemyPerceptionPipeline } from '../world/enemy/enemyPerception.
 import { updateEnemyAmbientBehavior } from '../world/enemy/enemyAmbientBehavior.ts';
 import { createWorldGridMapper } from '../world/spatial/worldGrid.ts';
 
+/** Создаёт и настраивает `createPerceptionObserverBinder` в ходе выполнения связанного игрового сценария. */
 export function createPerceptionObserverBinder(runtime, options: {
   getExplorationRuntime: () => any;
   canRun: () => boolean;

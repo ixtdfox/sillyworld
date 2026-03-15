@@ -6,6 +6,7 @@ import { isCameraOrbiting, isPrimaryPointerAction } from '../render/shared/point
 
 export { ENCOUNTER_INTERACTION_DISTANCE };
 
+/** Определяет контракт `BabylonRuntimeSubset` для согласованного взаимодействия модулей в контексте `scene/sceneEncounterInteractionInput`. */
 interface BabylonRuntimeSubset {
   BABYLON: {
     PointerEventTypes: { POINTERDOWN: number };
@@ -22,6 +23,7 @@ interface BabylonRuntimeSubset {
   };
 }
 
+/** Определяет контракт `EncounterInputOptions` для согласованного взаимодействия модулей в контексте `scene/sceneEncounterInteractionInput`. */
 interface EncounterInputOptions {
   playerRoot?: PositionNodeLike;
   enemyRoot?: PositionNodeLike;
@@ -29,6 +31,7 @@ interface EncounterInputOptions {
   onEncounterStart?: (payload: EncounterInteractionPayload) => void;
 }
 
+/** Выполняет `isDescendantOf` в ходе выполнения связанного игрового сценария. */
 function isDescendantOf(node: { parent?: unknown } | null | undefined, candidateAncestor: unknown): boolean {
   let current: { parent?: unknown } | null = node ?? null;
   while (current) {
@@ -40,6 +43,7 @@ function isDescendantOf(node: { parent?: unknown } | null | undefined, candidate
   return false;
 }
 
+/** Выполняет `isEnemyPick` в ходе выполнения связанного игрового сценария. */
 function isEnemyPick({ pickedMesh, enemyRoot }: { pickedMesh: unknown; enemyRoot: unknown }): boolean {
   if (!pickedMesh || !enemyRoot) {
     return false;
@@ -47,6 +51,7 @@ function isEnemyPick({ pickedMesh, enemyRoot }: { pickedMesh: unknown; enemyRoot
   return pickedMesh === enemyRoot || isDescendantOf(pickedMesh as { parent?: unknown }, enemyRoot);
 }
 
+/** Класс `SceneEncounterInteractionInput` координирует соответствующий сценарий модуля `scene/sceneEncounterInteractionInput` и инкапсулирует связанную логику. */
 export class SceneEncounterInteractionInput {
   readonly #runtime: BabylonRuntimeSubset;
   readonly #playerRoot: PositionNodeLike;
@@ -135,6 +140,7 @@ export class SceneEncounterInteractionInput {
   }
 }
 
+/** Подключает `attachSceneEncounterInteractionInput` в ходе выполнения связанного игрового сценария. */
 export function attachSceneEncounterInteractionInput(runtime: BabylonRuntimeSubset, options: EncounterInputOptions = {}): RuntimeDispose {
   const input = new SceneEncounterInteractionInput(runtime, options);
   return input.attach();

@@ -12,6 +12,7 @@ import { WORLD_MAP_REGIONS } from './worldMapRegions.ts';
 const SCREEN_SIZE = Object.freeze({ width: 1280, height: 920 });
 const PHONE_SIZE = Object.freeze({ width: 555, height: 918, scale: 0.78 });
 
+/** Определяет контракт `PhoneScaler` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/phoneCityMapScreen`. */
 interface PhoneScaler {
   x: (value: number) => number;
   y: (value: number) => number;
@@ -19,12 +20,14 @@ interface PhoneScaler {
   h: (value: number) => number;
 }
 
+/** Определяет контракт `PhoneDisplayController` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/phoneCityMapScreen`. */
 interface PhoneDisplayController {
   displayArea: GuiControlLike;
   openMap: () => void;
   openInventory: () => void;
 }
 
+/** Определяет контракт `PhoneButtonCallbacks` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/phoneCityMapScreen`. */
 interface PhoneButtonCallbacks {
   map: () => void;
   log: () => void;
@@ -34,14 +37,17 @@ interface PhoneButtonCallbacks {
   endCall: () => void;
 }
 
+/** Определяет контракт `MountPhoneSceneOptions` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/phoneCityMapScreen`. */
 interface MountPhoneSceneOptions {
   onRegionOpen: (regionId: RegionId) => void;
 }
 
+/** Определяет контракт `PhoneCityMapScreenProps` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/phoneCityMapScreen`. */
 export interface PhoneCityMapScreenProps {
   onRegionOpen?: (regionId: RegionId) => void;
 }
 
+/** Определяет контракт `PhoneGuiNamespace` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/phoneCityMapScreen`. */
 interface PhoneGuiNamespace extends BabylonGuiLike {
   AdvancedDynamicTexture: {
     CreateFullscreenUI: (name: string, foreground: boolean, scene: unknown) => {
@@ -55,6 +61,7 @@ interface PhoneGuiNamespace extends BabylonGuiLike {
   };
 }
 
+/** Создаёт и настраивает `createPhoneScaler` в ходе выполнения связанного игрового сценария. */
 function createPhoneScaler(phoneWidth: number, phoneHeight: number): PhoneScaler {
   const scaleX = phoneWidth / PHONE_SIZE.width;
   const scaleY = phoneHeight / PHONE_SIZE.height;
@@ -67,6 +74,7 @@ function createPhoneScaler(phoneWidth: number, phoneHeight: number): PhoneScaler
   };
 }
 
+/** Создаёт и настраивает `createPhoneDisplayLayer` в ходе выполнения связанного игрового сценария. */
 function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen }: { GUI: BabylonGuiLike; scale: PhoneScaler; mapTextureUrl: string; onRegionOpen: (regionId: RegionId) => void }): PhoneDisplayController {
   const displayArea = new GUI.Rectangle('phone-display-area');
   displayArea.width = `${scale.w(PHONE_DISPLAY_BOUNDS.width)}px`;
@@ -105,6 +113,7 @@ function createPhoneDisplayLayer({ GUI, scale, mapTextureUrl, onRegionOpen }: { 
   };
 }
 
+/** Создаёт и настраивает `createButtonCallbacks` в ходе выполнения связанного игрового сценария. */
 function createButtonCallbacks({ phoneDisplay }: { phoneDisplay: PhoneDisplayController }): PhoneButtonCallbacks {
   return {
     map: () => phoneDisplay.openMap(),
@@ -119,6 +128,7 @@ function createButtonCallbacks({ phoneDisplay }: { phoneDisplay: PhoneDisplayCon
   };
 }
 
+/** Собирает `buildPhoneGui` в ходе выполнения связанного игрового сценария. */
 function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }: { GUI: BabylonGuiLike; textureUrl: string; mapTextureUrl: string; onRegionOpen: (regionId: RegionId) => void }): unknown {
   const uiRoot = new GUI.Rectangle('phone-root');
   uiRoot.width = `${SCREEN_SIZE.width}px`;
@@ -189,6 +199,7 @@ function buildPhoneGui({ GUI, textureUrl, mapTextureUrl, onRegionOpen }: { GUI: 
   return uiRoot;
 }
 
+/** Выполняет `mountPhoneScene` в ходе выполнения связанного игрового сценария. */
 async function mountPhoneScene(canvas: HTMLCanvasElement, { onRegionOpen }: MountPhoneSceneOptions): Promise<() => void> {
   await ensureBabylonRuntime();
   const runtime = createBabylonUiRuntime(canvas);
@@ -212,6 +223,7 @@ async function mountPhoneScene(canvas: HTMLCanvasElement, { onRegionOpen }: Moun
   };
 }
 
+/** Класс `MapScreen` координирует соответствующий сценарий модуля `render/ui/screens/phoneMap/phoneCityMapScreen` и инкапсулирует связанную логику. */
 export class MapScreen extends Screen {
   readonly #props: PhoneCityMapScreenProps;
   #canvas: HTMLCanvasElement | null = null;

@@ -1,9 +1,12 @@
 import type { CharacterState, CharactersState } from '../contracts.ts';
 import { indexBy } from '../utils/object.ts';
 
+/** Описывает тип `CharacterSeed`, который формализует структуру данных в модуле `world/character/characters`. */
 type CharacterSeed = Partial<CharacterState>;
+/** Описывает тип `CharactersSeed`, который формализует структуру данных в модуле `world/character/characters`. */
 type CharactersSeed = Partial<CharactersState>;
 
+/** Нормализует `normalizeCharacter` в ходе выполнения связанного игрового сценария. */
 function normalizeCharacter(character: CharacterSeed = {}): CharacterState {
   const id = character.id ?? '';
   return {
@@ -15,6 +18,7 @@ function normalizeCharacter(character: CharacterSeed = {}): CharacterState {
   };
 }
 
+/** Создаёт и настраивает `createDefaultCharacters` в ходе выполнения связанного игрового сценария. */
 export function createDefaultCharacters(seed: CharacterSeed[] | CharactersSeed = []): CharactersState {
   const asArray: CharacterSeed[] = Array.isArray(seed) ? seed : Object.values(seed.byId ?? {});
   const normalized = asArray.map(normalizeCharacter);

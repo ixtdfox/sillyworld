@@ -3,6 +3,7 @@ import type { BabylonGuiLike, GuiControlLike } from '../worldMapViewport.ts';
 import { INVENTORY_LAYOUT, INVENTORY_SLOT_REGION, getInventoryLayoutMetrics } from './inventoryConfig.ts';
 import { createInventoryScrollbar } from './inventoryScrollbar.ts';
 
+/** Определяет контракт `PhoneScale` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/inventory/inventoryGridView`. */
 interface PhoneScale {
   x: (value: number) => number;
   y: (value: number) => number;
@@ -10,6 +11,7 @@ interface PhoneScale {
   h: (value: number) => number;
 }
 
+/** Определяет контракт `InventoryGridViewProps` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/inventory/inventoryGridView`. */
 export interface InventoryGridViewProps {
   GUI: BabylonGuiLike;
   textureUrl: string;
@@ -18,22 +20,26 @@ export interface InventoryGridViewProps {
   viewportHeight: number;
 }
 
+/** Определяет контракт `InventoryCell` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/inventory/inventoryGridView`. */
 interface InventoryCell {
   row: number;
   col: number;
   index: number;
 }
 
+/** Выполняет `clamp` в ходе выполнения связанного игрового сценария. */
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+/** Выполняет `isCellVisible` в ходе выполнения связанного игрового сценария. */
 function isCellVisible({ row, metrics, scrollOffset, viewportHeight }: { row: number; metrics: ReturnType<typeof getInventoryLayoutMetrics>; scrollOffset: number; viewportHeight: number }): boolean {
   const top = metrics.originY + (row * metrics.slotHeight) - scrollOffset;
   const bottom = top + metrics.slotHeight;
   return bottom > 0 && top < viewportHeight;
 }
 
+/** Создаёт и настраивает `createInventoryGridView` в ходе выполнения связанного игрового сценария. */
 export function createInventoryGridView({ GUI, textureUrl, scale, viewportWidth, viewportHeight }: InventoryGridViewProps): GuiControlLike {
   const metrics = getInventoryLayoutMetrics(scale);
 

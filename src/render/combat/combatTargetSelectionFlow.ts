@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { isCameraOrbiting, isPrimaryPointerAction } from '../shared/pointerInputGuards.ts';
+/** Выполняет `isDescendantOf` в ходе выполнения связанного игрового сценария. */
 function isDescendantOf(node, possibleAncestor) {
   let current = node;
   while (current) {
@@ -12,6 +13,7 @@ function isDescendantOf(node, possibleAncestor) {
   return false;
 }
 
+/** Определяет `resolveTargetMeshList` в ходе выполнения связанного игрового сценария. */
 function resolveTargetMeshList(targetRoot) {
   if (!targetRoot) {
     return [];
@@ -24,6 +26,7 @@ function resolveTargetMeshList(targetRoot) {
   return [targetRoot, ...childMeshes].filter((mesh, index, array) => mesh && array.indexOf(mesh) === index);
 }
 
+/** Выполняет `applySelectionHighlight` в ходе выполнения связанного игрового сценария. */
 function applySelectionHighlight(targetRoot, selected) {
   const meshes = resolveTargetMeshList(targetRoot);
   meshes.forEach((mesh) => {
@@ -32,6 +35,7 @@ function applySelectionHighlight(targetRoot, selected) {
   });
 }
 
+/** Определяет `resolveEntryFromPick` в ходе выполнения связанного игрового сценария. */
 function resolveEntryFromPick(entries, pickedMesh) {
   if (!pickedMesh) {
     return null;
@@ -43,6 +47,7 @@ function resolveEntryFromPick(entries, pickedMesh) {
   }) ?? null;
 }
 
+/** Подключает `attachCombatTargetSelectionFlow` в ходе выполнения связанного игрового сценария. */
 export function attachCombatTargetSelectionFlow(runtime, options = {}) {
   const {
     getTargetEntries = () => [],

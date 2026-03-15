@@ -5,10 +5,12 @@ export const GRID_ALIGNMENT_DEFAULTS = Object.freeze({
   maxCellSearchRadius: 8
 });
 
+/** Выполняет `toFiniteNumber` в ходе выполнения связанного игрового сценария. */
 function toFiniteNumber(value, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+/** Создаёт и настраивает `createGroundedWorldPosition` в ходе выполнения связанного игрового сценария. */
 function createGroundedWorldPosition({ gridMapper, cell, resolveY, fallbackY = 0 }) {
   return gridMapper.gridCellToWorld(cell, {
     resolveY: ({ x, z }) => (typeof resolveY === 'function' ? resolveY({ x, z, fallbackY }) : fallbackY),
@@ -16,6 +18,7 @@ function createGroundedWorldPosition({ gridMapper, cell, resolveY, fallbackY = 0
   });
 }
 
+/** Выполняет `compareCandidateCells` в ходе выполнения связанного игрового сценария. */
 function compareCandidateCells(a, b) {
   if (a.distanceSq !== b.distanceSq) {
     return a.distanceSq - b.distanceSq;
@@ -29,6 +32,7 @@ function compareCandidateCells(a, b) {
   return a.cell.z - b.cell.z;
 }
 
+/** Выполняет `validateActorAlignment` в ходе выполнения связанного игрового сценария. */
 export function validateActorAlignment({ actor, gridMapper, resolveY, tolerance = GRID_ALIGNMENT_DEFAULTS.positionTolerance } = {}) {
   const worldPosition = actor?.rootNode?.position;
   if (!worldPosition || !gridMapper?.worldToGridCell || !gridMapper?.gridCellToWorld) {
@@ -56,6 +60,7 @@ export function validateActorAlignment({ actor, gridMapper, resolveY, tolerance 
   };
 }
 
+/** Выполняет `findNearestValidGridCell` в ходе выполнения связанного игрового сценария. */
 export function findNearestValidGridCell({ worldPosition, gridMapper, isCellValid, maxSearchRadius = GRID_ALIGNMENT_DEFAULTS.maxCellSearchRadius } = {}) {
   if (!worldPosition || !gridMapper?.worldToGridCell) {
     return null;
@@ -97,6 +102,7 @@ export function findNearestValidGridCell({ worldPosition, gridMapper, isCellVali
   return validator(baseCell) ? baseCell : null;
 }
 
+/** Выполняет `snapActorToGridCell` в ходе выполнения связанного игрового сценария. */
 export function snapActorToGridCell({ runtime, actor, gridMapper, cell, resolveY, logger = console, reason = 'unspecified' } = {}) {
   const worldPosition = actor?.rootNode?.position;
   if (!runtime?.BABYLON?.Vector3 || !actor?.rootNode || !worldPosition || !gridMapper?.gridCellToWorld || !cell) {
@@ -140,6 +146,7 @@ export function snapActorToGridCell({ runtime, actor, gridMapper, cell, resolveY
   };
 }
 
+/** Выполняет `snapActorToNearestValidGridCell` в ходе выполнения связанного игрового сценария. */
 export function snapActorToNearestValidGridCell({
   runtime,
   actor,

@@ -5,14 +5,18 @@ const PIN_SIZE = 24;
 const DRAG_THRESHOLD_PX = 5;
 const CLICK_SUPPRESSION_MS = 120;
 
+/** Описывает тип `NumberRef`, который формализует структуру данных в модуле `render/ui/screens/phoneMap/worldMapViewport`. */
 type NumberRef = { value: number };
+/** Описывает тип `BooleanRef`, который формализует структуру данных в модуле `render/ui/screens/phoneMap/worldMapViewport`. */
 type BooleanRef = { value: boolean };
 
+/** Определяет контракт `PointerPosition` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/worldMapViewport`. */
 interface PointerPosition {
   x: number;
   y: number;
 }
 
+/** Определяет контракт `PointerInfo` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/worldMapViewport`. */
 interface PointerInfo {
   x?: number;
   y?: number;
@@ -22,6 +26,7 @@ interface PointerInfo {
   };
 }
 
+/** Определяет контракт `WorldMapRegion` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/worldMapViewport`. */
 export interface WorldMapRegion {
   regionId: RegionId;
   label: string;
@@ -29,6 +34,7 @@ export interface WorldMapRegion {
   y: number;
 }
 
+/** Определяет контракт `WorldMapViewportProps` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/worldMapViewport`. */
 export interface WorldMapViewportProps {
   GUI: BabylonGuiLike;
   mapTextureUrl: string;
@@ -38,14 +44,17 @@ export interface WorldMapViewportProps {
   onRegionOpen: (regionId: RegionId) => void;
 }
 
+/** Выполняет `clamp` в ходе выполнения связанного игрового сценария. */
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+/** Возвращает `getCenteredOffset` в ходе выполнения связанного игрового сценария. */
 function getCenteredOffset(viewportSize: number, contentSize: number): number {
   return Math.round((viewportSize - contentSize) / 2);
 }
 
+/** Возвращает `getClampBounds` в ходе выполнения связанного игрового сценария. */
 function getClampBounds(viewportSize: number, contentSize: number): { min: number; max: number } {
   if (contentSize <= viewportSize) {
     const centered = getCenteredOffset(viewportSize, contentSize);
@@ -55,6 +64,7 @@ function getClampBounds(viewportSize: number, contentSize: number): { min: numbe
   return { min: viewportSize - contentSize, max: 0 };
 }
 
+/** Определяет контракт `RegionPinProps` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/worldMapViewport`. */
 interface RegionPinProps {
   GUI: BabylonGuiLike;
   region: WorldMapRegion;
@@ -64,6 +74,7 @@ interface RegionPinProps {
   onSuppressionEnd: (now?: number) => void;
 }
 
+/** Создаёт и настраивает `createRegionPin` в ходе выполнения связанного игрового сценария. */
 function createRegionPin({
   GUI,
   region,
@@ -117,6 +128,7 @@ function createRegionPin({
   return pin;
 }
 
+/** Возвращает `getPointerPosition` в ходе выполнения связанного игрового сценария. */
 function getPointerPosition(pointerInfo?: PointerInfo): PointerPosition | null {
   if (!pointerInfo) return null;
   if (typeof pointerInfo.x === 'number' && typeof pointerInfo.y === 'number') {
@@ -130,6 +142,7 @@ function getPointerPosition(pointerInfo?: PointerInfo): PointerPosition | null {
   return null;
 }
 
+/** Создаёт и настраивает `createWorldMapViewport` в ходе выполнения связанного игрового сценария. */
 export function createWorldMapViewport({
   GUI,
   mapTextureUrl,
@@ -278,10 +291,12 @@ export function createWorldMapViewport({
   return viewport;
 }
 
+/** Определяет контракт `GuiObservable` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/worldMapViewport`. */
 interface GuiObservable<T = unknown> {
   add: (callback: (payload: T) => void) => void;
 }
 
+/** Определяет контракт `GuiControlLike` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/worldMapViewport`. */
 export interface GuiControlLike {
   sourceLeft?: number;
   sourceTop?: number;
@@ -318,6 +333,7 @@ export interface GuiControlLike {
   _currentMeasure?: { left: number; top: number };
 }
 
+/** Определяет контракт `GuiSliderLike` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/worldMapViewport`. */
 export interface GuiSliderLike extends GuiControlLike {
   minimum: number;
   maximum: number;
@@ -329,8 +345,10 @@ export interface GuiSliderLike extends GuiControlLike {
 }
 
 
+/** Определяет контракт `GuiRectangleLike` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/worldMapViewport`. */
 export interface GuiRectangleLike extends GuiControlLike {}
 
+/** Определяет контракт `BabylonGuiLike` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/worldMapViewport`. */
 export interface BabylonGuiLike {
   Control: {
     HORIZONTAL_ALIGNMENT_LEFT: number;

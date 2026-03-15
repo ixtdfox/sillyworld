@@ -2,6 +2,7 @@
 import { createCombatDebugShell } from './combatDebugShell.ts';
 import { createEnemyVisionGridDebugOverlay } from './enemyVisionGridDebugOverlay.ts';
 
+/** Обновляет `setupSceneExplorationDebugShell` в ходе выполнения связанного игрового сценария. */
 export function setupSceneExplorationDebugShell(runtime, options: {
   getExplorationRuntime: () => any;
   hasLineOfSight: (args: any) => boolean;

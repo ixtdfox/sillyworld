@@ -1,3 +1,4 @@
+/** Определяет контракт `AtlasRegion` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/phoneSpriteAtlas`. */
 export interface AtlasRegion {
   x: number;
   y: number;
@@ -5,8 +6,10 @@ export interface AtlasRegion {
   height: number;
 }
 
+/** Константа `PHONE_UI_TEXTURE_SIZE` хранит общие настройки/данные, которые переиспользуются в модуле `render/ui/screens/phoneMap/phoneSpriteAtlas`. */
 export const PHONE_UI_TEXTURE_SIZE = Object.freeze({ width: 1536, height: 1024 });
 
+/** Константа `PHONE_UI_ATLAS` хранит общие настройки/данные, которые переиспользуются в модуле `render/ui/screens/phoneMap/phoneSpriteAtlas`. */
 export const PHONE_UI_ATLAS = Object.freeze({
   phoneFrame: { x: 978, y: 0, width: 555, height: 918 },
   menuButtons: {

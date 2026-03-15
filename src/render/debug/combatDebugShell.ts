@@ -1,6 +1,7 @@
 // @ts-nocheck
 const DEFAULT_SHELL_RUNTIME_KEY = '__combatDebugShellController';
 
+/** Создаёт и настраивает `createPrimitiveButton` в ходе выполнения связанного игрового сценария. */
 function createPrimitiveButton(runtime, label, onClick) {
   const button = new runtime.BABYLON.GUI.Rectangle();
   button.width = '118px';
@@ -28,6 +29,7 @@ function createPrimitiveButton(runtime, label, onClick) {
   return { button, text };
 }
 
+/** Нормализует `normalizePanelController` в ходе выполнения связанного игрового сценария. */
 function normalizePanelController(created) {
   if (!created) {
     return {
@@ -49,6 +51,7 @@ function normalizePanelController(created) {
   };
 }
 
+/** Создаёт и настраивает `createCombatDebugShell` в ходе выполнения связанного игрового сценария. */
 export function createCombatDebugShell(runtime, options = {}) {
   const runtimeKey = typeof options.runtimeKey === 'string' && options.runtimeKey.length > 0
     ? options.runtimeKey

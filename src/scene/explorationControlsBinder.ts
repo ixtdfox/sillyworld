@@ -7,12 +7,14 @@ import { PlayerMovementController } from '../world/player/playerMovementControll
 import { SceneGroundMovementInput } from './sceneGroundMovementInput.ts';
 import type { PositionLike, PositionNodeLike, RuntimeDispose } from '../render/shared/runtimeContracts.ts';
 
+/** Определяет контракт `ExplorationControlsBinder` для согласованного взаимодействия модулей в контексте `scene/explorationControlsBinder`. */
 export interface ExplorationControlsBinder {
   attach: () => void;
   dispose: RuntimeDispose;
   isAttached: () => boolean;
 }
 
+/** Определяет `resolveGroundY` в ходе выполнения связанного игрового сценария. */
 function resolveGroundY(runtime, x: number, z: number, fallbackY = 0): number {
   const groundMesh = runtime?.scene?.getMeshByName?.('Ground') ?? null;
   if (!groundMesh || groundMesh.isEnabled?.() === false || groundMesh.isVisible === false) {
@@ -30,6 +32,7 @@ function resolveGroundY(runtime, x: number, z: number, fallbackY = 0): number {
   return hit?.hit && hit.pickedPoint ? hit.pickedPoint.y : fallbackY;
 };
 
+/** Создаёт и настраивает `createExplorationControlsBinder` в ходе выполнения связанного игрового сценария. */
 export function createExplorationControlsBinder(
   runtime,
   explorationRuntime: {

@@ -1,5 +1,6 @@
 import { PHONE_DISPLAY_BOUNDS } from '../phoneDisplayLayout.ts';
 
+/** Определяет контракт `PhoneScale` для согласованного взаимодействия модулей в контексте `render/ui/screens/phoneMap/inventory/inventoryConfig`. */
 interface PhoneScale {
   x: (value: number) => number;
   y: (value: number) => number;
@@ -7,6 +8,7 @@ interface PhoneScale {
   h: (value: number) => number;
 }
 
+/** Константа `INVENTORY_LAYOUT` хранит общие настройки/данные, которые переиспользуются в модуле `render/ui/screens/phoneMap/inventory/inventoryConfig`. */
 export const INVENTORY_LAYOUT = Object.freeze({
   columns: 3,
   rows: 10,
@@ -22,6 +24,7 @@ export const INVENTORY_LAYOUT = Object.freeze({
   contextMenuOffsetY: 8
 });
 
+/** Константа `INVENTORY_SLOT_REGION` хранит общие настройки/данные, которые переиспользуются в модуле `render/ui/screens/phoneMap/inventory/inventoryConfig`. */
 export const INVENTORY_SLOT_REGION = Object.freeze({
   x: 333,
   y: 0,
@@ -29,6 +32,7 @@ export const INVENTORY_SLOT_REGION = Object.freeze({
   height: 135
 });
 
+/** Возвращает `getInventoryLayoutMetrics` в ходе выполнения связанного игрового сценария. */
 export function getInventoryLayoutMetrics(scale: PhoneScale) {
   const originX = scale.x(INVENTORY_LAYOUT.originX - PHONE_DISPLAY_BOUNDS.left);
   const originY = scale.y(INVENTORY_LAYOUT.originY - PHONE_DISPLAY_BOUNDS.top);

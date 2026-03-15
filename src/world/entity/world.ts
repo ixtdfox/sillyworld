@@ -9,10 +9,12 @@ const PHASE_TO_TIME_OF_DAY: Record<TimePhase, TimeOfDay> = Object.freeze({
   [TIME_PHASE.Night]: TIME_OF_DAY.Night
 });
 
+/** Выполняет `toLegacyTimeOfDay` в ходе выполнения связанного игрового сценария. */
 function toLegacyTimeOfDay(phase: TimePhase): TimeOfDay {
   return PHASE_TO_TIME_OF_DAY[phase] ?? TIME_OF_DAY.Morning;
 }
 
+/** Нормализует `normalizeTransitions` в ходе выполнения связанного игрового сценария. */
 function normalizeTransitions(phaseTransitions: unknown): WorldPhaseTransitionState {
   const transitions = (phaseTransitions ?? {}) as { pending?: unknown; history?: unknown };
   return {
@@ -21,6 +23,7 @@ function normalizeTransitions(phaseTransitions: unknown): WorldPhaseTransitionSt
   };
 }
 
+/** Создаёт и настраивает `createDefaultWorld` в ходе выполнения связанного игрового сценария. */
 export function createDefaultWorld(seed: GameStateSeed['world'] | undefined = undefined): WorldState {
   const safeSeed = (seed ?? {}) as Partial<WorldState> & { timeOfDay?: string; timePhase?: string };
   const normalizedPhase = normalizeTimePhase(safeSeed.timePhase, normalizeTimePhase(safeSeed.timeOfDay));

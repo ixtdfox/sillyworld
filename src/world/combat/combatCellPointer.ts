@@ -1,14 +1,17 @@
 // @ts-nocheck
 import { tryResolveCellFromPickResult } from './combatCellSelection.ts';
 
+/** Выполняет `isCombatGuiPick` в ходе выполнения связанного игрового сценария. */
 export function isCombatGuiPick(pickResult) {
   return Boolean(pickResult?.pickedMesh?.metadata?.isCombatHudControl);
 }
 
+/** Выполняет `tryResolveCellFromPick` в ходе выполнения связанного игрового сценария. */
 export function tryResolveCellFromPick(pickResult, gridMapper) {
   return tryResolveCellFromPickResult(pickResult, gridMapper);
 }
 
+/** Выполняет `pickCombatCellAtPointer` в ходе выполнения связанного игрового сценария. */
 export function pickCombatCellAtPointer(runtime, gridMapper, pointerPickInfo = null) {
   const pickResult = pointerPickInfo?.hit
     ? pointerPickInfo

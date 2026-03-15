@@ -8,15 +8,18 @@ const REST_ACTION = Object.freeze({
   NextPhase: 'advance-to-next-phase'
 });
 
+/** Выполняет `isAtHome` в ходе выполнения связанного игрового сценария. */
 function isAtHome(state: GameState): boolean {
   return Boolean(state.player.currentNodeId) && state.player.currentNodeId === state.player.homeNodeId;
 }
 
+/** Выполняет `summarizeTransitions` в ходе выполнения связанного игрового сценария. */
 function summarizeTransitions(state: GameState, previousPendingCount: number): PhaseTransitionRecord[] {
   const pending = Array.isArray(state.world.phaseTransitions?.pending) ? state.world.phaseTransitions.pending : [];
   return pending.slice(previousPendingCount);
 }
 
+/** Возвращает `getAvailableRestActions` в ходе выполнения связанного игрового сценария. */
 export function getAvailableRestActions(state: GameState): Array<{ id: string; label: string; description: string }> {
   if (!isAtHome(state)) return [];
 
@@ -39,6 +42,7 @@ export function getAvailableRestActions(state: GameState): Array<{ id: string; l
   ];
 }
 
+/** Выполняет `performRestAction` в ходе выполнения связанного игрового сценария. */
 export function performRestAction(state: GameState, actionId: string) {
   if (!isAtHome(state)) {
     return {

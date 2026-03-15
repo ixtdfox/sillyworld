@@ -1,5 +1,6 @@
 import type { EncounterStartPayload } from '../render/shared/runtimeContracts.ts';
 
+/** Класс `EncounterCoordinator` координирует соответствующий сценарий модуля `scene/encounterCoordinator` и инкапсулирует связанную логику. */
 export class EncounterCoordinator {
   readonly #onEncounterStart: ((payload: EncounterStartPayload) => void) | undefined;
   #started = false;
