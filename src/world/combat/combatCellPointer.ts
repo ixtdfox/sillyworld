@@ -1,31 +1,20 @@
 // @ts-nocheck
-import { tryResolveCellFromPickResult } from './combatCellSelection.ts';
+import { CombatCellPicker } from './input/CombatCellPicker.ts';
 
-/** Выполняет `isCombatGuiPick` в ходе выполнения связанного игрового сценария. */
+/**
+ * Фасад указателя оставлен для совместимости с контроллерами движения/подсветки,
+ * а сама логика извлечения клетки инкапсулирована в `CombatCellPicker`.
+ */
+const picker = new CombatCellPicker();
+
 export function isCombatGuiPick(pickResult) {
-  return Boolean(pickResult?.pickedMesh?.metadata?.isCombatHudControl);
+  return picker.isCombatGuiPick(pickResult);
 }
 
-/** Выполняет `tryResolveCellFromPick` в ходе выполнения связанного игрового сценария. */
 export function tryResolveCellFromPick(pickResult, gridMapper) {
-  return tryResolveCellFromPickResult(pickResult, gridMapper);
+  return picker.tryResolveCellFromPickResult(pickResult, gridMapper);
 }
 
-/** Выполняет `pickCombatCellAtPointer` в ходе выполнения связанного игрового сценария. */
 export function pickCombatCellAtPointer(runtime, gridMapper, pointerPickInfo = null) {
-  const pickResult = pointerPickInfo?.hit
-    ? pointerPickInfo
-    : runtime.scene.pick(runtime.scene.pointerX, runtime.scene.pointerY);
-
-  if (!pickResult?.hit || !pickResult.pickedPoint || isCombatGuiPick(pickResult)) {
-    return {
-      pickResult,
-      cell: null
-    };
-  }
-
-  return {
-    pickResult,
-    cell: tryResolveCellFromPickResult(pickResult, gridMapper)
-  };
+  return picker.pickCombatCellAtPointer(runtime, gridMapper, pointerPickInfo);
 }
