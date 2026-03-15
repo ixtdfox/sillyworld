@@ -5,7 +5,6 @@ import {
   applyCharacterToPlayerState,
   createCharacterFromPlayerState,
   createEnemyAmbientControllerAdapter,
-  createPlayerMovementTargetControllerAdapter,
   toCharacterRuntimeFromPlayerState
 } from '../src/world/character/characterCompatibilityAdapters.ts';
 
@@ -71,25 +70,6 @@ test('legacy runtime DTO adapters remain available for incremental migration', (
   const roundTrip = applyCharacterRuntimeToPlayerState(player, runtime);
   assert.equal(roundTrip.currentNodeId, 'poi:shop');
   assert.equal(roundTrip.homeNodeId, 'building:home');
-});
-
-test('createPlayerMovementTargetControllerAdapter exposes movement target as PlayerController', () => {
-  let target = { x: 10, z: 4 };
-  const controller = createPlayerMovementTargetControllerAdapter({
-    hasTarget: () => Boolean(target),
-    getTarget: () => target
-  });
-
-  assert.deepEqual(controller.issueIntent(), {
-    kind: 'move',
-    command: {
-      destinationCell: { x: 10, z: 4 },
-      source: 'player_input'
-    }
-  });
-
-  target = null;
-  assert.deepEqual(controller.issueIntent(), { kind: 'idle' });
 });
 
 test('createEnemyAmbientControllerAdapter emits ai intent for next patrol cell', () => {
