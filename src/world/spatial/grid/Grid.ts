@@ -2,13 +2,13 @@
 import { Cell } from '../cell/Cell.ts';
 
 /**
- * Объект `CombatGrid` владеет геометрией арены и изменяемым состоянием занятости клеток.
+ * Объект `Grid` владеет геометрией арены и изменяемым состоянием занятости клеток.
  *
  * Отдельный класс нужен, чтобы pathfinding, проверка проходимости и учёт юнитов
  * не размазывались по runtime-скриптам. Таким образом, правила передвижения живут
  * рядом с данными, которые эти правила используют.
  */
-export class CombatGrid {
+export class Grid {
   constructor({ minX, maxX, minZ, maxZ, blockedCells = [] }) {
     this.minX = minX;
     this.maxX = maxX;
@@ -227,5 +227,5 @@ export class CombatGrid {
  * Фабрика оставлена как compatibility-слой для модулей, которые ещё живут в процедурном API.
  */
 export function createCombatGrid(config) {
-  return new CombatGrid(config);
+  return new Grid(config);
 }

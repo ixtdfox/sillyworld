@@ -4,7 +4,6 @@
  * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
  * Фокус файла — пошаговый бой: клетки, действия, очередь ходов и управление вводом в бою.
  */
-import { manhattanDistance } from "../common/math/utils.ts";
 
 const DEFAULT_BASIC_ATTACK_AP_COST = 1;
 const DEFAULT_BASIC_ATTACK_RANGE = 1;
@@ -15,7 +14,7 @@ const DEFAULT_BASIC_ATTACK_DAMAGE = 4;
  * Класс инкапсулирует правила валидации и применения базовой атаки,
  * а также умеет определять завершение боя по составу живых команд.
  */
-export class CombatActionResolver {
+export class ActionResolver {
   basicAttackApCost;
   basicAttackDamage;
 
@@ -66,7 +65,7 @@ export class CombatActionResolver {
         ? attacker.attackRange
         : DEFAULT_BASIC_ATTACK_RANGE;
 
-    const distance = manhattanDistance(attacker.gridCell, target.gridCell);
+    const distance = attacker.gridCell.manhattanDistanceTo(target.gridCell)
 
     if (distance > attackRange) {
       return {
@@ -157,5 +156,5 @@ export class CombatActionResolver {
  * пока ожидает создание резолвера через функцию.
  */
 export function createCombatActionResolver(options = {}) {
-  return new CombatActionResolver(options);
+  return new ActionResolver(options);
 }

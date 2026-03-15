@@ -2,7 +2,7 @@
 /**
  * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей. Фокус файла — состояние и поведение игрока в исследовании и связанных действиях.
  */
-import { pickCombatCellAtPointer } from '../combat/combatCellPointer.ts';
+import {CombatCellPicker} from '../combat/input/CombatCellPicker.ts';
 import { isCameraOrbiting, isPrimaryPointerAction } from '../../render/shared/pointerInputGuards.ts';
 import {
   advancePositionAlongWaypoints,
@@ -137,7 +137,8 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    const { pickResult, cell: destinationCell } = pickCombatCellAtPointer(runtime, gridMapper, pointerInfo.pickInfo ?? null);
+    const picker = new CombatCellPicker();
+    const { pickResult, cell: destinationCell } = picker.pickCombatCellAtPointer(runtime, gridMapper, pointerInfo.pickInfo ?? null);
 
     if (!pickResult?.hit || !pickResult.pickedPoint) {
       return;

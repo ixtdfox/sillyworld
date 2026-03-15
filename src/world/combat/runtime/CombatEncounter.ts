@@ -1,13 +1,13 @@
 // @ts-nocheck
 import { createCombatTurnManager } from '../combatTurnManager.ts';
-import { createCombatGrid } from '../grid/CombatGrid.ts';
+import { createCombatGrid } from '../../spatial/grid/Grid.ts';
 import { createWorldGridMapper } from '../../spatial/worldGrid.ts';
 import { createPlayerAnimationController } from '../../player/playerAnimationController.ts';
 import { attachCombatPlayerMovementController } from '../../player/combatPlayerMovementController.ts';
-import { createCombatActionResolver } from '../combatActionResolver.ts';
+import { createCombatActionResolver } from '../ActionResolver.ts';
 import { attachCombatAttackInputController } from '../combatAttackInputController.ts';
 import { createCombatDebugHud } from '../../../render/debug/combatDebugHud.ts';
-import { resolveCombatGridConfig } from '../combatGridConfig.ts';
+import { resolveCombatGridConfig } from '../../spatial/worldGrid.ts';
 import { createCombatGridOverlayRenderer } from '../../../render/combat/combatGridOverlayRenderer.ts';
 import { createCombatMovementRangeHighlighter } from '../../../render/combat/combatMovementRangeHighlighter.ts';
 import { createPlayerActionModeStateMachine, PLAYER_ACTION_MODES } from '../playerActionModeStateMachine.ts';
@@ -457,8 +457,9 @@ export class CombatEncounter {
         if (!Number.isFinite(activeUnit.mp) || activeUnit.mp <= 0) break;
 
         const reachableCells = grid.getReachableCells(activeUnit.gridCell, activeUnit.mp, { allowOccupiedByUnitId: activeUnit.id, movementCost });
-        const candidateCells = reachableCells.map((cell) => ({ x: cell.x, z: cell.z }))
-          .filter((cell) => !(cell.x === activeUnit.gridCell.x && cell.z === activeUnit.gridCell.z));
+        const candidateCells = reachableCells
+            .map((cell) => Cell.from(cell))
+            .filter((cell) => !cell.equals(activeUnit.gridCell));
 
         let selectedMove = null;
         for (const candidateCell of candidateCells) {
@@ -466,8 +467,10 @@ export class CombatEncounter {
           if (!path || path.length <= 1) continue;
           const pathCost = grid.calculatePathCost(path, { movementCost });
           if (!Number.isFinite(pathCost) || pathCost <= 0 || pathCost > activeUnit.mp) continue;
-          const distanceToPlayer = manhattanDistance(candidateCell, playerUnit.gridCell);
-          const currentDistance = selectedMove ? manhattanDistance(selectedMove.destinationCell, playerUnit.gridCell) : Infinity;
+          const distanceToPlayer = candidateCell.manhattanDistanceTo(playerUnit.gridCell);
+          const currentDistance = selectedMove
+              ? selectedMove.destinationCell.manhattanDistanceTo(playerUnit.gridCell)
+              : Infinity;
           if (!selectedMove || distanceToPlayer < currentDistance || (distanceToPlayer === currentDistance && pathCost < selectedMove.pathCost)) {
             selectedMove = { destinationCell: candidateCell, pathCost };
           }
@@ -567,4 +570,9 @@ export class CombatEncounter {
 
     return { combatState, combatScene, playerUnit, enemyUnit, dispose };
   }
+}
+
+export async function createCombatRuntime(runtime, options = {}) {
+  const encounter = new CombatEncounter(runtime, options);
+  return encounter.initialize();
 }

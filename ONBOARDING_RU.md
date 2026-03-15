@@ -279,7 +279,7 @@
 **Ключевые модули:**
 - `createCombatTurnManager` (`src/world/combat/combatTurnManager.ts`) — порядок ходов, фазы раунда.
 - `createCombatGrid` (`src/world/combat/combatGrid.ts`) — bounds, blocked/occupied, pathfinding, reachable cells.
-- `createCombatActionResolver` (`src/world/combat/combatActionResolver.ts`) — валидация/применение атаки.
+- `createCombatActionResolver` (`src/world/combat/ActionResolver.ts`) — валидация/применение атаки.
 - UI input:
   - `attachCombatPlayerMovementController`,
   - `attachCombatAttackInputController`.
@@ -489,7 +489,7 @@
 - **Изменить механику боя (ходы, атака, перемещение):**
   - `src/ui/rendering/combat/combatRuntime.ts`,
   - `src/world/combat/combatTurnManager.ts`,
-  - `src/world/combat/combatActionResolver.ts`,
+  - `src/world/combat/ActionResolver.ts`,
   - `src/world/combat/combatGrid.ts`.
 
 - **Изменить время/фазы/переходы времени:**
