@@ -31,123 +31,155 @@ function calculatePathCost(grid, path, movementCost) {
   return path.length - 1;
 }
 
-export function attachCombatPlayerMovementController(runtime, options) {
-  const {
-    combatState,
-    playerUnit,
-    grid,
-    gridMapper,
-    resolveGroundY,
-    onMovingStateChange = () => {},
-    isMovementEnabled = () => true,
-    moveSpeed = DEFAULT_MOVE_SPEED,
-    stopDistance = DEFAULT_STOP_DISTANCE,
-    movementCost,
-    debugLog = () => {}
-  } = options;
+/**
+ * Runtime service for player turn movement in combat.
+ * Owns pointer subscriptions, movement path lifecycle, and combat-state synchronization.
+ */
+export class CombatPlayerMovementRuntime {
+  constructor(runtime, options) {
+    this.runtime = runtime;
+    this.combatState = options.combatState;
+    this.playerUnit = options.playerUnit;
+    this.grid = options.grid;
+    this.gridMapper = options.gridMapper;
+    this.resolveGroundY = options.resolveGroundY;
+    this.onMovingStateChange = options.onMovingStateChange ?? (() => {});
+    this.isMovementEnabled = options.isMovementEnabled ?? (() => true);
+    this.moveSpeed = options.moveSpeed ?? DEFAULT_MOVE_SPEED;
+    this.stopDistance = options.stopDistance ?? DEFAULT_STOP_DISTANCE;
+    this.movementCost = options.movementCost;
+    this.debugLog = options.debugLog ?? (() => {});
 
-  const getActiveUnit = () => combatState.getActiveUnit?.() ?? null;
+    this.pendingPathCost = 0;
+    this.isMoving = false;
+    this.movementInputResetVersion = this.combatState.pendingMovementInputResetVersion ?? 0;
+    this.pointerObserver = null;
+    this.beforeRenderObserver = null;
 
-  let pendingPathCost = 0;
-  let isMoving = false;
-  let movementInputResetVersion = combatState.pendingMovementInputResetVersion ?? 0;
-  combatState.playerMovementInProgress = false;
+    this.combatState.playerMovementInProgress = false;
+    this.movementEngine = new CellMovementEngine({
+      moveSpeed: this.moveSpeed,
+      stopDistance: this.stopDistance,
+      gridMapper: this.gridMapper,
+      resolveGroundY: this.resolveGroundY,
+      grid: this.grid,
+      toVector3: (world) => new this.runtime.BABYLON.Vector3(world.x, world.y, world.z)
+    });
+  }
 
-  const movementEngine = new CellMovementEngine({
-    moveSpeed,
-    stopDistance,
-    gridMapper,
-    resolveGroundY,
-    grid,
-    toVector3: (world) => new runtime.BABYLON.Vector3(world.x, world.y, world.z)
-  });
+  attach() {
+    if (this.pointerObserver || this.beforeRenderObserver) {
+      return () => this.dispose();
+    }
 
-  const setMoving = (nextMovingState) => {
-    if (isMoving === nextMovingState) {
+    const currentCell = this.movementEngine.ensureCharacterCell({
+      currentCell: this.playerUnit.gridCell,
+      position: this.playerUnit.rootNode.position
+    });
+    this.playerUnit.gridCell = currentCell;
+    this.playerUnit.rootNode.gridCell = currentCell;
+    this.movementEngine.snapPositionToCell({
+      cell: currentCell,
+      position: this.playerUnit.rootNode.position,
+      fallbackY: this.playerUnit.rootNode.position.y
+    });
+
+    this.pointerObserver = this.runtime.scene.onPointerObservable.add((pointerInfo) => this.#onPointer(pointerInfo));
+    this.beforeRenderObserver = this.runtime.scene.onBeforeRenderObservable.add(() => this.#onBeforeRender());
+
+    return () => this.dispose();
+  }
+
+  dispose() {
+    this.#clearPath('controller_detach');
+    if (this.pointerObserver) {
+      this.runtime.scene.onPointerObservable.remove(this.pointerObserver);
+      this.pointerObserver = null;
+    }
+    if (this.beforeRenderObserver) {
+      this.runtime.scene.onBeforeRenderObservable.remove(this.beforeRenderObserver);
+      this.beforeRenderObserver = null;
+    }
+  }
+
+  #getActiveUnit() {
+    return this.combatState.getActiveUnit?.() ?? null;
+  }
+
+  #setMoving(nextMovingState) {
+    if (this.isMoving === nextMovingState) {
       return;
     }
 
-    isMoving = nextMovingState;
-    combatState.playerMovementInProgress = isMoving;
-    if (!isMoving) {
-      combatState.hoveredMovementDestination = null;
+    this.isMoving = nextMovingState;
+    this.combatState.playerMovementInProgress = this.isMoving;
+    if (!this.isMoving) {
+      this.combatState.hoveredMovementDestination = null;
     }
-    onMovingStateChange(isMoving);
-  };
+    this.onMovingStateChange(this.isMoving);
+  }
 
-  const clearPath = (reason = 'clear_path') => {
-    if (movementEngine.activePath) {
-      debugLog('[combat-move] cleared pending movement path', { reason });
+  #clearPath(reason = 'clear_path') {
+    if (this.movementEngine.activePath) {
+      this.debugLog('[combat-move] cleared pending movement path', { reason });
     }
-    movementEngine.clear(reason);
-    pendingPathCost = 0;
-    setMoving(false);
-  };
+    this.movementEngine.clear(reason);
+    this.pendingPathCost = 0;
+    this.#setMoving(false);
+  }
 
-  const syncResetVersion = () => {
-    const nextVersion = combatState.pendingMovementInputResetVersion ?? 0;
-    if (nextVersion !== movementInputResetVersion) {
-      movementInputResetVersion = nextVersion;
-      clearPath(`external_reset:${combatState.lastMovementInputResetReason ?? 'unknown'}`);
+  #syncResetVersion() {
+    const nextVersion = this.combatState.pendingMovementInputResetVersion ?? 0;
+    if (nextVersion !== this.movementInputResetVersion) {
+      this.movementInputResetVersion = nextVersion;
+      this.#clearPath(`external_reset:${this.combatState.lastMovementInputResetReason ?? 'unknown'}`);
     }
-  };
+  }
 
-  const isPlayerMoveAllowed = () => {
-    const activeUnit = getActiveUnit();
-    return combatState.status === 'active'
-      && (!combatState.phase || combatState.phase === 'turn_active')
-      && playerUnit.isAlive
-      && activeUnit?.id === playerUnit.id
-      && isMovementEnabled()
-      && Number.isFinite(playerUnit.mp)
-      && playerUnit.mp > 0;
-  };
+  #isPlayerMoveAllowed() {
+    const activeUnit = this.#getActiveUnit();
+    return this.combatState.status === 'active'
+      && (!this.combatState.phase || this.combatState.phase === 'turn_active')
+      && this.playerUnit.isAlive
+      && activeUnit?.id === this.playerUnit.id
+      && this.isMovementEnabled()
+      && Number.isFinite(this.playerUnit.mp)
+      && this.playerUnit.mp > 0;
+  }
 
-  const currentCell = movementEngine.ensureCharacterCell({
-    currentCell: playerUnit.gridCell,
-    position: playerUnit.rootNode.position
-  });
-  playerUnit.gridCell = currentCell;
-  playerUnit.rootNode.gridCell = currentCell;
-  movementEngine.snapPositionToCell({
-    cell: currentCell,
-    position: playerUnit.rootNode.position,
-    fallbackY: playerUnit.rootNode.position.y
-  });
+  #onPointer(pointerInfo) {
+    this.#syncResetVersion();
 
-  const pointerObserver = runtime.scene.onPointerObservable.add((pointerInfo) => {
-    syncResetVersion();
-
-    if (pointerInfo.type === runtime.BABYLON.PointerEventTypes.POINTERUP) {
-      if (combatState.consumeUiPointerGuard?.()) {
-        debugLog('[combat-move] suppressed pointer up from GUI interaction', {
-          reason: combatState.uiPointerGuardReason ?? 'unknown'
+    if (pointerInfo.type === this.runtime.BABYLON.PointerEventTypes.POINTERUP) {
+      if (this.combatState.consumeUiPointerGuard?.()) {
+        this.debugLog('[combat-move] suppressed pointer up from GUI interaction', {
+          reason: this.combatState.uiPointerGuardReason ?? 'unknown'
         });
       }
       return;
     }
 
-    if (pointerInfo.type !== runtime.BABYLON.PointerEventTypes.POINTERDOWN) {
+    if (pointerInfo.type !== this.runtime.BABYLON.PointerEventTypes.POINTERDOWN) {
       return;
     }
 
-    if (!isPrimaryPointerAction(pointerInfo) || isCameraOrbiting(runtime)) {
+    if (!isPrimaryPointerAction(pointerInfo) || isCameraOrbiting(this.runtime)) {
       return;
     }
 
-    if (combatState.consumeUiPointerGuard?.()) {
-      debugLog('[combat-move] suppressed pointer down from GUI interaction', {
-        reason: combatState.uiPointerGuardReason ?? 'unknown'
+    if (this.combatState.consumeUiPointerGuard?.()) {
+      this.debugLog('[combat-move] suppressed pointer down from GUI interaction', {
+        reason: this.combatState.uiPointerGuardReason ?? 'unknown'
       });
       return;
     }
 
-    if (!isPlayerMoveAllowed() || isMoving) {
+    if (!this.#isPlayerMoveAllowed() || this.isMoving) {
       return;
     }
 
     const picker = new CombatCellPicker();
-    const { pickResult, cell: destinationCell } = picker.pickCombatCellAtPointer(runtime, gridMapper, pointerInfo.pickInfo ?? null);
+    const { pickResult, cell: destinationCell } = picker.pickCombatCellAtPointer(this.runtime, this.gridMapper, pointerInfo.pickInfo ?? null);
 
     if (!pickResult?.hit || !pickResult.pickedPoint) {
       return;
@@ -155,26 +187,26 @@ export function attachCombatPlayerMovementController(runtime, options) {
 
     if (!destinationCell) {
       if (pickResult?.pickedMesh?.metadata?.isCombatHudControl) {
-        debugLog('[combat-move] rejected click: gui mesh pick');
+        this.debugLog('[combat-move] rejected click: gui mesh pick');
       } else {
-        debugLog('[combat-move] rejected click: no valid destination cell', {
+        this.debugLog('[combat-move] rejected click: no valid destination cell', {
           pickedMeshName: pickResult?.pickedMesh?.name ?? 'none'
         });
       }
       return;
     }
 
-    const movementAttempt = typeof combatState.tryMoveActiveUnit === 'function'
-      ? combatState.tryMoveActiveUnit({
-        unitId: playerUnit.id,
+    const movementAttempt = typeof this.combatState.tryMoveActiveUnit === 'function'
+      ? this.combatState.tryMoveActiveUnit({
+        unitId: this.playerUnit.id,
         destinationCell,
-        movementCost,
+        movementCost: this.movementCost,
         source: 'world_pointer'
       })
       : null;
 
     if (movementAttempt && !movementAttempt.success) {
-      debugLog('[combat-move] movement rejected by combat state', {
+      this.debugLog('[combat-move] movement rejected by combat state', {
         reason: movementAttempt.reason,
         destinationCell
       });
@@ -182,78 +214,79 @@ export function attachCombatPlayerMovementController(runtime, options) {
     }
 
     const path = movementAttempt?.path ?? resolveCellPath({
-      startCell: playerUnit.gridCell,
+      startCell: this.playerUnit.gridCell,
       destinationCell,
-      grid,
+      grid: this.grid,
       findPathOptions: {
-        allowOccupiedByUnitId: playerUnit.id,
-        movementCost
+        allowOccupiedByUnitId: this.playerUnit.id,
+        movementCost: this.movementCost
       }
     });
+
     if (!path || path.length <= 1) {
-      debugLog('[combat-move] rejected click: path not found', { destinationCell });
+      this.debugLog('[combat-move] rejected click: path not found', { destinationCell });
       return;
     }
 
-    const pathCost = movementAttempt?.pathCost ?? calculatePathCost(grid, path, movementCost);
-    if (!Number.isFinite(pathCost) || pathCost <= 0 || pathCost > playerUnit.mp) {
-      debugLog('[combat-move] rejected click: invalid path cost', { pathCost, mp: playerUnit.mp });
+    const pathCost = movementAttempt?.pathCost ?? calculatePathCost(this.grid, path, this.movementCost);
+    if (!Number.isFinite(pathCost) || pathCost <= 0 || pathCost > this.playerUnit.mp) {
+      this.debugLog('[combat-move] rejected click: invalid path cost', { pathCost, mp: this.playerUnit.mp });
       return;
     }
 
-    const queueResult = movementEngine.queueMovement({
-      currentCell: playerUnit.gridCell,
+    const queueResult = this.movementEngine.queueMovement({
+      currentCell: this.playerUnit.gridCell,
       destinationCell,
-      position: playerUnit.rootNode.position,
-      fallbackY: playerUnit.rootNode.position.y,
+      position: this.playerUnit.rootNode.position,
+      fallbackY: this.playerUnit.rootNode.position.y,
       findPathOptions: {
-        allowOccupiedByUnitId: playerUnit.id,
-        movementCost
+        allowOccupiedByUnitId: this.playerUnit.id,
+        movementCost: this.movementCost
       },
       resolvedPathCells: path
     });
 
     if (!queueResult.ok) {
-      debugLog('[combat-move] rejected click: movement queue failed', {
+      this.debugLog('[combat-move] rejected click: movement queue failed', {
         destinationCell,
         reason: queueResult.reason
       });
       return;
     }
 
-    pendingPathCost = pathCost;
-    setMoving(true);
-    debugLog('[combat-move] queued movement', {
+    this.pendingPathCost = pathCost;
+    this.#setMoving(true);
+    this.debugLog('[combat-move] queued movement', {
       source: 'world_pointer',
       destinationCell,
       pathCost
     });
-  });
+  }
 
-  const beforeRenderObserver = runtime.scene.onBeforeRenderObservable.add(() => {
-    syncResetVersion();
+  #onBeforeRender() {
+    this.#syncResetVersion();
 
-    if (!isPlayerMoveAllowed()) {
-      clearPath('player_cannot_move');
+    if (!this.#isPlayerMoveAllowed()) {
+      this.#clearPath('player_cannot_move');
       return;
     }
 
-    if (!movementEngine.isMoving) {
+    if (!this.movementEngine.isMoving) {
       return;
     }
 
-    const currentPosition = playerUnit.rootNode.position;
-    const deltaTimeSeconds = runtime.engine.getDeltaTime() / 1000;
-    const advanceResult = movementEngine.tick({
+    const currentPosition = this.playerUnit.rootNode.position;
+    const deltaTimeSeconds = this.runtime.engine.getDeltaTime() / 1000;
+    const advanceResult = this.movementEngine.tick({
       position: currentPosition,
       deltaTimeSeconds
     });
 
     if (advanceResult.reachedWaypoint && advanceResult.reachedCell) {
-      playerUnit.gridCell = advanceResult.reachedCell;
-      playerUnit.rootNode.gridCell = advanceResult.reachedCell;
-      if (playerUnit.entity) {
-        playerUnit.entity.gridCell = advanceResult.reachedCell;
+      this.playerUnit.gridCell = advanceResult.reachedCell;
+      this.playerUnit.rootNode.gridCell = advanceResult.reachedCell;
+      if (this.playerUnit.entity) {
+        this.playerUnit.entity.gridCell = advanceResult.reachedCell;
       }
     }
 
@@ -261,44 +294,44 @@ export function attachCombatPlayerMovementController(runtime, options) {
       return;
     }
 
-    debugLog('[combat-move] reached destination waypoint', {
+    this.debugLog('[combat-move] reached destination waypoint', {
       destinationCell: advanceResult.destinationCell,
-      pathCost: pendingPathCost
+      pathCost: this.pendingPathCost
     });
 
-    if (typeof combatState.completeUnitMovement === 'function') {
-      combatState.completeUnitMovement({
-        unitId: playerUnit.id,
+    if (typeof this.combatState.completeUnitMovement === 'function') {
+      this.combatState.completeUnitMovement({
+        unitId: this.playerUnit.id,
         destinationCell: advanceResult.destinationCell,
-        pathCost: pendingPathCost,
+        pathCost: this.pendingPathCost,
         source: 'world_pointer'
       });
     } else {
-      const fromCell = playerUnit.gridCell;
+      const fromCell = this.playerUnit.gridCell;
       const toCell = advanceResult.destinationCell;
-      grid.moveOccupant(fromCell, toCell, playerUnit.id);
-      playerUnit.gridCell = toCell;
-      playerUnit.rootNode.gridCell = toCell;
-      if (playerUnit.entity) {
-        playerUnit.entity.gridCell = toCell;
+      this.grid.moveOccupant(fromCell, toCell, this.playerUnit.id);
+      this.playerUnit.gridCell = toCell;
+      this.playerUnit.rootNode.gridCell = toCell;
+      if (this.playerUnit.entity) {
+        this.playerUnit.entity.gridCell = toCell;
       }
-      playerUnit.mp -= pendingPathCost;
+      this.playerUnit.mp -= this.pendingPathCost;
     }
 
-    movementEngine.snapPositionToCell({
+    this.movementEngine.snapPositionToCell({
       cell: advanceResult.destinationCell,
-      position: playerUnit.rootNode.position,
-      fallbackY: playerUnit.rootNode.position.y
+      position: this.playerUnit.rootNode.position,
+      fallbackY: this.playerUnit.rootNode.position.y
     });
 
-    setMoving(false);
-    combatState.resetPendingMovementInput?.('movement_complete');
-    syncResetVersion();
-  });
+    this.#setMoving(false);
+    this.combatState.resetPendingMovementInput?.('movement_complete');
+    this.#syncResetVersion();
+  }
+}
 
-  return () => {
-    clearPath('controller_detach');
-    runtime.scene.onPointerObservable.remove(pointerObserver);
-    runtime.scene.onBeforeRenderObservable.remove(beforeRenderObserver);
-  };
+export function attachCombatPlayerMovementController(runtime, options) {
+  const movementRuntime = new CombatPlayerMovementRuntime(runtime, options);
+  movementRuntime.attach();
+  return () => movementRuntime.dispose();
 }

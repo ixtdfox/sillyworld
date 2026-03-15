@@ -52,7 +52,7 @@ This document describes the current standalone app architecture in the codebase 
 - `src/ui/screens/phaseTransitionInterstitial.js`: modal-like transition screen between time phases.
 - `src/ui/screens/sceneViewScreen.js`: 3D district scene wrapper and debug overlay.
 
-## 7) Scene loading and player movement responsibilities
+## 7) Scene loading and movement responsibilities
 
 - `sceneRuntime.js` is the orchestrator:
   - boots Babylon runtime,
@@ -62,10 +62,11 @@ This document describes the current standalone app architecture in the codebase 
 - `districtExplorationRuntime.js` composes exploration scene parts (world scene + player + enemy entities).
 - `worldSceneLoader.js` imports the district GLB and resolves the ground mesh.
 - Movement/input split:
-  - `sceneGroundClickInput.js`: picks valid ground clicks and sets move targets.
-  - `playerMovementController.js`: per-frame movement toward target + stop behavior.
-  - `playerAnimationController.js`: reacts to moving/idle state.
-  - `encounterInteractionInput.js`: enemy click proximity check and combat trigger.
+  - `sceneGroundMovementInput.ts`: picks valid ground clicks and sets move targets.
+  - `characterMovementOrchestrator.ts`: shared per-frame movement execution for controller intents.
+  - `combatPlayerMovementController.ts`: combat-specific runtime service for turn movement (pointer gating + MP spending).
+  - `playerAnimationController.ts`: reacts to moving/idle state.
+  - `sceneEncounterInteractionInput.ts`: enemy click proximity check and combat trigger.
 
 ## 8) Where future features should be added
 

@@ -10,11 +10,6 @@ import {
   dispositionFromRelationshipState
 } from './index.ts';
 
-interface PlayerMovementTargetStateLike {
-  hasTarget(): boolean;
-  getTarget(): { x: number; z: number } | null;
-}
-
 /**
  * Keeps save-schema compatibility by wrapping PlayerState in the new Character aggregate.
  * World persistence still stores PlayerState while runtime systems can start consuming Character.
@@ -121,18 +116,6 @@ export function applyCharacterRuntimeToPlayerState(
     },
     character
   );
-}
-
-export function createPlayerMovementTargetControllerAdapter(
-  movementTargetState: PlayerMovementTargetStateLike
-): PlayerController {
-  return new PlayerController(() => {
-    if (!movementTargetState.hasTarget()) {
-      return null;
-    }
-
-    return movementTargetState.getTarget();
-  });
 }
 
 export function createEnemyAmbientControllerAdapter(behavior: EnemyAmbientBehavior & { requestedDestinationCell?: { x: number; z: number } | null }): AIController {
