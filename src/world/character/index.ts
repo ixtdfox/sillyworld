@@ -1,6 +1,7 @@
 export * from './CharacterIdentity.ts';
 export * from './CharacterRuntimeState.ts';
 export * from './CharacterDisposition.ts';
+export * from './CharacterHostilityRuntime.ts';
 export * from './CharacterRelations.ts';
 export * from './Character.ts';
 
