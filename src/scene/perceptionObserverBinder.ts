@@ -1,12 +1,14 @@
 // @ts-nocheck
 /**
- * Модуль runtime сцены: координирует Babylon-объекты, ввод игрока и режимы исследования/боя.
+ * Perception binder keeps sensory checks separate from movement execution.
+ * AI state produces intents, while CharacterMovementOrchestrator applies movement.
  */
 import { evaluateEnemyPerceptionPipeline } from '../world/enemy/enemyPerception.ts';
 import { updateEnemyAmbientBehavior } from '../world/enemy/enemyAmbientBehavior.ts';
 import { createWorldGridMapper } from '../world/spatial/worldGrid.ts';
+import { AIController, Character, CharacterRelations } from '../world/character/index.ts';
+import { CharacterMovementOrchestrator } from '../world/movement/characterMovementOrchestrator.ts';
 
-/** Создаёт и настраивает `createPerceptionObserverBinder` в ходе выполнения связанного игрового сценария. */
 export function createPerceptionObserverBinder(runtime, options: {
   getExplorationRuntime: () => any;
   canRun: () => boolean;
@@ -17,8 +19,45 @@ export function createPerceptionObserverBinder(runtime, options: {
 }) {
   let observer = null;
   const fallbackGridMapper = createWorldGridMapper();
+  const aiTargetState = { destinationCell: null };
+
+  const enemyCharacter = new Character({
+    identity: { id: 'scene:enemy', name: 'Enemy', kind: 'creature' },
+    controller: new AIController(() => aiTargetState.destinationCell),
+    relations: new CharacterRelations('scene:enemy'),
+    runtimeState: {
+      cell: null,
+      currentNodeId: null,
+      homeNodeId: null,
+      hpCurrent: 1
+    }
+  });
+
+  let movementOrchestrator = null;
+  let movementDispose = () => {};
+
+  const ensureMovementOrchestrator = (explorationRuntime, gridMapper) => {
+    if (movementOrchestrator || !explorationRuntime?.enemyMeshRoot) {
+      return;
+    }
+
+    movementOrchestrator = new CharacterMovementOrchestrator(runtime, {
+      character: enemyCharacter,
+      rootNode: explorationRuntime.enemyMeshRoot,
+      moveSpeed: 3.2,
+      gridMapper,
+      grid: explorationRuntime.worldGrid,
+      resolveGroundY: explorationRuntime.resolveGroundY,
+      BABYLON: runtime.BABYLON
+    });
+    movementDispose = movementOrchestrator.attach();
+  };
 
   const detach = () => {
+    movementDispose();
+    movementOrchestrator = null;
+    movementDispose = () => {};
+
     if (observer) {
       runtime.scene.onBeforeRenderObservable.remove(observer);
       observer = null;
@@ -38,6 +77,7 @@ export function createPerceptionObserverBinder(runtime, options: {
       }
 
       const gridMapper = explorationRuntime.worldGridMapper ?? fallbackGridMapper;
+      ensureMovementOrchestrator(explorationRuntime, gridMapper);
       const deltaMs = runtime.engine?.getDeltaTime?.() ?? 16;
       const deltaSeconds = Math.max(0, deltaMs / 1000);
 
@@ -45,11 +85,13 @@ export function createPerceptionObserverBinder(runtime, options: {
         ? updateEnemyAmbientBehavior({
             enemyRootNode: explorationRuntime.enemyMeshRoot,
             behavior: explorationRuntime.enemyAmbientBehavior,
+            currentCell: enemyCharacter.getCell(),
             deltaSeconds,
-            gridMapper,
-            resolveGroundY: explorationRuntime.resolveGroundY
+            gridMapper
           })
         : null;
+
+      aiTargetState.destinationCell = updatedBehavior?.requestedDestinationCell ?? null;
 
       if (updatedBehavior?.facingDirection) {
         explorationRuntime.enemyPerception = explorationRuntime.enemyPerception ?? {};

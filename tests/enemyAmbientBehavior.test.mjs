@@ -7,7 +7,8 @@ function createEnemyRootNode(position = { x: 0, y: 0, z: 0 }) {
   return {
     position: { ...position },
     rotation: { x: 0, y: 0, z: 0 },
-    rotationQuaternion: null
+    rotationQuaternion: null,
+    gridCell: { x: 0, z: 0 }
   };
 }
 
@@ -16,11 +17,6 @@ function createGridMapper(cellSize = 1) {
     worldToGridCell: ({ x, z }) => ({
       x: Math.round(x / cellSize),
       z: Math.round(z / cellSize)
-    }),
-    gridCellToWorld: ({ x, z }, transform = {}) => ({
-      x: x * cellSize,
-      y: transform.resolveY ? transform.resolveY({ x: x * cellSize, z: z * cellSize }) : (transform.fallbackY ?? 0),
-      z: z * cellSize
     })
   };
 }
@@ -37,28 +33,24 @@ test('enemy ambient behavior transitions from idle to lookAround and rotates fac
   assert.notEqual(enemyRootNode.rotation.y, 0);
 });
 
-test('enemy patrol movement advances one grid cell at a time and updates facing', () => {
+test('enemy patrol update emits destination intent without mutating enemy position', () => {
   const behavior = createEnemyAmbientBehavior({
     facingDirection: { x: 0, y: 0, z: -1 },
     patrolCells: [{ x: 1, z: 0 }],
     patrolStepIntervalSeconds: 0.1
   });
-  const enemyRootNode = createEnemyRootNode();
-  enemyRootNode.gridCell = { x: 0, z: 0 };
-  const gridMapper = createGridMapper(1);
+  const enemyRootNode = createEnemyRootNode({ x: 4.25, y: 0, z: 3.75 });
 
-  updateEnemyAmbientBehavior({ enemyRootNode, behavior, deltaSeconds: 2, gridMapper });
-  const duringPatrol = updateEnemyAmbientBehavior({ enemyRootNode, behavior, deltaSeconds: 2.5, gridMapper });
+  updateEnemyAmbientBehavior({ enemyRootNode, behavior, deltaSeconds: 2, currentCell: { x: 0, z: 0 } });
+  const duringPatrol = updateEnemyAmbientBehavior({ enemyRootNode, behavior, deltaSeconds: 2.5, currentCell: { x: 0, z: 0 } });
 
   assert.equal(duringPatrol.state, 'patrol');
-  assert.equal(enemyRootNode.gridCell.x, 1);
-  assert.equal(Math.abs(enemyRootNode.gridCell.z), 0);
-  assert.equal(enemyRootNode.position.x, 1);
-  assert.equal(Math.abs(enemyRootNode.position.z), 0);
+  assert.deepEqual(duringPatrol.requestedDestinationCell, { x: 1, z: 0 });
+  assert.deepEqual(enemyRootNode.position, { x: 4.25, y: 0, z: 3.75 });
   assert.ok(duringPatrol.facingDirection.x > 0);
 });
 
-test('enemy patrol resolves patrol points to cells and re-centers enemy to avoid drift', () => {
+test('enemy patrol resolves patrol points to cells and emits movement intent', () => {
   const behavior = createEnemyAmbientBehavior({
     patrolPoints: [{ x: 2.49, y: 0, z: -1.51 }],
     patrolStepIntervalSeconds: 1
@@ -66,12 +58,9 @@ test('enemy patrol resolves patrol points to cells and re-centers enemy to avoid
   const enemyRootNode = createEnemyRootNode({ x: 0.37, y: 0, z: -0.42 });
   const gridMapper = createGridMapper(1);
 
-  updateEnemyAmbientBehavior({ enemyRootNode, behavior, deltaSeconds: 2, gridMapper });
-  updateEnemyAmbientBehavior({ enemyRootNode, behavior, deltaSeconds: 2.5, gridMapper });
+  updateEnemyAmbientBehavior({ enemyRootNode, behavior, deltaSeconds: 2, currentCell: { x: 0, z: 0 }, gridMapper });
+  const result = updateEnemyAmbientBehavior({ enemyRootNode, behavior, deltaSeconds: 2.5, currentCell: { x: 0, z: 0 }, gridMapper });
 
-  assert.deepEqual(behavior.patrolCells, [{ x: 2, z: -2 }]);
-  assert.equal(enemyRootNode.gridCell.x, 1);
-  assert.equal(Math.abs(enemyRootNode.gridCell.z), 0);
-  assert.equal(enemyRootNode.position.x, 1);
-  assert.equal(Math.abs(enemyRootNode.position.z), 0);
+  assert.deepEqual(behavior.patrolCells.map((cell) => ({ x: cell.x, z: cell.z })), [{ x: 2, z: -2 }]);
+  assert.deepEqual({ x: result.requestedDestinationCell.x, z: result.requestedDestinationCell.z }, { x: 2, z: -2 });
 });

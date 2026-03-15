@@ -9,6 +9,7 @@ import { spawnPlayerCharacter } from '../world/player/playerSpawn.ts';
 import { DEFAULT_ENEMY_PERCEPTION_SETTINGS } from '../world/enemy/enemyPerception.ts';
 import { createEnemyAmbientBehavior } from '../world/enemy/enemyAmbientBehavior.ts';
 import { createWorldGridMapper } from '../world/spatial/worldGrid.ts';
+import { createCombatGrid } from '../world/spatial/grid/Grid.ts';
 import { snapActorToNearestValidGridCell } from '../render/shared/gridAlignment.ts';
 import type { AssetResolver, PositionLike, PositionNodeLike, RuntimeDispose } from '../render/shared/runtimeContracts.ts';
 
@@ -142,6 +143,13 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
   });
 
   const gridMapper = createWorldGridMapper();
+  const worldGrid = createCombatGrid({
+    minX: gridMapper.minX,
+    maxX: gridMapper.maxX,
+    minZ: gridMapper.minZ,
+    maxZ: gridMapper.maxZ,
+    blockedCells: gridMapper.blockedCells
+  });
 
   const playerEntity = (await loadPlayerCharacter(runtime, {
     playerFile: options.playerFile,
@@ -216,6 +224,7 @@ export async function createDistrictExplorationRuntime(runtime: BabylonRuntimeSu
     enemyEntity,
     enemyMeshRoot: enemyEntity.rootNode,
     worldGridMapper: gridMapper,
+    worldGrid,
     enemyPerception: {
       visionAngleDegrees: Number.isFinite(options.enemyVisionAngleDegrees)
         ? Math.max(0, options.enemyVisionAngleDegrees)

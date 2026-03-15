@@ -93,7 +93,7 @@ test('createPlayerMovementTargetControllerAdapter exposes movement target as Pla
 });
 
 test('createEnemyAmbientControllerAdapter emits ai intent for next patrol cell', () => {
-  const behavior = { patrolCells: [{ x: 2, z: 1 }], currentPatrolIndex: 0 };
+  const behavior = { patrolCells: [{ x: 2, z: 1 }], currentPatrolIndex: 0, requestedDestinationCell: { x: 2, z: 1 } };
   const controller = createEnemyAmbientControllerAdapter(behavior);
 
   const character = createCharacterFromPlayerState({
@@ -116,5 +116,8 @@ test('createEnemyAmbientControllerAdapter emits ai intent for next patrol cell',
   });
 
   character.setCell({ x: 2, z: 1 });
+  assert.deepEqual(controller.issueIntent(character), { kind: 'idle' });
+
+  behavior.requestedDestinationCell = null;
   assert.deepEqual(controller.issueIntent(character), { kind: 'idle' });
 });
