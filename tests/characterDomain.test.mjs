@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 import {
   AIController,
   Character,
+  CharacterHostilityRuntime,
   CharacterRelations,
   PlayerController,
+  getCharacterDispositionTowardPlayer,
+  isHostileCharacter,
   dispositionFromRelationshipState
 } from '../src/world/character/index.ts';
 
@@ -70,4 +73,33 @@ test('dispositionFromRelationshipState uses stance first and level thresholds se
   assert.equal(dispositionFromRelationshipState({ stance: 'neutral', level: -30 }), 'hostile');
   assert.equal(dispositionFromRelationshipState({ stance: 'neutral', level: 30 }), 'friendly');
   assert.equal(dispositionFromRelationshipState(null), 'neutral');
+});
+
+test('CharacterHostilityRuntime derives disposition and hostility from relationships', () => {
+  const runtime = new CharacterHostilityRuntime('player');
+  const friendly = new Character({
+    identity: { id: 'npc:friendly', name: 'Friend', kind: 'npc' },
+    controller: new AIController(() => null),
+    relations: new CharacterRelations('npc:friendly', {
+      player: { stance: 'friendly', level: 0 }
+    }),
+    runtimeState: { cell: null, currentNodeId: null, homeNodeId: null, hpCurrent: 5 }
+  });
+  const hostile = new Character({
+    identity: { id: 'npc:hostile', name: 'Raider', kind: 'npc' },
+    controller: new AIController(() => null),
+    relations: new CharacterRelations('npc:hostile', {
+      'scene:player': { stance: 'hostile', level: 0 }
+    }),
+    runtimeState: { cell: null, currentNodeId: null, homeNodeId: null, hpCurrent: 5 }
+  });
+
+  assert.equal(runtime.getCharacterDispositionTowardPlayer(friendly), 'friendly');
+  assert.equal(runtime.isHostileCharacter(friendly), false);
+  assert.equal(runtime.getCharacterDispositionTowardPlayer(hostile), 'neutral');
+  assert.equal(runtime.isHostileCharacter(hostile), false);
+  assert.equal(getCharacterDispositionTowardPlayer(hostile), 'neutral');
+  assert.equal(isHostileCharacter(hostile), false);
+  assert.equal(getCharacterDispositionTowardPlayer(hostile, 'scene:player'), 'hostile');
+  assert.equal(isHostileCharacter(hostile, 'scene:player'), true);
 });

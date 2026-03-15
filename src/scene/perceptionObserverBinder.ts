@@ -6,7 +6,7 @@
 import { evaluateEnemyPerceptionPipeline } from '../world/enemy/enemyPerception.ts';
 import { updateEnemyAmbientBehavior } from '../world/enemy/enemyAmbientBehavior.ts';
 import { createWorldGridMapper } from '../world/spatial/worldGrid.ts';
-import { AIController, Character, CharacterRelations } from '../world/character/index.ts';
+import { AIController, Character, CharacterHostilityRuntime, CharacterRelations } from '../world/character/index.ts';
 import { CharacterMovementOrchestrator } from '../world/movement/characterMovementOrchestrator.ts';
 
 export function createPerceptionObserverBinder(runtime, options: {
@@ -16,15 +16,18 @@ export function createPerceptionObserverBinder(runtime, options: {
   hasLineOfSight: (args: any) => boolean;
   onPerceptionUpdated: (payload: any) => void;
   onCombatTriggered: (payload: any) => void;
+  isHostileCharacter?: (character: Character) => boolean;
 }) {
   let observer = null;
   const fallbackGridMapper = createWorldGridMapper();
   const aiTargetState = { destinationCell: null };
 
-  const enemyCharacter = new Character({
+  const npcCharacter = new Character({
     identity: { id: 'scene:enemy', name: 'Enemy', kind: 'creature' },
     controller: new AIController(() => aiTargetState.destinationCell),
-    relations: new CharacterRelations('scene:enemy'),
+    relations: new CharacterRelations('scene:enemy', {
+      'scene:player': { stance: 'hostile', level: 0 }
+    }),
     runtimeState: {
       cell: null,
       currentNodeId: null,
@@ -35,6 +38,8 @@ export function createPerceptionObserverBinder(runtime, options: {
 
   let movementOrchestrator = null;
   let movementDispose = () => {};
+  const hostilityRuntime = new CharacterHostilityRuntime('scene:player');
+  const isHostileCharacter = options.isHostileCharacter ?? ((character: Character) => hostilityRuntime.isHostileCharacter(character));
 
   const ensureMovementOrchestrator = (explorationRuntime, gridMapper) => {
     if (movementOrchestrator || !explorationRuntime?.enemyMeshRoot) {
@@ -42,7 +47,7 @@ export function createPerceptionObserverBinder(runtime, options: {
     }
 
     movementOrchestrator = new CharacterMovementOrchestrator(runtime, {
-      character: enemyCharacter,
+      character: npcCharacter,
       rootNode: explorationRuntime.enemyMeshRoot,
       moveSpeed: 3.2,
       gridMapper,
@@ -85,7 +90,7 @@ export function createPerceptionObserverBinder(runtime, options: {
         ? updateEnemyAmbientBehavior({
             enemyRootNode: explorationRuntime.enemyMeshRoot,
             behavior: explorationRuntime.enemyAmbientBehavior,
-            currentCell: enemyCharacter.getCell(),
+            currentCell: npcCharacter.getCell(),
             deltaSeconds,
             gridMapper
           })
@@ -127,7 +132,7 @@ export function createPerceptionObserverBinder(runtime, options: {
       };
       options.onPerceptionUpdated(perceptionResult);
 
-      if (pipelineResult.playerCellVisible === true) {
+      if (pipelineResult.playerCellVisible === true && isHostileCharacter(npcCharacter)) {
         options.onCombatTriggered({
           distanceToEnemy: pipelineResult.perceptionResult.distanceToPlayer
         });
