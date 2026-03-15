@@ -8,10 +8,11 @@ import {
   resolveCellPath,
   stepCellTowardsTarget
 } from '../src/world/movement/gridMovement.ts';
+import { Cell } from '../src/world/spatial/cell/Cell.ts';
 
 test('stepCellTowardsTarget moves one axis-aligned step toward destination', () => {
-  assert.deepEqual(stepCellTowardsTarget({ x: 1, z: 1 }, { x: 3, z: 9 }), { x: 2, z: 1 });
-  assert.deepEqual(stepCellTowardsTarget({ x: 3, z: 1 }, { x: 3, z: -1 }), { x: 3, z: 0 });
+  assert.deepEqual(stepCellTowardsTarget({ x: 1, z: 1 }, { x: 3, z: 9 }), new Cell(2, 1));
+  assert.deepEqual(stepCellTowardsTarget({ x: 3, z: 1 }, { x: 3, z: -1 }), new Cell(3, 0));
 });
 
 test('resolveCellPath falls back to direct path when no grid pathfinder exists', () => {
@@ -21,7 +22,7 @@ test('resolveCellPath falls back to direct path when no grid pathfinder exists',
     grid: { isCellWalkable: () => true }
   });
 
-  assert.deepEqual(path, [{ x: 0, z: 0 }, { x: 2, z: 0 }]);
+  assert.deepEqual(path, [new Cell(0, 0), new Cell(2, 0)]);
 });
 
 test('buildWorldWaypointPath resolves y via ground callback and advances incrementally', () => {

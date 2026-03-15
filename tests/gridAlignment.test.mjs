@@ -7,6 +7,7 @@ import {
   snapActorToNearestValidGridCell,
   validateActorAlignment
 } from '../src/render/shared/gridAlignment.ts';
+import { Cell } from '../src/world/spatial/cell/Cell.ts';
 
 class FakeVector3 {
   constructor(x, y, z) {
@@ -42,7 +43,7 @@ test('findNearestValidGridCell chooses deterministic nearest valid cell', () => 
     isCellValid: (cell) => !(cell.x === 0 && cell.z === 0)
   });
 
-  assert.deepEqual(chosen, { x: -1, z: 0 });
+  assert.deepEqual(chosen, new Cell(-1, 0));
 });
 
 test('snapActorToNearestValidGridCell snaps and preserves facing transform', () => {
@@ -62,7 +63,7 @@ test('snapActorToNearestValidGridCell snaps and preserves facing transform', () 
   });
 
   assert.equal(result.snapped, true);
-  assert.deepEqual(result.cell, { x: 0, z: 0 });
+  assert.deepEqual(result.cell, new Cell(0, 0));
   assert.deepEqual(actor.rootNode.rotation, { x: 0, y: 1.2, z: 0 });
   assert.equal(actor.rootNode.position.x, 1);
   assert.equal(actor.rootNode.position.z, 1);

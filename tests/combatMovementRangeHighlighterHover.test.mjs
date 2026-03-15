@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createCombatMovementRangeHighlighter } from '../src/render/combat/combatMovementRangeHighlighter.ts';
+import { Cell } from '../src/world/spatial/cell/Cell.ts';
 
 function createObservable() {
   let observer = null;
@@ -101,7 +102,7 @@ test('updates and clears hovered movement destination during move mode', () => {
       cellSize: 1,
       originWorldX: 0,
       originWorldZ: 0,
-      worldToGridCell: () => ({ x: 1, z: 0 }),
+      worldToGridCell: () => new Cell(1, 0),
       gridCellToWorld: (cell) => ({ x: cell.x, y: 0, z: cell.z })
     }
   };
@@ -110,16 +111,16 @@ test('updates and clears hovered movement destination during move mode', () => {
     id: 'player_1',
     isAlive: true,
     mp: 3,
-    gridCell: { x: 0, z: 0 }
+    gridCell: new Cell(0, 0)
   };
 
   const grid = {
     bounds: { minX: -2, maxX: 2, minZ: -2, maxZ: 2 },
-    toCellKey: (cell) => `${cell.x},${cell.z}`,
-    getReachableCells: () => [{ x: 0, z: 0 }, { x: 1, z: 0 }],
+    toCellKey: (cell) => cell.toKey(),
+    getReachableCells: () => [{ cell: new Cell(0, 0), cost: 0 }, { cell: new Cell(1, 0), cost: 1 }],
     getOccupancyRevision: () => 0,
     isWithinBounds: () => true,
-    findPath: (_from, to) => [{ x: 0, z: 0 }, { x: to.x, z: to.z }]
+    findPath: (_from, to) => [new Cell(0, 0), Cell.from(to)]
   };
 
   const highlighter = createCombatMovementRangeHighlighter(runtime, {
@@ -131,10 +132,10 @@ test('updates and clears hovered movement destination during move mode', () => {
 
   runtime.tick();
   assert.deepEqual(combatState.hoveredMovementDestination, {
-    cell: { x: 1, z: 0 },
+    cell: new Cell(1, 0),
     isReachable: true
   });
-  assert.deepEqual(combatState.hoveredMovementPath, [{ x: 0, z: 0 }, { x: 1, z: 0 }]);
+  assert.deepEqual(combatState.hoveredMovementPath, [new Cell(0, 0), new Cell(1, 0)]);
 
   combatState.playerMovementInProgress = true;
   runtime.tick();

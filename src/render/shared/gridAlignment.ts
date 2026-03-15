@@ -2,6 +2,7 @@
 /**
  * Модуль слоя render: отвечает за визуальное представление состояния мира, UI и отладочные оверлеи.
  */
+import { Cell } from '../../world/spatial/cell/Cell.ts';
 
 export const GRID_ALIGNMENT_DEFAULTS = Object.freeze({
   positionTolerance: 0.05,
@@ -81,7 +82,7 @@ export function findNearestValidGridCell({ worldPosition, gridMapper, isCellVali
           continue;
         }
 
-        const cell = { x: baseCell.x + offsetX, z: baseCell.z + offsetZ };
+        const cell = new Cell(baseCell.x + offsetX, baseCell.z + offsetZ);
         if (!validator(cell)) {
           continue;
         }
@@ -125,13 +126,14 @@ export function snapActorToGridCell({ runtime, actor, gridMapper, cell, resolveY
   });
 
   actor.rootNode.position.copyFrom(new runtime.BABYLON.Vector3(targetWorld.x, targetWorld.y, targetWorld.z));
-  actor.rootNode.gridCell = { ...cell };
-  actor.gridCell = { ...cell };
+  const normalizedCell = Cell.from(cell);
+  actor.rootNode.gridCell = normalizedCell;
+  actor.gridCell = normalizedCell;
 
   logger.debug?.('[SillyRPG] Actor snapped to grid cell.', {
     reason,
     originalWorldPosition,
-    resolvedGridCell: { ...cell },
+    resolvedGridCell: normalizedCell,
     finalSnappedWorldPosition: {
       x: actor.rootNode.position.x,
       y: actor.rootNode.position.y,
@@ -140,7 +142,7 @@ export function snapActorToGridCell({ runtime, actor, gridMapper, cell, resolveY
   });
 
   return {
-    cell: { ...cell },
+    cell: normalizedCell,
     worldPosition: {
       x: actor.rootNode.position.x,
       y: actor.rootNode.position.y,
@@ -192,12 +194,12 @@ export function snapActorToNearestValidGridCell({
     && alignment.targetCell?.z === nearestCell.z;
 
   if (alignedToSameCell) {
-    actor.rootNode.gridCell = { ...nearestCell };
-    actor.gridCell = { ...nearestCell };
+    actor.rootNode.gridCell = nearestCell;
+    actor.gridCell = nearestCell;
     return {
       snapped: false,
       reason: 'already_aligned',
-      cell: { ...nearestCell },
+      cell: nearestCell,
       worldPosition: {
         x: worldPosition.x,
         y: worldPosition.y,
@@ -219,7 +221,7 @@ export function snapActorToNearestValidGridCell({
   return {
     snapped: true,
     reason: 'snapped',
-    cell: snapResult?.cell ?? { ...nearestCell },
+    cell: snapResult?.cell ?? nearestCell,
     worldPosition: snapResult?.worldPosition ?? null
   };
 }

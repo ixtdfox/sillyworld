@@ -4,6 +4,7 @@
  * Доменный модуль мира: хранит и преобразует игровое состояние, правила времени, карты, боя и персонажей.
  * Фокус файла — пошаговый бой: клетки, действия, очередь ходов и управление вводом в бою.
  */
+import { Cell } from '../spatial/cell/Cell.ts';
 
 const DEFAULT_BASIC_ATTACK_AP_COST = 1;
 const DEFAULT_BASIC_ATTACK_RANGE = 1;
@@ -65,7 +66,7 @@ export class ActionResolver {
         ? attacker.attackRange
         : DEFAULT_BASIC_ATTACK_RANGE;
 
-    const distance = attacker.gridCell.manhattanDistanceTo(target.gridCell)
+    const distance = Cell.from(attacker.gridCell).manhattanDistanceTo(target.gridCell);
 
     if (distance > attackRange) {
       return {
