@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { attachCombatAttackInputController } from '../src/world/combat/combatAttackInputController.ts';
+import { attachCombatAttackInputController } from '../src/world/combat/AttackInputController.ts';
 
 function createObservable() {
   let observer = null;
