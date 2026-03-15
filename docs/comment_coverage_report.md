@@ -57,12 +57,12 @@
 - `src/world/character/characters.ts`
 - `src/world/character/npcAvailabilitySelectors.ts`
 - `src/world/combat/ActionResolver.ts`
-- `src/world/combat/combatAttackInputController.ts`
+- `src/world/combat/AttackInputController.ts`
 - `src/world/combat/combatCellPointer.ts`
 - `src/world/combat/combatGrid.ts`
 - `src/world/combat/combatGridConfig.ts`
 - `src/world/combat/combatRuntime.ts`
-- `src/world/combat/combatTurnManager.ts`
+- `src/world/combat/TurnManager.ts`
 - `src/world/combat/combatWorldPositionMapper.ts`
 - `src/world/combat/playerActionModeStateMachine.ts`
 - `src/world/enemy/enemyAmbientBehavior.ts`

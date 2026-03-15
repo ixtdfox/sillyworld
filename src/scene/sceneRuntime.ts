@@ -4,7 +4,7 @@
  */
 import { createBabylonWorldRuntime, ensureBabylonRuntime } from './babylonRuntime.ts';
 import { createDistrictExplorationRuntime } from './districtExplorationRuntime.ts';
-import { createCombatRuntime } from '../world/combat/runtime/CombatEncounter.ts';
+import { createCombatRuntime } from '../world/combat/runtime/CombatRuntime.ts';
 import { EncounterCoordinator } from './encounterCoordinator.ts';
 import { SceneModeController } from './sceneModeController.ts';
 import {

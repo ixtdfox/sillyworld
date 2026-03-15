@@ -1,11 +1,11 @@
 // @ts-nocheck
-import { createCombatTurnManager } from '../combatTurnManager.ts';
+import { createCombatTurnManager } from '../TurnManager.ts';
 import { createCombatGrid } from '../../spatial/grid/Grid.ts';
 import { createWorldGridMapper } from '../../spatial/worldGrid.ts';
 import { createPlayerAnimationController } from '../../player/playerAnimationController.ts';
 import { attachCombatPlayerMovementController } from '../../player/combatPlayerMovementController.ts';
 import { createCombatActionResolver } from '../ActionResolver.ts';
-import { attachCombatAttackInputController } from '../combatAttackInputController.ts';
+import { attachCombatAttackInputController } from '../AttackInputController.ts';
 import { createCombatDebugHud } from '../../../render/debug/combatDebugHud.ts';
 import { resolveCombatGridConfig } from '../../spatial/worldGrid.ts';
 import { createCombatGridOverlayRenderer } from '../../../render/combat/combatGridOverlayRenderer.ts';
@@ -91,7 +91,7 @@ function resolveEncounterParticipants(options = {}) {
 }
 
 /**
- * `CombatEncounter` координирует жизненный цикл тактической стычки.
+ * `CombatRuntime` координирует жизненный цикл тактической стычки.
  *
  * Он собирает grid/unit/turn/input/rendering зависимости в единый orchestration-слой:
  * - инициализация участников и их spawn-позиций,
@@ -100,7 +100,7 @@ function resolveEncounterParticipants(options = {}) {
  * - синхронизация HUD и debug-панелей,
  * - корректный dispose внешних контроллеров.
  */
-export class CombatEncounter {
+export class CombatRuntime {
   constructor(runtime, options = {}) {
     this.runtime = runtime;
     this.options = options;
@@ -569,6 +569,6 @@ export class CombatEncounter {
 }
 
 export async function createCombatRuntime(runtime, options = {}) {
-  const encounter = new CombatEncounter(runtime, options);
+  const encounter = new CombatRuntime(runtime, options);
   return encounter.initialize();
 }

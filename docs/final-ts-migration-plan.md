@@ -254,7 +254,7 @@ These declaration files exist to type JS implementations and should be deleted a
 
 **Class/functional impact**
 - `CombatRuntime` class orchestrating scene, units, and combat lifecycle.
-- `CombatTurnManager` class owning state machine.
+- `TurnManager` class owning state machine.
 - Input/debug modules as controller/service classes.
 - Grid/path/resolution helpers remain functional unless stateful caches are introduced.
 

@@ -11,7 +11,7 @@ const DEFAULT_INITIATIVE = 0;
  * номер раунда и текущую фазу боя, чтобы остальные подсистемы работали
  * с единым и детерминированным состоянием.
  */
-export class CombatTurnManager {
+export class TurnManager {
   state;
 
   constructor(units = []) {
@@ -148,5 +148,5 @@ export class CombatTurnManager {
  * который пока использует функциональный способ создания менеджера.
  */
 export function createCombatTurnManager(units = []) {
-  return new CombatTurnManager(units);
+  return new TurnManager(units);
 }
