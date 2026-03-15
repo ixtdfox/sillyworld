@@ -22,3 +22,5 @@ export * as relationshipSelectors from './relationship/relationshipSelectors.ts'
 export * as settingSelectors from './map/settingSelectors.ts';
 export * as locationAvailabilitySelectors from './map/locationAvailabilitySelectors.ts';
 export * as npcAvailabilitySelectors from './character/npcAvailabilitySelectors.ts';
+export * from './character/index.ts';
+export * from './character/characterCompatibilityAdapters.ts';
